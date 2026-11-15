@@ -13,7 +13,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Amical",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 2,
@@ -29,7 +32,10 @@
     "status": "finished",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 3,
@@ -45,7 +51,10 @@
     "status": "finished",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 4,
@@ -61,7 +70,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 5,
@@ -77,7 +89,10 @@
     "status": "finished",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 6,
@@ -93,7 +108,10 @@
     "status": "finished",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 7,
@@ -109,7 +127,10 @@
     "status": "finished",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 8,
@@ -125,7 +146,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 9,
@@ -141,7 +165,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 10,
@@ -157,7 +184,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 11,
@@ -173,7 +203,10 @@
     "status": "finished",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 12,
@@ -189,7 +222,10 @@
     "status": "finished",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 13,
@@ -205,7 +241,10 @@
     "status": "finished",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 14,
@@ -221,7 +260,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 15,
@@ -237,7 +279,10 @@
     "status": "finished",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 16,
@@ -253,7 +298,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 17,
@@ -269,7 +317,10 @@
     "status": "finished",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 18,
@@ -285,7 +336,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 19,
@@ -301,7 +355,10 @@
     "status": "finished",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 20,
@@ -317,7 +374,10 @@
     "status": "finished",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 21,
@@ -333,7 +393,10 @@
     "status": "finished",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 22,
@@ -349,7 +412,10 @@
     "status": "finished",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 23,
@@ -365,7 +431,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 24,
@@ -381,7 +450,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 25,
@@ -397,7 +469,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 26,
@@ -413,7 +488,10 @@
     "status": "finished",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 27,
@@ -429,7 +507,10 @@
     "status": "finished",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 28,
@@ -445,7 +526,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 29,
@@ -461,7 +545,10 @@
     "status": "finished",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 30,
@@ -477,7 +564,10 @@
     "status": "finished",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 31,
@@ -493,7 +583,10 @@
     "status": "finished",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 32,
@@ -509,7 +602,10 @@
     "status": "finished",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 33,
@@ -525,7 +621,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 34,
@@ -541,7 +640,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 35,
@@ -557,7 +659,10 @@
     "status": "finished",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 36,
@@ -573,7 +678,10 @@
     "status": "finished",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 37,
@@ -589,7 +697,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 38,
@@ -605,7 +716,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 39,
@@ -621,7 +735,10 @@
     "status": "finished",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 40,
@@ -637,7 +754,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 41,
@@ -653,7 +773,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 42,
@@ -669,7 +792,10 @@
     "status": "finished",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 43,
@@ -685,7 +811,10 @@
     "status": "finished",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 44,
@@ -701,7 +830,10 @@
     "status": "finished",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 45,
@@ -717,7 +849,10 @@
     "status": "finished",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 46,
@@ -733,7 +868,10 @@
     "status": "finished",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 47,
@@ -749,7 +887,10 @@
     "status": "finished",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "Terminé"
+    "period": "Terminé",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 48,
@@ -765,7 +906,10 @@
     "status": "upcoming",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 49,
@@ -776,12 +920,15 @@
     "time": "15H30",
     "home": "U13 FILLE BENJAMINES",
     "away": "WATTIGNIES/TEMPLEMARS AS",
-    "sh": 0,
-    "sa": 0,
+    "sh": 28,
+    "sa": 22,
     "status": "live",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "En cours"
+    "period": "QT2",
+    "fh": 2,
+    "fa": 3,
+    "liveTracking": true
   },
   {
     "id": 50,
@@ -797,7 +944,10 @@
     "status": "upcoming",
     "cat": "U15M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 51,
@@ -813,7 +963,10 @@
     "status": "upcoming",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 52,
@@ -829,7 +982,10 @@
     "status": "upcoming",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 53,
@@ -845,7 +1001,10 @@
     "status": "upcoming",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 54,
@@ -861,7 +1020,10 @@
     "status": "upcoming",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 55,
@@ -877,7 +1039,10 @@
     "status": "upcoming",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 56,
@@ -893,7 +1058,10 @@
     "status": "upcoming",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 57,
@@ -909,7 +1077,10 @@
     "status": "upcoming",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 58,
@@ -925,7 +1096,10 @@
     "status": "upcoming",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 59,
@@ -941,7 +1115,10 @@
     "status": "upcoming",
     "cat": "U15M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 60,
@@ -957,7 +1134,10 @@
     "status": "upcoming",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 61,
@@ -973,7 +1153,10 @@
     "status": "upcoming",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 62,
@@ -989,7 +1172,10 @@
     "status": "upcoming",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 63,
@@ -1005,7 +1191,10 @@
     "status": "upcoming",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 64,
@@ -1021,7 +1210,10 @@
     "status": "upcoming",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 65,
@@ -1037,7 +1229,10 @@
     "status": "upcoming",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 66,
@@ -1053,7 +1248,10 @@
     "status": "upcoming",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 67,
@@ -1069,7 +1267,10 @@
     "status": "upcoming",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 68,
@@ -1085,7 +1286,10 @@
     "status": "upcoming",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 69,
@@ -1101,7 +1305,10 @@
     "status": "upcoming",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 70,
@@ -1117,7 +1324,10 @@
     "status": "upcoming",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 71,
@@ -1133,7 +1343,10 @@
     "status": "upcoming",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 72,
@@ -1149,7 +1362,10 @@
     "status": "upcoming",
     "cat": "SM1",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 73,
@@ -1165,7 +1381,10 @@
     "status": "upcoming",
     "cat": "SM2",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 74,
@@ -1181,7 +1400,10 @@
     "status": "upcoming",
     "cat": "U15M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 75,
@@ -1197,7 +1419,10 @@
     "status": "upcoming",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 76,
@@ -1213,7 +1438,10 @@
     "status": "upcoming",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 77,
@@ -1229,7 +1457,10 @@
     "status": "upcoming",
     "cat": "U11F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 78,
@@ -1245,7 +1476,10 @@
     "status": "upcoming",
     "cat": "U13F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 79,
@@ -1261,7 +1495,10 @@
     "status": "upcoming",
     "cat": "U18M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 80,
@@ -1277,7 +1514,10 @@
     "status": "upcoming",
     "cat": "U18F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 81,
@@ -1293,7 +1533,10 @@
     "status": "upcoming",
     "cat": "U15F",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 82,
@@ -1309,7 +1552,10 @@
     "status": "upcoming",
     "cat": "U9",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   },
   {
     "id": 83,
@@ -1325,6 +1571,9 @@
     "status": "upcoming",
     "cat": "U15M",
     "comp": "Champ.",
-    "period": "À venir"
+    "period": "À venir",
+    "fh": 0,
+    "fa": 0,
+    "liveTracking": false
   }
 ]
