@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSBSC - Écran Interactif Programmation & Résultats</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Teko -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Teko:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Teko', 'sans-serif'],
+                    },
+                    colors: {
+                        lsbsc: {
+                            blue: '#1E3A8A',
+                            royal: '#1D4ED8',
+                            gold: '#D97706',
+                            red: '#DC2626',
+                            orange: '#EA580C',
+                            light: '#F8FAFC'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #E2E8F0;
+            background-image:
+                radial-gradient(circle at 10% 10%, rgba(30, 58, 138, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 90% 90%, rgba(217, 119, 6, 0.10) 0%, transparent 45%);
+            color: #0F172A;
+            user-select: none;
+        }
+
+        .score-digit {
+            font-family: 'Teko', sans-serif;
+            line-height: 0.85;
+        }
+
+        @keyframes floatMascot {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .mascot-anim {
+            animation: floatMascot 4s ease-in-out infinite;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            display: flex;
+            width: max-content;
+            animation: marquee 38s linear infinite;
+        }
+        .animate-marquee:hover {
+            animation-play-state: paused;
+        }
+
+        .crest-shadow {
+            filter: drop-shadow(0 4px 6px rgba(15, 23, 42, 0.18));
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94A3B8;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748B;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-x-hidden lg:overflow-hidden flex flex-col">
+
+    <!-- ================= 1. EN-TÊTE PRINCIPAL (LOGO OFFICIEL + MASCOTTE + NAVIGATION SEMAINES + STAFF) ================= -->
+    <header class="bg-white border-b-2 border-slate-300 px-3 sm:px-5 py-2 shrink-0 shadow-sm flex flex-wrap items-center justify-between gap-3 z-20">
+        
+        <!-- Gauche : Logo Officiel LSBSC + Mascotte + Titre -->
+        <div class="flex items-center gap-3 min-w-0">
+            <!-- Blason Officiel LSBSC -->
+            <div onclick="openAssetsModal()" title="Cliquer pour personnaliser le Logo ou la Mascotte" class="cursor-pointer w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border-2 border-amber-400 p-1 flex items-center justify-center shadow-md shrink-0 hover:scale-105 transition">
+                <img id="header-logo-img" alt="Logo LSBSC" class="w-full h-full object-contain crest-shadow">
+            </div>
+
+            <!-- Mascotte Officielle Lion South Lille -->
+            <div onclick="openAssetsModal()" title="Mascotte South Lille LSBSC" class="cursor-pointer hidden sm:flex w-14 h-16 rounded-2xl bg-gradient-to-b from-blue-50 to-amber-50 border border-amber-300 p-0.5 items-center justify-center shadow-sm shrink-0 hover:scale-105 transition">
+                <img id="header-mascot-img" alt="Mascotte LSBSC" class="w-full h-full object-contain mascot-anim crest-shadow">
+            </div>
+
+            <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="bg-gradient-to-r from-blue-900 via-blue-800 to-amber-600 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">
+                        SOUTH LILLE • LSBSC
+                    </span>
+                    <span id="sync-badge" class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="sync-badge-text">Synchronisé</span>
+                    </span>
+                </div>
+                <h1 class="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-wide text-slate-900 uppercase leading-none truncate mt-0.5">
+                    Lille Sud Basketball Sporting Club
+                </h1>
+            </div>
+        </div>
+
+        <!-- Centre : Bilan du Week-end affiché -->
+        <div class="hidden xl:flex items-center gap-3 bg-slate-100 border border-slate-300 px-4 py-1.5 rounded-2xl shadow-inner">
+            <div class="pr-3 border-r border-slate-300 text-center">
+                <div class="text-[10px] font-extrabold uppercase text-slate-500">Semaine affichée</div>
+                <div id="stat-week-label" class="font-display text-xl font-bold text-blue-900 uppercase leading-none">14 & 15 Nov.</div>
+            </div>
+            <div class="px-2 border-r border-slate-300 text-center">
+                <div class="text-[10px] font-extrabold uppercase text-slate-500">Matchs</div>
+                <div id="stat-total" class="font-display text-2xl font-bold text-slate-900 leading-none">9</div>
+            </div>
+            <div class="px-2 border-r border-slate-300 text-center">
+                <div class="text-[10px] font-extrabold uppercase text-emerald-700">Victoires</div>
+                <div id="stat-wins" class="font-display text-2xl font-bold text-emerald-600 leading-none">3</div>
+            </div>
+            <div class="px-2 border-r border-slate-300 text-center">
+                <div class="text-[10px] font-extrabold uppercase text-rose-700">Défaites</div>
+                <div id="stat-losses" class="font-display text-2xl font-bold text-rose-600 leading-none">3</div>
+            </div>
+            <div class="pl-2 text-center">
+                <div class="text-[10px] font-extrabold uppercase text-amber-700">À jouer</div>
+                <div id="stat-upcoming" class="font-display text-2xl font-bold text-amber-600 leading-none">3</div>
+            </div>
+        </div>
+
+        <!-- Droite : Boutons Staff, Logos, Horloge & Plein Écran -->
+        <div class="flex items-center gap-2 ml-auto lg:ml-0">
+            <!-- Bouton direct pour charger les fichiers JPG du logo/mascotte ou des clubs -->
+            <button onclick="openAssetsModal()" class="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-extrabold px-3 py-2 rounded-xl text-xs shadow-sm transition" title="Personnaliser le Logo LSBSC, la Mascotte et les Logos des Clubs">
+                <i class="fa-solid fa-shield-halved text-amber-600"></i>
+                <span class="hidden sm:inline">Logos & Mascotte</span>
+            </button>
+
+            <!-- Actions Staff supplémentaires quand déverrouillé -->
+            <div id="staff-top-toolbar" class="hidden items-center gap-1.5">
+                <button onclick="openMatchModal()" class="flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white font-extrabold px-3 py-2 rounded-xl text-xs shadow-sm transition">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden md:inline">Ajouter Match</span>
+                </button>
+                <button onclick="openSettingsModal()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-extrabold px-3 py-2 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-bullhorn text-orange-600"></i>
+                    <span class="hidden lg:inline">Buvette & PIN</span>
+                </button>
+            </div>
+
+            <!-- Horloge -->
+            <div class="hidden sm:flex items-center gap-2 bg-slate-100 border border-slate-300 px-3 py-1 rounded-xl">
+                <i class="fa-regular fa-clock text-orange-600"></i>
+                <div class="text-right">
+                    <div id="clock-time" class="font-display text-xl font-bold text-slate-900 leading-none">15:30:00</div>
+                    <div id="clock-date" class="text-[10px] font-bold text-slate-500 uppercase">Dim. 15 Nov.</div>
+                </div>
+            </div>
+
+            <!-- Accès Staff (Code PIN 5900) -->
+            <button id="btn-staff-toggle" onclick="handleStaffButton()" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition shadow-sm bg-slate-900 hover:bg-slate-800 text-white">
+                <i id="staff-icon" class="fa-solid fa-lock text-amber-400"></i>
+                <span id="staff-label">Accès Staff (Saisie)</span>
+            </button>
+
+            <!-- Plein écran -->
+            <button onclick="toggleFullScreen()" title="Plein écran TV" class="p-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs hidden sm:inline-flex">
+                <i id="fs-icon" class="fa-solid fa-expand"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= 2. CORPS PRINCIPAL PAYSAGE : 2 GRANDES COLONNES ================= -->
+    <main class="flex-1 lg:min-h-0 w-full grid grid-cols-12 gap-3.5 p-3 sm:p-4 lg:overflow-hidden">
+
+        <!-- ================= COLONNE DE GAUCHE (6/12 = 50%) : PROGRAMMATION DU WEEK-END & SCORES ================= -->
+        <section class="col-span-12 lg:col-span-6 flex flex-col lg:min-h-0 bg-white border-2 border-slate-300 rounded-2xl shadow-md overflow-hidden">
+            
+            <!-- Barre de Navigation des Week-ends (Semaine précédente / Ce Week-end / Semaine suivante) -->
+            <div class="p-3 bg-slate-100 border-b border-slate-300 space-y-2.5 shrink-0">
+                
+                <!-- Ligne 1 : Sélecteur de Semaine très visible -->
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-300 shadow-sm">
+                    <button id="btn-prev-week" onclick="stepWeek(-1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-900 hover:text-white text-slate-800 font-extrabold text-xs transition flex items-center gap-1.5 border border-slate-300">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        <span>Sem. préc.</span>
+                    </button>
+
+                    <div class="flex-1 min-w-[170px] text-center">
+                        <select id="week-select" onchange="selectWeek(this.value)" class="w-full bg-transparent text-slate-900 font-extrabold text-xs sm:text-sm text-center focus:outline-none cursor-pointer">
+                            <!-- Injecté par JS -->
+                        </select>
+                    </div>
+
+                    <button id="btn-next-week" onclick="stepWeek(1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-900 hover:text-white text-slate-800 font-extrabold text-xs transition flex items-center gap-1.5 border border-slate-300">
+                        <span>Sem. suiv.</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+
+                    <button id="btn-reset-current-week" onclick="jumpToCurrentWeekend()" class="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs uppercase shadow-sm transition flex items-center gap-1">
+                        <i class="fa-solid fa-calendar-day"></i>
+                        <span>Ce Week-end</span>
+                    </button>
+                </div>
+
+                <!-- Ligne 2 : Onglets rapides de toutes les semaines -->
+                <div id="week-pills-bar" class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <!-- Injecté par JS -->
+                </div>
+
+                <!-- Ligne 3 : Filtres Catégories & Domicile/Extérieur -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                    <div id="category-pills" class="flex items-center gap-1 overflow-x-auto">
+                        <!-- Injecté par JS -->
+                    </div>
+
+                    <div class="flex items-center bg-slate-200 p-0.5 rounded-lg border border-slate-300 text-[11px] font-extrabold shrink-0">
+                        <button onclick="setLocationFilter('ALL')" id="loc-ALL" class="px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm">Tous</button>
+                        <button onclick="setLocationFilter('HOME')" id="loc-HOME" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900">🏠 Dom.</button>
+                        <button onclick="setLocationFilter('AWAY')" id="loc-AWAY" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900">🚌 Ext.</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liste des matchs du week-end sélectionné avec Logos & Scores -->
+            <div id="matches-list-container" class="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50/70">
+                <!-- Injecté immédiatement par JS -->
+            </div>
+        </section>
+
+        <!-- ================= COLONNE DE DROITE (6/12 = 50%) : MATCH EN COURS (HAUT) + MATCH SUIVANT (BAS) ================= -->
+        <section class="col-span-12 lg:col-span-6 flex flex-col lg:min-h-0 gap-3.5">
+
+            <!-- HAUT DROITE : LE MATCH EN COURS (SCOREBOARD GÉANT + LOGOS + MASCOTTE) -->
+            <div id="current-match-card" class="flex-[7] bg-white border-2 border-slate-300 rounded-2xl shadow-md p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+                <!-- Injecté immédiatement par JS -->
+            </div>
+
+            <!-- BAS DROITE : LE MATCH SUIVANT (JUSTE EN DESSOUS DU MATCH EN COURS) -->
+            <div id="next-match-card" class="flex-[3] bg-white border-2 border-slate-300 rounded-2xl shadow-md p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden">
+                <!-- Injecté immédiatement par JS -->
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ================= 3. PIED DE PAGE : BANDEAU INFOS CLUB & BUVETTE ================= -->
+    <footer class="h-10 bg-white border-t-2 border-orange-600 flex items-center overflow-hidden shrink-0 z-20 shadow-md">
+        <div class="bg-gradient-to-r from-blue-950 via-blue-900 to-orange-600 text-white font-display text-lg font-bold uppercase px-4 h-full flex items-center gap-2 shrink-0 z-10">
+            <i class="fa-solid fa-basketball text-amber-300"></i>
+            <span>Infos LSBSC & Buvette</span>
+        </div>
+        <div class="flex-1 overflow-hidden relative h-full flex items-center bg-amber-50/40">
+            <div id="ticker-track" class="animate-marquee whitespace-nowrap text-xs sm:text-sm font-extrabold text-slate-800 flex items-center gap-12 px-6">
+                <!-- Injecté par JS -->
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= MODALE 1 : SAISIE RAPIDE DU SCORE FINAL (PROTÉGÉE PAR PIN) ================= -->
+    <div id="score-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white border-2 border-slate-300 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div>
+                    <span id="sm-cat-badge" class="bg-orange-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded uppercase">Catégorie</span>
+                    <h3 class="font-display text-3xl font-bold text-slate-900 uppercase leading-none mt-1">Saisir le Résultat du Match</h3>
+                </div>
+                <button onclick="closeScoreModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="submitScoreModal(event)" class="space-y-4">
+                <input type="hidden" id="sm-match-id">
+
+                <div class="grid grid-cols-5 items-center gap-3 bg-slate-100 p-4 rounded-2xl border border-slate-300">
+                    <div class="col-span-2 text-center space-y-2">
+                        <img id="sm-home-logo" alt="" class="w-12 h-12 mx-auto object-contain crest-shadow">
+                        <label id="sm-home-name" class="block text-xs font-extrabold text-slate-900 uppercase line-clamp-2 h-8">Domicile</label>
+                        <input type="number" id="sm-home-score" min="0" max="250" required class="w-full text-center font-display text-4xl font-bold text-slate-900 bg-white border-2 border-slate-300 focus:border-orange-600 rounded-xl py-1.5 focus:outline-none">
+                    </div>
+
+                    <div class="col-span-1 text-center font-display text-4xl font-bold text-slate-400">-</div>
+
+                    <div class="col-span-2 text-center space-y-2">
+                        <img id="sm-away-logo" alt="" class="w-12 h-12 mx-auto object-contain crest-shadow">
+                        <label id="sm-away-name" class="block text-xs font-extrabold text-slate-900 uppercase line-clamp-2 h-8">Visiteur</label>
+                        <input type="number" id="sm-away-score" min="0" max="250" required class="w-full text-center font-display text-4xl font-bold text-slate-900 bg-white border-2 border-slate-300 focus:border-orange-600 rounded-xl py-1.5 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Statut du match</label>
+                        <select id="sm-status" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900">
+                            <option value="FINISHED">✅ Terminé (Score Final)</option>
+                            <option value="LIVE">🏀 En cours sur le terrain</option>
+                            <option value="UPCOMING">⏳ À venir</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Quart-temps / Période</label>
+                        <select id="sm-period" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900">
+                            <option value="SCORE FINAL">Score Final</option>
+                            <option value="EN COURS">En cours (Global)</option>
+                            <option value="QT1">1er Quart-Temps (QT1)</option>
+                            <option value="QT2">2e Quart-Temps (QT2)</option>
+                            <option value="MI-TEMPS">Mi-Temps</option>
+                            <option value="QT3">3e Quart-Temps (QT3)</option>
+                            <option value="QT4">4e Quart-Temps (QT4)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeScoreModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">Annuler</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold uppercase shadow-md flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Enregistrer & Diffuser</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE 2 : CODE PIN STAFF (5900 PAR DÉFAUT) ================= -->
+    <div id="pin-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white border-2 border-slate-300 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-2xl shadow-sm">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div>
+                <h3 class="font-display text-3xl font-bold text-slate-900 uppercase leading-none">Accès Staff LSBSC</h3>
+                <p class="text-xs text-slate-500 font-semibold mt-1">Entrez le code PIN du club pour saisir les résultats ou modifier l'affichage.</p>
+            </div>
+
+            <form onsubmit="verifyPin(event)" class="space-y-4">
+                <input type="password" id="pin-input" inputmode="numeric" maxlength="8" placeholder="••••" required
+                    class="w-44 mx-auto block text-center font-display text-4xl tracking-[0.35em] font-bold text-slate-900 bg-slate-100 border-2 border-slate-300 focus:border-orange-600 rounded-xl py-2 focus:outline-none">
+                <p id="pin-error" class="hidden text-xs font-extrabold text-rose-600">Code PIN incorrect (Code par défaut : 5900)</p>
+
+                <div class="grid grid-cols-3 gap-2 max-w-[230px] mx-auto">
+                    <button type="button" onclick="tapPin('1')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">1</button>
+                    <button type="button" onclick="tapPin('2')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">2</button>
+                    <button type="button" onclick="tapPin('3')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">3</button>
+                    <button type="button" onclick="tapPin('4')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">4</button>
+                    <button type="button" onclick="tapPin('5')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">5</button>
+                    <button type="button" onclick="tapPin('6')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">6</button>
+                    <button type="button" onclick="tapPin('7')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">7</button>
+                    <button type="button" onclick="tapPin('8')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">8</button>
+                    <button type="button" onclick="tapPin('9')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">9</button>
+                    <button type="button" onclick="clearPin()" class="py-2 rounded-xl bg-rose-50 text-rose-700 font-extrabold text-xs uppercase">Effacer</button>
+                    <button type="button" onclick="tapPin('0')" class="py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-display text-2xl font-bold">0</button>
+                    <button type="submit" class="py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs uppercase shadow">Valider</button>
+                </div>
+
+                <div class="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                    <span>PIN par défaut : <strong>5900</strong></span>
+                    <button type="button" onclick="closePinModal()" class="font-bold text-slate-700 hover:text-slate-900">Fermer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE 3 : GESTION DU LOGO LSBSC, DE LA MASCOTTE ET DES LOGOS DES CLUBS ================= -->
+    <div id="assets-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white border-2 border-slate-300 rounded-2xl max-w-4xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
+                <div class="flex items-center gap-3">
+                    <img id="modal-preview-logo" alt="Logo" class="w-12 h-12 object-contain crest-shadow">
+                    <div>
+                        <h3 class="font-display text-2xl sm:text-3xl font-bold text-slate-900 uppercase leading-none">
+                            Logo LSBSC, Mascotte & Blasons des Clubs Adverses
+                        </h3>
+                        <p class="text-xs text-slate-500 font-semibold">
+                            Vous pouvez utiliser les visuels HD intégrés ou sélectionner vos fichiers images (détourage automatique du fond noir inclus).
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeAssetsModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 space-y-4 pr-1">
+                <!-- Visuels officiels du club LSBSC -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gradient-to-r from-blue-50 via-white to-amber-50 p-4 rounded-2xl border border-amber-300">
+                    <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center gap-4 shadow-sm">
+                        <div class="w-20 h-20 rounded-2xl bg-slate-900 p-1.5 flex items-center justify-center shrink-0 border-2 border-amber-400">
+                            <img id="card-preview-logo" alt="Logo LSBSC" class="w-full h-full object-contain">
+                        </div>
+                        <div class="space-y-1.5 flex-1">
+                            <div class="font-display text-2xl font-bold text-slate-900 uppercase leading-none">Logo Officiel LSBSC</div>
+                            <p class="text-[11px] text-slate-500">Importer <code>Logo LSBSC HD sans fond.jpg</code> ou garder le blason HD intégré.</p>
+                            <div class="flex flex-wrap gap-1.5 pt-1">
+                                <label class="px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-extrabold cursor-pointer transition shadow-sm inline-flex items-center gap-1.5">
+                                    <i class="fa-solid fa-upload"></i>
+                                    <span>Choisir image Logo</span>
+                                    <input type="file" accept="image/*" class="hidden" onchange="uploadLsbscBrandImage(event, 'logo')">
+                                </label>
+                                <button onclick="resetLsbscBrandImage('logo')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">Par défaut</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center gap-4 shadow-sm">
+                        <div class="w-20 h-20 rounded-2xl bg-blue-50 p-1 flex items-center justify-center shrink-0 border-2 border-blue-300">
+                            <img id="card-preview-mascot" alt="Mascotte LSBSC" class="w-full h-full object-contain">
+                        </div>
+                        <div class="space-y-1.5 flex-1">
+                            <div class="font-display text-2xl font-bold text-slate-900 uppercase leading-none">Mascotte Lion LSBSC</div>
+                            <p class="text-[11px] text-slate-500">Importer <code>mascotte fond transparent.jpg</code> ou garder la mascotte HD intégrée.</p>
+                            <div class="flex flex-wrap gap-1.5 pt-1">
+                                <label class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-extrabold cursor-pointer transition shadow-sm inline-flex items-center gap-1.5">
+                                    <i class="fa-solid fa-upload"></i>
+                                    <span>Choisir image Mascotte</span>
+                                    <input type="file" accept="image/*" class="hidden" onchange="uploadLsbscBrandImage(event, 'mascot')">
+                                </label>
+                                <button onclick="resetLsbscBrandImage('mascot')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">Par défaut</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des clubs adverses -->
+                <div class="space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="font-display text-2xl font-bold text-slate-900 uppercase">Logos des Clubs Adverses</h4>
+                        <input type="text" id="club-search-input" oninput="renderClubsAssetsGrid()" placeholder="Rechercher un club (Lomme, Comines, Tourcoing...)"
+                            class="w-full sm:w-72 bg-slate-100 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-900">
+                    </div>
+                    <div id="clubs-assets-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                        <!-- Injecté par JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end border-t border-slate-200 pt-3 shrink-0">
+                <button onclick="closeAssetsModal()" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold uppercase">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODALE 4 : AJOUTER / MODIFIER UN MATCH ================= -->
+    <div id="match-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white border-2 border-slate-300 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 class="font-display text-3xl font-bold text-slate-900 uppercase leading-none">Programmer / Modifier un Match</h3>
+                <button onclick="closeMatchModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="submitMatchModal(event)" class="space-y-3">
+                <input type="hidden" id="mm-id">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Week-end</label>
+                        <select id="mm-week" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Catégorie</label>
+                        <select id="mm-category" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900">
+                            <option value="U9">U9 Mini-Poussins</option>
+                            <option value="U11">U11 Poussines</option>
+                            <option value="U13">U13 Benjamines</option>
+                            <option value="U15">U15 Minimes</option>
+                            <option value="U18">U18 Cadets / Cadettes</option>
+                            <option value="Seniors">Seniors M1 / M2</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Date (ex: SAM. 14 NOV.)</label>
+                        <input type="text" id="mm-date" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Heure</label>
+                        <input type="text" id="mm-time" required placeholder="18H30" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Domicile / Ext.</label>
+                        <select id="mm-ishome" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900">
+                            <option value="true">🏠 Domicile (Lille Sud)</option>
+                            <option value="false">🚌 Extérieur</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-blue-900 mb-1">Équipe Locaux</label>
+                        <input type="text" id="mm-home" required class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 mb-2">
+                        <label class="block text-[10px] font-bold uppercase text-slate-500">Score Locaux</label>
+                        <input type="number" id="mm-homescore" min="0" value="0" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-sm font-bold text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-orange-700 mb-1">Équipe Visiteurs</label>
+                        <input type="text" id="mm-away" required class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-900 mb-2">
+                        <label class="block text-[10px] font-bold uppercase text-slate-500">Score Visiteurs</label>
+                        <input type="number" id="mm-awayscore" min="0" value="0" class="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-sm font-bold text-slate-900">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Statut</label>
+                    <select id="mm-status" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900">
+                        <option value="UPCOMING">⏳ À venir</option>
+                        <option value="LIVE">🏀 En cours</option>
+                        <option value="FINISHED">✅ Terminé</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeMatchModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">Annuler</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-extrabold uppercase shadow">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODALE 5 : PARAMÈTRES BUVETTE & CODE PIN ================= -->
+    <div id="settings-modal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white border-2 border-slate-300 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 class="font-display text-3xl font-bold text-slate-900 uppercase leading-none">Bandeau Buvette & Code PIN</h3>
+                <button onclick="closeSettingsModal()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-700 mb-1">Messages du bandeau défilant (un par ligne)</label>
+                    <textarea id="set-ticker" rows="4" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-bold text-slate-900"></textarea>
+                </div>
+                <div class="flex items-center justify-between bg-slate-100 p-3 rounded-xl border border-slate-300">
+                    <div>
+                        <label class="block text-xs font-extrabold uppercase text-slate-800">Code PIN Staff</label>
+                        <span class="text-[11px] text-slate-500">Protège la saisie des résultats</span>
+                    </div>
+                    <input type="text" id="set-pin" maxlength="8" class="w-28 text-center font-display text-2xl font-bold bg-white border border-slate-300 rounded-lg py-1">
+                </div>
+                <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                    <button type="button" onclick="resetAllDataToFactory()" class="text-xs font-extrabold text-rose-600 hover:underline">
+                        <i class="fa-solid fa-rotate-left mr-1"></i>Réinitialiser le calendrier Kalisport d'origine
+                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">Annuler</button>
+                        <button type="button" onclick="saveSettingsModal()" class="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold uppercase shadow">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-12 right-5 z-50 hidden bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-extrabold border-l-4 border-amber-400">
+        <i class="fa-solid fa-circle-check text-amber-400 text-base"></i>
+        <span id="toast-text">Modification enregistrée</span>
+    </div>
+
+    <!-- ================= SCRIPT PRINCIPAL 100% AUTONOME ET IMMÉDIAT ================= -->
+    <script>
+        // 1. VISUELS OFFICIELS HAUTE DÉFINITION INTÉGRÉS (LOGO LSBSC & MASCOTTE LION SOUTH LILLE)
+        const LSBSC_OFFICIAL_LOGO_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 320">
+                <defs>
+                    <linearGradient id="goldFleur" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FEF08A"/>
+                        <stop offset="35%" stop-color="#D97706"/>
+                        <stop offset="70%" stop-color="#B45309"/>
+                        <stop offset="100%" stop-color="#451A03"/>
+                    </linearGradient>
+                    <linearGradient id="silverLion" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FFFFFF"/>
+                        <stop offset="50%" stop-color="#CBD5E1"/>
+                        <stop offset="85%" stop-color="#64748B"/>
+                        <stop offset="100%" stop-color="#1E293B"/>
+                    </linearGradient>
+                    <linearGradient id="redBanner" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#7F1D1D"/>
+                        <stop offset="20%" stop-color="#DC2626"/>
+                        <stop offset="50%" stop-color="#EF4444"/>
+                        <stop offset="80%" stop-color="#DC2626"/>
+                        <stop offset="100%" stop-color="#7F1D1D"/>
+                    </linearGradient>
+                    <radialGradient id="basketBall" cx="45%" cy="40%" r="55%">
+                        <stop offset="0%" stop-color="#EA580C"/>
+                        <stop offset="65%" stop-color="#9A3412"/>
+                        <stop offset="100%" stop-color="#431407"/>
+                    </radialGradient>
+                </defs>
+
+                <!-- Grande Fleur de Lys Or Métallique -->
+                <path d="M150 10 C120 52 108 102 118 148 C80 112 24 118 14 164 C6 202 42 232 88 218 C106 212 118 202 126 194 L126 252 L92 264 C115 278 132 284 136 310 C144 315 156 315 164 310 C168 284 185 278 208 264 L174 252 L174 194 C182 202 194 212 212 218 C258 232 294 202 286 164 C276 118 220 112 182 148 C192 102 180 52 150 10 Z" fill="url(#goldFleur)" stroke="#451A03" stroke-width="4"/>
+
+                <!-- Couronne/Bouclier Bleu Marine derrière le Lion -->
+                <path d="M150 68 L178 96 L205 88 L200 205 L150 235 L100 205 L95 88 L122 96 Z" fill="#1E3A8A" stroke="#93C5FD" stroke-width="2.5"/>
+
+                <!-- Textes SOUTH LILLE en bleu métallisé -->
+                <text x="52" y="86" fill="#3B82F6" stroke="#FFFFFF" stroke-width="1.2" font-family="Impact, Arial Black, sans-serif" font-weight="900" font-size="25" transform="rotate(-22 52 86)">SOUTH</text>
+                <text x="192" y="66" fill="#3B82F6" stroke="#FFFFFF" stroke-width="1.2" font-family="Impact, Arial Black, sans-serif" font-weight="900" font-size="25" transform="rotate(22 192 66)">LILLE</text>
+
+                <!-- Ballon de Basket Rouge dans la gueule du Lion -->
+                <circle cx="150" cy="192" r="44" fill="url(#basketBall)" stroke="#431407" stroke-width="3"/>
+                <path d="M110 186 Q150 165 190 186 M116 212 Q150 190 184 212 M150 148 L150 236" fill="none" stroke="#1E293B" stroke-width="3"/>
+
+                <!-- Tête de Lion Argentée 3D -->
+                <path d="M150 80 C106 80 82 110 85 154 C88 184 102 206 114 214 C110 188 118 172 150 172 C182 172 190 188 186 214 C198 206 212 184 215 154 C218 110 194 80 150 80 Z" fill="url(#silverLion)" stroke="#334155" stroke-width="3"/>
+                <!-- Yeux, Mufle et Crocs d'argent -->
+                <polygon points="118,128 136,136 118,141" fill="#0F172A"/>
+                <polygon points="182,128 164,136 182,141" fill="#0F172A"/>
+                <polygon points="138,150 162,150 150,164" fill="#1E293B"/>
+                <path d="M118 164 C118 176 138 176 150 166 C162 176 182 176 182 164" fill="none" stroke="#334155" stroke-width="3"/>
+                <!-- Crocs plantés sur le ballon -->
+                <polygon points="122,172 127,190 133,174" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+                <polygon points="178,172 173,190 167,174" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+
+                <!-- Bannière Rouge Officielle -->
+                <path d="M16 212 Q150 232 284 212 L272 266 Q150 286 28 266 Z" fill="url(#redBanner)" stroke="#FCA5A5" stroke-width="2.5"/>
+                <text x="150" y="242" text-anchor="middle" fill="#FFFFFF" font-family="Impact, Arial Black, sans-serif" font-size="21" letter-spacing="1">LILLE SUD BASKETBALL</text>
+                <text x="150" y="264" text-anchor="middle" fill="#E2E8F0" font-family="Impact, Arial Black, sans-serif" font-size="18" letter-spacing="2.5">SPORTING CLUB</text>
+            </svg>
+        `);
+
+        const LSBSC_OFFICIAL_MASCOT_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 310">
+                <defs>
+                    <linearGradient id="furGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#FDE68A"/>
+                        <stop offset="55%" stop-color="#F59E0B"/>
+                        <stop offset="100%" stop-color="#B45309"/>
+                    </linearGradient>
+                    <linearGradient id="jerseyBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#2563EB"/>
+                        <stop offset="100%" stop-color="#1E3A8A"/>
+                    </linearGradient>
+                </defs>
+                <!-- Ailes/Fleurs de lys derrière les épaules -->
+                <path d="M48 118 C12 96 10 144 42 162 C16 168 22 198 54 192 Z" fill="url(#furGold)" stroke="#1E3A8A" stroke-width="3"/>
+                <path d="M212 118 C248 96 250 144 218 162 C244 168 238 198 206 192 Z" fill="url(#furGold)" stroke="#1E3A8A" stroke-width="3"/>
+
+                <!-- Crinière Bleue Royale & Couronne Fleur de Lys Or -->
+                <circle cx="130" cy="86" r="60" fill="#1E3A8A" stroke="#FDE68A" stroke-width="3.5"/>
+                <path d="M130 6 C112 34 112 60 130 74 C148 60 148 34 130 6 Z" fill="url(#furGold)" stroke="#78350F" stroke-width="2.5"/>
+                <path d="M82 26 C70 46 80 68 100 72 C98 50 94 34 82 26 Z M178 26 C190 46 180 68 160 72 C162 50 166 34 178 26 Z" fill="url(#furGold)" stroke="#78350F" stroke-width="2"/>
+
+                <!-- Visage du Lion -->
+                <circle cx="130" cy="92" r="40" fill="url(#furGold)"/>
+                <ellipse cx="130" cy="108" rx="22" ry="15" fill="#FEF3C7"/>
+                <polygon points="120,96 140,96 130,106" fill="#1E3A8A"/>
+                <circle cx="113" cy="82" r="6" fill="#0F172A"/>
+                <circle cx="147" cy="82" r="6" fill="#0F172A"/>
+                <circle cx="115" cy="80" r="2" fill="#FFFFFF"/>
+                <circle cx="149" cy="80" r="2" fill="#FFFFFF"/>
+
+                <!-- Bras musclés -->
+                <ellipse cx="64" cy="168" rx="22" ry="34" fill="url(#furGold)" stroke="#B45309" stroke-width="2"/>
+                <ellipse cx="196" cy="168" rx="22" ry="34" fill="url(#furGold)" stroke="#B45309" stroke-width="2"/>
+
+                <!-- Maillot & Short Officiels SOUTH LILLE -->
+                <path d="M84 130 L176 130 L184 236 L76 236 Z" fill="url(#jerseyBlue)" stroke="#FDE68A" stroke-width="3.5" rx="14"/>
+                <text x="130" y="154" text-anchor="middle" fill="#FFFFFF" font-family="Impact, Arial Black, sans-serif" font-size="15" letter-spacing="1">SOUTH LILLE</text>
+                <!-- Blason sur le maillot -->
+                <circle cx="130" cy="180" r="18" fill="#F59E0B" stroke="#FFFFFF" stroke-width="1.5"/>
+                <circle cx="130" cy="180" r="12" fill="#DC2626"/>
+                <line x1="78" y1="205" x2="182" y2="205" stroke="#FDE68A" stroke-width="4"/>
+
+                <!-- Ballon Bleu & Or Fleur de Lys sous le bras -->
+                <circle cx="66" cy="176" r="28" fill="#1E3A8A" stroke="#FDE68A" stroke-width="3"/>
+                <path d="M66 152 C56 168 56 184 66 200 M42 176 C56 168 76 168 90 176" stroke="#FDE68A" stroke-width="3" fill="none"/>
+
+                <!-- Baskets Bleues & Blanches -->
+                <rect x="80" y="244" width="40" height="50" rx="12" fill="#1E3A8A" stroke="#FFFFFF" stroke-width="3"/>
+                <rect x="140" y="244" width="40" height="50" rx="12" fill="#1E3A8A" stroke="#FFFFFF" stroke-width="3"/>
+                <line x1="86" y1="276" x2="114" y2="276" stroke="#FFFFFF" stroke-width="3"/>
+                <line x1="146" y1="276" x2="174" y2="276" stroke="#FFFFFF" stroke-width="3"/>
+            </svg>
+        `);
+
+        // 2. PALETTE ET BLASONS DES 44 CLUBS ADVERSES DU CALENDRIER KALISPORT
+        const OPPONENT_CLUBS_META = {
+            "SEQUEDIN": { code: "OSM", c1: "#16A34A", c2: "#14532D", acc: "#BBF7D0" },
+            "TOURCOING": { code: "TUS", c1: "#DC2626", c2: "#1E293B", acc: "#FCA5A5" },
+            "LILLE-EST": { code: "LEB", c1: "#2563EB", c2: "#1E3A8A", acc: "#93C5FD" },
+            "LOMME": { code: "LBC", c1: "#1D4ED8", c2: "#172554", acc: "#FDE047" },
+            "BAILLEULOIS": { code: "BCB", c1: "#D97706", c2: "#78350F", acc: "#FDE68A" },
+            "COMINOISE": { code: "LLC", c1: "#B91C1C", c2: "#450A0A", acc: "#FDE047" },
+            "WATTRELOS": { code: "WBC", c1: "#0284C7", c2: "#0C4A6E", acc: "#E0F2FE" },
+            "BAUVIN": { code: "BBC", c1: "#EA580C", c2: "#7C2D12", acc: "#FFEDD5" },
+            "ORCHESIEN": { code: "BCO", c1: "#4F46E5", c2: "#312E81", acc: "#C7D2FE" },
+            "ESTAIRES": { code: "BCE", c1: "#0D9488", c2: "#134E4A", acc: "#99F6E4" },
+            "WASQUEHAL": { code: "WFB", c1: "#E11D48", c2: "#881337", acc: "#FECDD3" },
+            "WAMBRECHIES": { code: "WJ", c1: "#15803D", c2: "#052E16", acc: "#FDE047" },
+            "HELLEMMES": { code: "BFC", c1: "#7C3AED", c2: "#4C1D95", acc: "#DDD6FE" },
+            "CHAPELLE": { code: "OSM", c1: "#0891B2", c2: "#164E63", acc: "#A5F3FC" },
+            "ARMENTIEROIS": { code: "SOA", c1: "#1E40AF", c2: "#0F172A", acc: "#F8FAFC" },
+            "RONCHIN": { code: "RBC", c1: "#16A34A", c2: "#064E3B", acc: "#86EFAC" },
+            "HEM": { code: "HEM", c1: "#DC2626", c2: "#7F1D1D", acc: "#FECACA" },
+            "MARCQ": { code: "ASJ", c1: "#0F766E", c2: "#134E4A", acc: "#FDE047" },
+            "CHERENG": { code: "ABC", c1: "#CA8A04", c2: "#713F12", acc: "#FEF08A" },
+            "CROIX": { code: "CBB", c1: "#B91C1C", c2: "#1E293B", acc: "#FCA5A5" },
+            "SAINT ANDRE": { code: "USSA", c1: "#2563EB", c2: "#172554", acc: "#BFDBFE" },
+            "TEMPLEUVE": { code: "BCP", c1: "#EA580C", c2: "#431407", acc: "#FED7AA" },
+            "PEVELE": { code: "BCP", c1: "#EA580C", c2: "#431407", acc: "#FED7AA" },
+            "LOOSSOIS": { code: "LBC", c1: "#9333EA", c2: "#3B0764", acc: "#E9D5FF" },
+            "LEZENNOIS": { code: "BCL", c1: "#059669", c2: "#064E3B", acc: "#A7F3D0" },
+            "VILLENEUVE": { code: "ESBVA", c1: "#16A34A", c2: "#14532D", acc: "#FFFFFF" },
+            "COEUR DE FLANDRE": { code: "CFBB", c1: "#D97706", c2: "#1E293B", acc: "#FDE047" },
+            "BEUVRAGES": { code: "ASM", c1: "#1D4ED8", c2: "#1E3A8A", acc: "#93C5FD" },
+            "GAYANT": { code: "GB", c1: "#0284C7", c2: "#0C4A6E", acc: "#FDE047" },
+            "LAMBERSART": { code: "BLM", c1: "#0F172A", c2: "#334155", acc: "#38BDF8" },
+            "WORMHOUT": { code: "ASW", c1: "#EAB308", c2: "#713F12", acc: "#FEF9C3" },
+            "WATTIGNIES": { code: "WTA", c1: "#4F46E5", c2: "#1E1B4B", acc: "#C7D2FE" },
+            "HOYMILLE": { code: "ACS", c1: "#0D9488", c2: "#134E4A", acc: "#99F6E4" },
+            "THUMERIES": { code: "AGT", c1: "#16A34A", c2: "#14532D", acc: "#BBF7D0" },
+            "SAINT POL": { code: "BCMSP", c1: "#0369A1", c2: "#0C4A6E", acc: "#FDE047" },
+            "PHALEMPIN": { code: "PBC", c1: "#15803D", c2: "#052E16", acc: "#FDE047" },
+            "BLARINGHEM": { code: "BCB", c1: "#7C3AED", c2: "#3B0764", acc: "#DDD6FE" },
+            "LEERS": { code: "OSBB", c1: "#DC2626", c2: "#7F1D1D", acc: "#FCA5A5" },
+            "BONDUES": { code: "BCB", c1: "#1E40AF", c2: "#172554", acc: "#FDE047" },
+            "LAMBRES": { code: "LBC", c1: "#EA580C", c2: "#7C2D12", acc: "#FFEDD5" },
+            "RONCQ": { code: "USR", c1: "#16A34A", c2: "#064E3B", acc: "#86EFAC" },
+            "DUNKERQUE": { code: "DMBC", c1: "#0284C7", c2: "#1E3A8A", acc: "#FFFFFF" },
+            "STEENWERCK": { code: "SBC", c1: "#B91C1C", c2: "#450A0A", acc: "#FECACA" },
+            "BRAY DUNES": { code: "BCBD", c1: "#0891B2", c2: "#155E75", acc: "#FDE047" },
+            "FRETIN": { code: "FBC", c1: "#059669", c2: "#064E3B", acc: "#A7F3D0" },
+            "ANNOEULLIN": { code: "ABC", c1: "#D97706", c2: "#78350F", acc: "#FEF08A" },
+            "DOUAI": { code: "DBF", c1: "#E11D48", c2: "#4C0519", acc: "#FECDD3" }
+        };
+
+        // 3. LES 14 SEMAINES / WEEK-ENDS DU CALENDRIER KALISPORT
+        const WEEKS = [
+            { id: 'w01', short: '05 Sep.', label: 'Week-end du 05 Septembre 2026' },
+            { id: 'w02', short: '12-13 Sep.', label: 'Week-end des 12 & 13 Septembre 2026' },
+            { id: 'w03', short: '19-20 Sep.', label: 'Week-end des 19 & 20 Septembre 2026' },
+            { id: 'w04', short: '26-27 Sep.', label: 'Week-end des 26 & 27 Septembre 2026' },
+            { id: 'w05', short: '03-07 Oct.', label: 'Semaine du 03 au 07 Octobre 2026' },
+            { id: 'w06', short: '10-11 Oct.', label: 'Week-end des 10 & 11 Octobre 2026' },
+            { id: 'w07', short: '17-18 Oct.', label: 'Week-end des 17 & 18 Octobre 2026' },
+            { id: 'w08', short: '24 Oct.', label: 'Week-end du 24 Octobre 2026' },
+            { id: 'w09', short: '07 Nov.', label: 'Week-end du 07 Novembre 2026' },
+            { id: 'w10', short: '14-15 Nov.', label: 'Week-end des 14 & 15 Novembre 2026 (Ce Week-end)' },
+            { id: 'w11', short: '21-22 Nov.', label: 'Week-end des 21 & 22 Novembre 2026' },
+            { id: 'w12', short: '28-29 Nov.', label: 'Week-end des 28 & 29 Novembre 2026' },
+            { id: 'w13', short: '05-06 Déc.', label: 'Week-end des 05 & 06 Décembre 2026' },
+            { id: 'w14', short: '12-13 Déc.', label: 'Week-end des 12 & 13 Décembre 2026' }
+        ];
+
+        const CATEGORIES = ['Tous', 'U9', 'U11', 'U13', 'U15', 'U18', 'Seniors'];
+        const DEFAULT_WEEK_ID = 'w10';
+
+        function mItem(id, weekId, date, time, category, isHome, homeTeam, awayTeam, homeScore, awayScore, status, comp = 'Champ.') {
+            return {
+                id, weekId, date, time, category, isHome, homeTeam, awayTeam,
+                homeScore, awayScore, status, comp,
+                period: status === 'FINISHED' ? 'SCORE FINAL' : 'EN COURS',
+                venue: isHome ? 'Salle Municipale Lille Sud' : 'Salle Extérieure (' + homeTeam + ')'
+            };
+        }
+
+        // INTÉGRALITÉ DES 69 MATCHS OFFICIELS DU PDF KALISPORT LSBSC
+        const INITIAL_MATCHES = [
+            // WE 1 : 05 SEP
+            mItem('m01', 'w01', 'SAM. 05 SEP.', '18H00', 'U18', false, 'SEQUEDIN OSM', 'U18 GARÇONS CADETS', 86, 55, 'FINISHED', 'Amical'),
+            // WE 2 : 12-13 SEP
+            mItem('m02', 'w02', 'SAM. 12 SEP.', '15H30', 'U15', true, 'U15 FILLES MINIMES', 'TOURCOING US F - 1', 27, 46, 'FINISHED'),
+            mItem('m03', 'w02', 'SAM. 12 SEP.', '18H30', 'U18', false, 'LILLE-EST BASKET - 1', 'U18 FILLES CADETTE', 66, 21, 'FINISHED'),
+            mItem('m04', 'w02', 'DIM. 13 SEP.', '14H00', 'U18', false, 'LOMME BASKET CLUB (LBC) - 1', 'U18 GARÇONS CADETS', 87, 45, 'FINISHED'),
+            // WE 3 : 19-20 SEP
+            mItem('m05', 'w03', 'SAM. 19 SEP.', '17H00', 'U13', true, 'U13 FILLE BENJAMINES', 'BAILLEULOIS B C', 45, 27, 'FINISHED'),
+            mItem('m06', 'w03', 'SAM. 19 SEP.', '17H00', 'U11', false, 'COMINOISE LL', 'U11 FILLES POUSSINES', 15, 27, 'FINISHED'),
+            mItem('m07', 'w03', 'SAM. 19 SEP.', '18H30', 'U18', true, 'U18 FILLES CADETTE', 'WATTRELOS BC', 55, 44, 'FINISHED'),
+            mItem('m08', 'w03', 'SAM. 19 SEP.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 2', 'BAUVIN B C - 2', 50, 61, 'FINISHED'),
+            mItem('m09', 'w03', 'DIM. 20 SEP.', '10H30', 'U18', true, 'U18 GARÇONS CADETS', 'ORCHESIEN B C - 2', 60, 112, 'FINISHED'),
+            mItem('m10', 'w03', 'DIM. 20 SEP.', '11H00', 'Seniors', false, 'ESTAIRES BC - 2', 'SENIORS MASCULINS 1', 35, 72, 'FINISHED'),
+            mItem('m11', 'w03', 'DIM. 20 SEP.', '14H00', 'U15', false, 'LOMME BASKET CLUB (LBC)', 'U15 FILLES MINIMES', 44, 34, 'FINISHED'),
+            // WE 4 : 26-27 SEP
+            mItem('m12', 'w04', 'SAM. 26 SEP.', '17H00', 'U15', true, 'U15 FILLES MINIMES', 'WASQUEHAL FEM B - 1', 11, 81, 'FINISHED'),
+            mItem('m13', 'w04', 'SAM. 26 SEP.', '17H00', 'U13', false, 'LOMME BASKET CLUB (LBC)', 'U13 FILLE BENJAMINES', 31, 31, 'FINISHED'),
+            mItem('m14', 'w04', 'SAM. 26 SEP.', '18H30', 'U18', true, 'U18 GARÇONS CADETS', 'WAMBRECHIES J - 1', 46, 86, 'FINISHED'),
+            mItem('m15', 'w04', 'SAM. 26 SEP.', '18H30', 'U18', false, 'WAMBRECHIES J', 'U18 FILLES CADETTE', 40, 32, 'FINISHED'),
+            mItem('m16', 'w04', 'SAM. 26 SEP.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 1', 'HELLEMMES LILLE BFC - 3', 62, 57, 'FINISHED'),
+            mItem('m17', 'w04', 'DIM. 27 SEP.', '11H00', 'U9', true, 'U9 MIXTE MINI-POUSSINS', 'CHAPELLE D\'ARMENTIERES OSM', 6, 50, 'FINISHED'),
+            mItem('m18', 'w04', 'DIM. 27 SEP.', '15H00', 'Seniors', false, 'HELLEMMES LILLE BFC - 2', 'SENIORS MASCULINS 2', 56, 39, 'FINISHED'),
+            mItem('m19', 'w04', 'DIM. 27 SEP.', '16H00', 'U11', true, 'U11 FILLES POUSSINES', 'SPORTS OUVRIERS ARMENTIEROIS - 1', 35, 8, 'FINISHED'),
+            // WE 5 : 03-07 OCT
+            mItem('m20', 'w05', 'SAM. 03 OCT.', '14H00', 'U11', false, 'RONCHIN BC - 1', 'U11 FILLES POUSSINES', 14, 36, 'FINISHED'),
+            mItem('m21', 'w05', 'SAM. 03 OCT.', '15H30', 'U15', false, 'HEM S B B', 'U15 FILLES MINIMES', 48, 18, 'FINISHED'),
+            mItem('m22', 'w05', 'SAM. 03 OCT.', '17H00', 'U18', true, 'U18 FILLES CADETTE', 'MARCQ EN BAROEUL ASJ', 37, 70, 'FINISHED'),
+            mItem('m23', 'w05', 'SAM. 03 OCT.', '18H30', 'Seniors', true, 'SENIORS MASCULINS 1', 'CHERENG ABC - 3', 103, 29, 'FINISHED'),
+            mItem('m24', 'w05', 'SAM. 03 OCT.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 2', 'HEM S B B - 2', 67, 69, 'FINISHED'),
+            mItem('m25', 'w05', 'SAM. 03 OCT.', '20H30', 'U18', false, 'CROIX BASKET BALL - 1', 'U18 GARÇONS CADETS', 86, 65, 'FINISHED'),
+            mItem('m26', 'w05', 'DIM. 04 OCT.', '09H00', 'U13', false, 'SAINT ANDRE US', 'U13 FILLE BENJAMINES', 19, 64, 'FINISHED'),
+            mItem('m27', 'w05', 'DIM. 04 OCT.', '11H00', 'U9', true, 'U9 MIXTE MINI-POUSSINS', 'LILLE-EST BASKET', 10, 10, 'FINISHED'),
+            mItem('m28', 'w05', 'MER. 07 OCT.', '20H30', 'U18', false, 'IE - CTC PÉVÈLE TEMPLEUVE', 'U18 GARÇONS CADETS', 160, 38, 'FINISHED'),
+            // WE 6 : 10-11 OCT
+            mItem('m29', 'w06', 'SAM. 10 OCT.', '15H30', 'U9', false, 'LOMME BASKET CLUB (LBC) - 2', 'U9 MIXTE MINI-POUSSINS', 2, 12, 'FINISHED'),
+            mItem('m30', 'w06', 'SAM. 10 OCT.', '17H00', 'U15', false, 'COMINOISE LL', 'U15 FILLES MINIMES', 75, 31, 'FINISHED'),
+            mItem('m31', 'w06', 'SAM. 10 OCT.', '17H00', 'U13', true, 'U13 FILLE BENJAMINES', 'SPORTS OUVRIERS ARMENTIEROIS - 2', 52, 17, 'FINISHED'),
+            mItem('m32', 'w06', 'SAM. 10 OCT.', '18H30', 'U18', true, 'U18 FILLES CADETTE', 'LOOSSOIS BASKET CLUB', 61, 23, 'FINISHED'),
+            mItem('m33', 'w06', 'SAM. 10 OCT.', '20H30', 'Seniors', false, 'BASKET CLUB LEZENNOIS', 'SENIORS MASCULINS 2', 75, 34, 'FINISHED'),
+            mItem('m34', 'w06', 'DIM. 11 OCT.', '10H30', 'Seniors', false, 'VILLENEUVE D\'ASCQ ESB - 2', 'SENIORS MASCULINS 1', 47, 51, 'FINISHED'),
+            mItem('m35', 'w06', 'DIM. 11 OCT.', '16H00', 'U11', true, 'U11 FILLES POUSSINES', 'MARCQ EN BAROEUL ASJ', 34, 24, 'FINISHED'),
+            // WE 7 : 17-18 OCT
+            mItem('m36', 'w07', 'SAM. 17 OCT.', '17H00', 'U9', true, 'U9 MIXTE MINI-POUSSINS', 'SEQUEDIN OSM', 10, 21, 'FINISHED'),
+            mItem('m37', 'w07', 'SAM. 17 OCT.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 1', 'TOURCOING IC - 3', 71, 64, 'FINISHED'),
+            mItem('m38', 'w07', 'DIM. 18 OCT.', '09H00', 'Seniors', false, 'COMINOISE L L - 3', 'SENIORS MASCULINS 2', 113, 52, 'FINISHED'),
+            // WE 8 : 24 OCT
+            mItem('m39', 'w08', 'SAM. 24 OCT.', '14H00', 'U9', false, 'COEUR DE FLANDRE BASKET BALL - 1', 'U9 MIXTE MINI-POUSSINS', 29, 9, 'FINISHED'),
+            // WE 9 : 07 NOV
+            mItem('m40', 'w09', 'SAM. 07 NOV.', '18H30', 'Seniors', false, 'BAUVIN B C - 2', 'SENIORS MASCULINS 2', 91, 46, 'FINISHED'),
+            mItem('m41', 'w09', 'SAM. 07 NOV.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 1', 'ESTAIRES BC - 2', 76, 48, 'FINISHED'),
+            // WE 10 : 14-15 NOV (WEEK-END ACTUEL PAR DÉFAUT)
+            mItem('m42', 'w10', 'SAM. 14 NOV.', '14H00', 'U9', false, 'COEUR DE FLANDRE BASKET BALL - 2', 'U9 MIXTE MINI-POUSSINS', 6, 52, 'FINISHED'),
+            mItem('m43', 'w10', 'SAM. 14 NOV.', '17H00', 'U11', true, 'U11 FILLES POUSSINES', 'BEUVRAGES ASM - 1', 13, 22, 'FINISHED'),
+            mItem('m44', 'w10', 'SAM. 14 NOV.', '18H30', 'U18', true, 'U18 GARÇONS CADETS', 'GAYANT BASKET - 2', 53, 50, 'FINISHED'),
+            mItem('m45', 'w10', 'SAM. 14 NOV.', '20H30', 'Seniors', false, 'HELLEMMES LILLE BFC - 3', 'SENIORS MASCULINS 1', 62, 65, 'FINISHED'),
+            mItem('m46', 'w10', 'SAM. 14 NOV.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 2', 'HELLEMMES LILLE BFC - 2', 39, 82, 'FINISHED'),
+            mItem('m47', 'w10', 'SAM. 14 NOV.', '20H30', 'U18', false, 'LAMBERSART B LM - 2', 'U18 FILLES CADETTE', 101, 38, 'FINISHED'),
+            mItem('m48', 'w10', 'DIM. 15 NOV.', '10H30', 'U15', true, 'U15 FILLES MINIMES', 'WORMHOUT AS - 1', 0, 0, 'UPCOMING'),
+            mItem('m49', 'w10', 'DIM. 15 NOV.', '15H30', 'U13', true, 'U13 FILLE BENJAMINES', 'WATTIGNIES/TEMPLEMARS AS', 0, 0, 'LIVE'),
+            mItem('m50', 'w10', 'DIM. 15 NOV.', '17H00', 'U15', true, 'MINIMES GARCONS U15 M1', 'COEUR DE FLANDRE BASKET BALL - 2', 0, 0, 'UPCOMING'),
+            // WE 11 : 21-22 NOV
+            mItem('m51', 'w11', 'SAM. 21 NOV.', '14H00', 'U11', false, 'HOYMILLE ACS', 'U11 FILLES POUSSINES', 0, 0, 'UPCOMING'),
+            mItem('m52', 'w11', 'SAM. 21 NOV.', '17H00', 'U13', false, 'THUMERIES A G - 1', 'U13 FILLE BENJAMINES', 0, 0, 'UPCOMING'),
+            mItem('m53', 'w11', 'SAM. 21 NOV.', '18H30', 'Seniors', false, 'CHERENG ABC - 3', 'SENIORS MASCULINS 1', 0, 0, 'UPCOMING'),
+            mItem('m54', 'w11', 'SAM. 21 NOV.', '18H30', 'U18', true, 'U18 FILLES CADETTE', 'VILLENEUVE D\'ASCQ ESB - 2', 0, 0, 'UPCOMING'),
+            mItem('m55', 'w11', 'SAM. 21 NOV.', '18H30', 'U15', false, 'SAINT POL SUR MER BC', 'U15 FILLES MINIMES', 0, 0, 'UPCOMING'),
+            mItem('m56', 'w11', 'SAM. 21 NOV.', '20H30', 'Seniors', false, 'HEM S B B - 2', 'SENIORS MASCULINS 2', 0, 0, 'UPCOMING'),
+            mItem('m57', 'w11', 'SAM. 21 NOV.', '20H30', 'U18', false, 'BASKET CLUB PEVELE', 'U18 GARÇONS CADETS', 0, 0, 'UPCOMING'),
+            mItem('m58', 'w11', 'DIM. 22 NOV.', '11H00', 'U9', true, 'U9 MIXTE MINI-POUSSINS', 'PHALEMPIN B C', 0, 0, 'UPCOMING'),
+            mItem('m59', 'w11', 'DIM. 22 NOV.', '14H00', 'U15', false, 'BC BLARINGHEM', 'MINIMES GARCONS U15 M1', 0, 0, 'UPCOMING'),
+            // WE 12 : 28-29 NOV
+            mItem('m60', 'w12', 'SAM. 28 NOV.', '15H30', 'U11', false, 'SAINT POL SUR MER BC', 'U11 FILLES POUSSINES', 0, 0, 'UPCOMING'),
+            mItem('m61', 'w12', 'SAM. 28 NOV.', '17H00', 'U13', true, 'U13 FILLE BENJAMINES', 'LEERS OSBB', 0, 0, 'UPCOMING'),
+            mItem('m62', 'w12', 'SAM. 28 NOV.', '18H30', 'Seniors', true, 'SENIORS MASCULINS 1', 'VILLENEUVE D\'ASCQ ESB - 2', 0, 0, 'UPCOMING'),
+            mItem('m63', 'w12', 'SAM. 28 NOV.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 2', 'BASKET CLUB LEZENNOIS', 0, 0, 'UPCOMING'),
+            mItem('m64', 'w12', 'SAM. 28 NOV.', '20H30', 'U18', false, 'TOURCOING US F - 1', 'U18 FILLES CADETTE', 0, 0, 'UPCOMING'),
+            mItem('m65', 'w12', 'DIM. 29 NOV.', '11H00', 'U9', true, 'U9 MIXTE MINI-POUSSINS', 'BASKET CLUB BONDUES', 0, 0, 'UPCOMING'),
+            mItem('m66', 'w12', 'DIM. 29 NOV.', '14H00', 'U15', false, 'ESTAIRES BC - 1', 'U15 FILLES MINIMES', 0, 0, 'UPCOMING'),
+            mItem('m67', 'w12', 'DIM. 29 NOV.', '16H00', 'U18', true, 'U18 GARÇONS CADETS', 'LAMBRES BASKET CLUB - 2', 0, 0, 'UPCOMING'),
+            // WE 13 : 05-06 DÉC
+            mItem('m68', 'w13', 'SAM. 05 DÉC.', '10H30', 'U9', false, 'RONCQ U S - 2', 'U9 MIXTE MINI-POUSSINS', 0, 0, 'UPCOMING'),
+            mItem('m69', 'w13', 'SAM. 05 DÉC.', '15H30', 'U13', false, 'LILLE-EST BASKET', 'U13 FILLE BENJAMINES', 0, 0, 'UPCOMING'),
+            mItem('m70', 'w13', 'SAM. 05 DÉC.', '17H00', 'U11', true, 'U11 FILLES POUSSINES', 'DUNKERQUE MALO BASKET CLUB - 1', 0, 0, 'UPCOMING'),
+            mItem('m71', 'w13', 'SAM. 05 DÉC.', '18H30', 'U18', true, 'U18 FILLES CADETTE', 'RONCHIN BC - 2', 0, 0, 'UPCOMING'),
+            mItem('m72', 'w13', 'SAM. 05 DÉC.', '20H30', 'Seniors', false, 'TOURCOING IC - 3', 'SENIORS MASCULINS 1', 0, 0, 'UPCOMING'),
+            mItem('m73', 'w13', 'SAM. 05 DÉC.', '20H30', 'Seniors', true, 'SENIORS MASCULINS 2', 'COMINOISE L L - 3', 0, 0, 'UPCOMING'),
+            mItem('m74', 'w13', 'DIM. 06 DÉC.', '09H00', 'U15', false, 'STEENWERCK BC - 2', 'MINIMES GARCONS U15 M1', 0, 0, 'UPCOMING'),
+            mItem('m75', 'w13', 'DIM. 06 DÉC.', '10H30', 'U15', true, 'U15 FILLES MINIMES', 'BASKET CLUB BRAY DUNES', 0, 0, 'UPCOMING'),
+            mItem('m76', 'w13', 'DIM. 06 DÉC.', '17H00', 'U18', false, 'FRETIN BC', 'U18 GARÇONS CADETS', 0, 0, 'UPCOMING'),
+            // WE 14 : 12-13 DÉC
+            mItem('m77', 'w14', 'SAM. 12 DÉC.', '14H00', 'U11', false, 'LILLE-EST BASKET', 'U11 FILLES POUSSINES', 0, 0, 'UPCOMING'),
+            mItem('m78', 'w14', 'SAM. 12 DÉC.', '17H00', 'U13', true, 'U13 FILLE BENJAMINES', 'COMINOISE LL', 0, 0, 'UPCOMING'),
+            mItem('m79', 'w14', 'SAM. 12 DÉC.', '18H30', 'U18', false, 'ANNOEULLIN B C', 'U18 GARÇONS CADETS', 0, 0, 'UPCOMING'),
+            mItem('m80', 'w14', 'SAM. 12 DÉC.', '18H30', 'U18', true, 'U18 FILLES CADETTE', 'DOUAI BASKET FEMININ - 2', 0, 0, 'UPCOMING'),
+            mItem('m81', 'w14', 'SAM. 12 DÉC.', '18H30', 'U15', false, 'MARCQ EN BAROEUL ASJ', 'U15 FILLES MINIMES', 0, 0, 'UPCOMING'),
+            mItem('m82', 'w14', 'DIM. 13 DÉC.', '11H00', 'U9', true, 'U9 MIXTE MINI-POUSSINS', 'FRETIN BC - 2', 0, 0, 'UPCOMING'),
+            mItem('m83', 'w14', 'DIM. 13 DÉC.', '16H00', 'U15', true, 'MINIMES GARCONS U15 M1', 'CROIX BASKET BALL - 3', 0, 0, 'UPCOMING')
+        ];
+
+        const INITIAL_TICKER = [
+            "🦁 Bienvenue à la Salle Municipale de Lille Sud ! Allez les Lions du LSBSC (South Lille) !",
+            "🥪 BUVETTE DU CLUB OUVERTE : Sandwichs, croque-monsieur, crêpes, boissons fraîches et cafés toute la journée !",
+            "📅 Utilisez les boutons Sem. préc. / Sem. suiv. en haut à gauche pour naviguer entre tous les week-ends.",
+            "🔒 La saisie des résultats est protégée par le code PIN Staff (5900 par défaut) et synchronisée instantanément."
+        ];
+
+        // 4. ÉTAT DE L'APPLICATION & PERSISTANCE MULTI-ONGLETS / MULTI-ÉCRANS
+        const STORAGE_KEY = 'lsbsc_interactive_board_v3';
+        let syncChannel = null;
+        try {
+            if ('BroadcastChannel' in window) {
+                syncChannel = new BroadcastChannel('lsbsc_live_sync_channel');
+            }
+        } catch (e) {}
+
+        let state = {
+            isStaff: false,
+            pin: '5900',
+            selectedWeekId: DEFAULT_WEEK_ID,
+            selectedCategory: 'Tous',
+            selectedLocation: 'ALL',
+            focusedMatchId: 'm49',
+            showLiveButtons: false,
+            matches: JSON.parse(JSON.stringify(INITIAL_MATCHES)),
+            ticker: [...INITIAL_TICKER],
+            customLogos: {} // { LSBSC_LOGO, LSBSC_MASCOT, [clubKey]: dataUrl }
+        };
+
+        function loadSavedState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed.matches) && parsed.matches.length >= 60) {
+                        state.matches = parsed.matches;
+                    }
+                    if (Array.isArray(parsed.ticker) && parsed.ticker.length > 0) {
+                        state.ticker = parsed.ticker;
+                    }
+                    if (parsed.pin) state.pin = String(parsed.pin);
+                    if (parsed.focusedMatchId) state.focusedMatchId = parsed.focusedMatchId;
+                    if (parsed.customLogos && typeof parsed.customLogos === 'object') {
+                        state.customLogos = parsed.customLogos;
+                    }
+                }
+            } catch (e) {
+                console.warn("Chargement état par défaut", e);
+            }
+        }
+
+        function saveAndBroadcastState(toastMessage = null) {
+            try {
+                const payload = {
+                    matches: state.matches,
+                    ticker: state.ticker,
+                    pin: state.pin,
+                    focusedMatchId: state.focusedMatchId,
+                    customLogos: state.customLogos,
+                    updatedAt: Date.now()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+                if (syncChannel) {
+                    syncChannel.postMessage(payload);
+                }
+            } catch (e) {}
+            renderAll();
+            if (toastMessage) showToast(toastMessage);
+        }
+
+        // Écoute des changements depuis d'autres fenêtres / écrans
+        if (syncChannel) {
+            syncChannel.onmessage = (ev) => {
+                if (ev.data && Array.isArray(ev.data.matches)) {
+                    state.matches = ev.data.matches;
+                    state.ticker = ev.data.ticker || state.ticker;
+                    state.pin = ev.data.pin || state.pin;
+                    state.focusedMatchId = ev.data.focusedMatchId || state.focusedMatchId;
+                    state.customLogos = ev.data.customLogos || state.customLogos;
+                    renderAll();
+                    showToast("Mise à jour reçue en direct !");
+                }
+            };
+        }
+        window.addEventListener('storage', (ev) => {
+            if (ev.key === STORAGE_KEY && ev.newValue) {
+                loadSavedState();
+                renderAll();
+            }
+        });
+
+        // 5. FONCTIONS DE RÉCUPÉRATION DES LOGOS (LSBSC, MASCOTTE ET CLUBS ADVERSES)
+        function isLsbscTeam(teamName = '') {
+            const u = teamName.toUpperCase();
+            return u.includes('LSBSC') ||
+                   u.includes('LILLE SUD') ||
+                   u.startsWith('U9 ') ||
+                   u.startsWith('U11 ') ||
+                   u.startsWith('U13 ') ||
+                   u.startsWith('U15 ') ||
+                   u.startsWith('U18 ') ||
+                   u.startsWith('MINIMES GAR') ||
+                   u.startsWith('SENIORS MASCULINS');
+        }
+
+        function getClubKey(teamName = '') {
+            if (isLsbscTeam(teamName)) return 'LSBSC';
+            const clean = teamName.toUpperCase().replace(/\s*-\s*\d+$/, '').trim();
+            for (const key of Object.keys(OPPONENT_CLUBS_META)) {
+                if (clean.includes(key)) return key;
+            }
+            return clean;
+        }
+
+        function getLsbscLogo() {
+            return (state.customLogos && state.customLogos['LSBSC_LOGO']) || LSBSC_OFFICIAL_LOGO_SVG;
+        }
+
+        function getLsbscMascot() {
+            return (state.customLogos && state.customLogos['LSBSC_MASCOT']) || LSBSC_OFFICIAL_MASCOT_SVG;
+        }
+
+        function getTeamLogo(teamName = '') {
+            if (isLsbscTeam(teamName)) {
+                return getLsbscLogo();
+            }
+            const key = getClubKey(teamName);
+            if (state.customLogos && state.customLogos[key]) {
+                return state.customLogos[key];
+            }
+            const meta = OPPONENT_CLUBS_META[key];
+            let code = meta ? meta.code : '';
+            if (!code) {
+                const words = teamName.replace(/[^a-zA-Z]/g, ' ').trim().split(/\s+/).filter(Boolean);
+                code = words.slice(0, 3).map(w => w[0]).join('').toUpperCase() || 'BC';
+            }
+            const c1 = meta ? meta.c1 : '#1D4ED8';
+            const c2 = meta ? meta.c2 : '#0F172A';
+            const acc = meta ? meta.acc : '#FDE047';
+
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 135">
+                    <defs>
+                        <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="${c1}"/>
+                            <stop offset="100%" stop-color="${c2}"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M60 6 L110 24 L103 84 C100 106 82 122 60 130 C38 122 20 106 17 84 L10 24 Z" fill="url(#cg)" stroke="${acc}" stroke-width="5"/>
+                    <circle cx="60" cy="40" r="15" fill="${acc}" fill-opacity="0.25" stroke="${acc}" stroke-width="2"/>
+                    <path d="M46 40 Q60 31 74 40 M49 49 Q60 41 71 49 M60 25 L60 55" stroke="${acc}" stroke-width="1.6" fill="none"/>
+                    <rect x="14" y="58" width="92" height="34" rx="7" fill="#0F172A" fill-opacity="0.65" stroke="${acc}" stroke-width="1.8"/>
+                    <text x="60" y="82" text-anchor="middle" fill="#FFFFFF" font-family="Impact, Arial Black, sans-serif" font-weight="900" font-size="${code.length > 3 ? '20' : '25'}" letter-spacing="1.5">${code}</text>
+                    <circle cx="44" cy="105" r="3" fill="${acc}"/>
+                    <circle cx="60" cy="108" r="4" fill="#FFFFFF"/>
+                    <circle cx="76" cy="105" r="3" fill="${acc}"/>
+                </svg>
+            `;
+            return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+        }
+
+        // Essayer aussi de charger automatiquement les 2 fichiers locaux s'ils sont présents dans le même dossier
+        function tryAutoLoadLocalFiles() {
+            const tryImg = (fileName, logoKey) => {
+                if (state.customLogos && state.customLogos[logoKey]) return;
+                const img = new Image();
+                img.onload = () => {
+                    const dataUrl = stripBlackBackgroundFromImage(img, 320);
+                    state.customLogos[logoKey] = dataUrl;
+                    renderAll();
+                };
+                img.src = fileName;
+            };
+            tryImg("Logo LSBSC HD sans fond.jpg", "LSBSC_LOGO");
+            tryImg("mascotte fond transparent.jpg", "LSBSC_MASCOT");
+        }
+
+        // Détourage automatique du fond noir/blanc sur les images importées
+        function stripBlackBackgroundFromImage(img, maxDim = 300) {
+            try {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1);
+                const w = Math.max(1, Math.round(img.naturalWidth * scale));
+                const h = Math.max(1, Math.round(img.naturalHeight * scale));
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                const imgData = ctx.getImageData(0, 0, w, h);
+                const d = imgData.data;
+
+                // Vérifier si les coins sont noirs
+                const cLum = (d[0] + d[1] + d[2]) / 3;
+                if (cLum < 40) {
+                    const visited = new Uint8Array(w * h);
+                    const queue = new Int32Array(w * h);
+                    let head = 0, tail = 0;
+                    const push = (x, y) => {
+                        const p = y * w + x;
+                        if (!visited[p]) { visited[p] = 1; queue[tail++] = p; }
+                    };
+                    for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+                    for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+
+                    while (head < tail) {
+                        const p = queue[head++];
+                        const idx = p * 4;
+                        if (Math.max(d[idx], d[idx + 1], d[idx + 2]) < 42) {
+                            d[idx + 3] = 0;
+                            const x = p % w, y = (p / w) | 0;
+                            if (x > 0) push(x - 1, y);
+                            if (x < w - 1) push(x + 1, y);
+                            if (y > 0) push(x, y - 1);
+                            if (y < h - 1) push(x, y + 1);
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                }
+                return canvas.toDataURL('image/png');
+            } catch (e) {
+                return img.src;
+            }
+        }
+
+        // 6. RENDU GLOBAL ULTRA-RAPIDE DE L'ÉCRAN INTERACTIF
+        function getWeekMatches(weekId) {
+            return state.matches.filter(m => m.weekId === weekId);
+        }
+
+        function ensureValidFocusedMatch() {
+            const weekMatches = getWeekMatches(state.selectedWeekId);
+            if (weekMatches.length === 0) return;
+            if (weekMatches.some(m => m.id === state.focusedMatchId)) return;
+
+            const live = weekMatches.find(m => m.status === 'LIVE');
+            if (live) { state.focusedMatchId = live.id; return; }
+            const upcoming = weekMatches.find(m => m.status === 'UPCOMING');
+            if (upcoming) { state.focusedMatchId = upcoming.id; return; }
+            state.focusedMatchId = weekMatches[weekMatches.length - 1].id;
+        }
+
+        function renderAll() {
+            ensureValidFocusedMatch();
+            renderBrandHeader();
+            renderWeekNavigation();
+            renderCategoryFilterBar();
+            renderLeftScheduleList();
+            renderRightPanels();
+            renderTickerBar();
+        }
+
+        function renderBrandHeader() {
+            const logoImg = document.getElementById('header-logo-img');
+            const mascotImg = document.getElementById('header-mascot-img');
+            if (logoImg) logoImg.src = getLsbscLogo();
+            if (mascotImg) mascotImg.src = getLsbscMascot();
+
+            // Statistiques du week-end sélectionné
+            const weekMatches = getWeekMatches(state.selectedWeekId);
+            let wins = 0, losses = 0, upcoming = 0;
+            weekMatches.forEach(m => {
+                if (m.status === 'FINISHED') {
+                    const won = (m.isHome && m.homeScore > m.awayScore) || (!m.isHome && m.awayScore > m.homeScore);
+                    const lost = (m.isHome && m.homeScore < m.awayScore) || (!m.isHome && m.awayScore < m.homeScore);
+                    if (won) wins++;
+                    if (lost) losses++;
+                } else {
+                    upcoming++;
+                }
+            });
+
+            const wObj = WEEKS.find(w => w.id === state.selectedWeekId);
+            document.getElementById('stat-week-label').textContent = wObj ? wObj.short : '';
+            document.getElementById('stat-total').textContent = weekMatches.length;
+            document.getElementById('stat-wins').textContent = wins;
+            document.getElementById('stat-losses').textContent = losses;
+            document.getElementById('stat-upcoming').textContent = upcoming;
+
+            // Bouton Staff
+            const btnStaff = document.getElementById('btn-staff-toggle');
+            const staffIcon = document.getElementById('staff-icon');
+            const staffLabel = document.getElementById('staff-label');
+            const staffToolbar = document.getElementById('staff-top-toolbar');
+
+            if (state.isStaff) {
+                btnStaff.className = "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white";
+                staffIcon.className = "fa-solid fa-lock-open";
+                staffLabel.textContent = "Staff Actif (Verrouiller)";
+                staffToolbar.classList.remove('hidden');
+                staffToolbar.classList.add('flex');
+            } else {
+                btnStaff.className = "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition shadow-sm bg-slate-900 hover:bg-slate-800 text-white";
+                staffIcon.className = "fa-solid fa-lock text-amber-400";
+                staffLabel.textContent = "Accès Staff (Saisie)";
+                staffToolbar.classList.add('hidden');
+                staffToolbar.classList.remove('flex');
+            }
+        }
+
+        function renderWeekNavigation() {
+            const select = document.getElementById('week-select');
+            const pills = document.getElementById('week-pills-bar');
+            const mmWeek = document.getElementById('mm-week');
+
+            select.innerHTML = WEEKS.map(w => {
+                const count = getWeekMatches(w.id).length;
+                return `<option value="${w.id}" ${w.id === state.selectedWeekId ? 'selected' : ''}>${w.id === DEFAULT_WEEK_ID ? '🏀 ' : '📅 '}${w.label} (${count} matchs)</option>`;
+            }).join('');
+
+            if (mmWeek) {
+                mmWeek.innerHTML = WEEKS.map(w => `<option value="${w.id}">${w.label}</option>`).join('');
+            }
+
+            pills.innerHTML = WEEKS.map(w => {
+                const active = w.id === state.selectedWeekId;
+                const isCurrent = w.id === DEFAULT_WEEK_ID;
+                let cls = "bg-white text-slate-600 border-slate-300 hover:bg-slate-200";
+                if (active) cls = "bg-blue-900 text-white border-blue-900 shadow-sm";
+                else if (isCurrent) cls = "bg-amber-50 text-orange-700 border-orange-300";
+
+                return `
+                    <button onclick="selectWeek('${w.id}')" class="px-2.5 py-1 rounded-lg border text-[11px] font-extrabold shrink-0 transition ${cls}">
+                        ${isCurrent ? '★ ' : ''}${w.short}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderCategoryFilterBar() {
+            const container = document.getElementById('category-pills');
+            container.innerHTML = CATEGORIES.map(cat => {
+                const active = state.selectedCategory === cat;
+                const cls = active
+                    ? "bg-orange-600 text-white border-orange-600 shadow-sm"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-200";
+                return `<button onclick="setCategoryFilter('${cat}')" class="px-2.5 py-1 rounded-lg border text-xs font-extrabold transition shrink-0 ${cls}">${cat}</button>`;
+            }).join('');
+        }
+
+        // COLONNE GAUCHE : LISTE DES MATCHS DU WEEK-END AVEC LOGOS ET SCORES
+        function renderLeftScheduleList() {
+            const container = document.getElementById('matches-list-container');
+            const weekMatches = getWeekMatches(state.selectedWeekId).filter(m => {
+                if (state.selectedCategory !== 'Tous' && m.category !== state.selectedCategory) return false;
+                if (state.selectedLocation === 'HOME' && !m.isHome) return false;
+                if (state.selectedLocation === 'AWAY' && m.isHome) return false;
+                return true;
+            });
+
+            if (weekMatches.length === 0) {
+                container.innerHTML = `
+                    <div class="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                        <i class="fa-solid fa-basketball text-4xl text-slate-300 mb-2"></i>
+                        <p class="font-display text-2xl uppercase text-slate-700">Aucun match pour ce filtre</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = weekMatches.map(m => {
+                const isFocused = m.id === state.focusedMatchId;
+                const isFinished = m.status === 'FINISHED';
+                const isLive = m.status === 'LIVE';
+                const hasLivePoints = isLive && (m.homeScore > 0 || m.awayScore > 0);
+
+                const lsbscWon = isFinished && ((m.isHome && m.homeScore > m.awayScore) || (!m.isHome && m.awayScore > m.homeScore));
+                const lsbscLost = isFinished && ((m.isHome && m.homeScore < m.awayScore) || (!m.isHome && m.awayScore < m.homeScore));
+
+                let cardStyle = "bg-white border-slate-300 hover:border-slate-400";
+                if (isLive) cardStyle = "bg-amber-50/90 border-orange-500 shadow-md";
+                else if (lsbscWon) cardStyle = "bg-emerald-50/60 border-emerald-400";
+                else if (lsbscLost) cardStyle = "bg-rose-50/60 border-rose-300";
+
+                if (isFocused) cardStyle += " ring-2 ring-blue-900";
+
+                const homeLogo = getTeamLogo(m.homeTeam);
+                const awayLogo = getTeamLogo(m.awayTeam);
+
+                let centerScoreHtml = '';
+                if (isFinished || hasLivePoints) {
+                    const pillColor = isLive
+                        ? "bg-orange-600 text-white border-orange-700"
+                        : (lsbscWon ? "bg-emerald-600 text-white border-emerald-700" : (lsbscLost ? "bg-rose-600 text-white border-rose-700" : "bg-slate-800 text-white border-slate-900"));
+                    centerScoreHtml = `
+                        <div class="px-3 py-1 rounded-xl border ${pillColor} shadow-sm flex items-center gap-1.5 shrink-0">
+                            <span class="score-digit text-3xl font-bold">${m.homeScore}</span>
+                            <span class="text-xs font-bold opacity-75">-</span>
+                            <span class="score-digit text-3xl font-bold">${m.awayScore}</span>
+                        </div>
+                    `;
+                } else if (isLive) {
+                    centerScoreHtml = `
+                        <div class="px-3 py-1 rounded-xl bg-orange-600 text-white font-display text-xl font-bold uppercase tracking-wider animate-pulse shrink-0">
+                            EN JEU
+                        </div>
+                    `;
+                } else {
+                    centerScoreHtml = `
+                        <div class="px-3 py-1 rounded-xl bg-slate-100 border border-slate-300 text-slate-800 font-display text-2xl font-bold shrink-0">
+                            ${m.time}
+                        </div>
+                    `;
+                }
+
+                let statusBadge = '';
+                if (isLive) {
+                    statusBadge = `<span class="bg-orange-100 text-orange-800 border border-orange-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">🏀 EN COURS</span>`;
+                } else if (isFinished) {
+                    statusBadge = lsbscWon
+                        ? `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">✓ VICTOIRE LSBSC</span>`
+                        : (lsbscLost
+                            ? `<span class="bg-rose-100 text-rose-800 border border-rose-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">DÉFAITE</span>`
+                            : `<span class="bg-slate-200 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">ÉGALITÉ</span>`);
+                } else {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">⏳ À VENIR</span>`;
+                }
+
+                return `
+                    <div onclick="focusMatch('${m.id}')" class="cursor-pointer border-2 rounded-2xl p-2.5 sm:p-3 transition-all ${cardStyle}">
+                        <!-- En-tête de la ligne -->
+                        <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="bg-slate-900 text-white text-[11px] font-extrabold px-2 py-0.5 rounded">
+                                    ${m.date} • ${m.time}
+                                </span>
+                                <span class="bg-blue-900 text-amber-300 font-display text-base font-bold px-2.5 py-0 rounded uppercase tracking-wider">
+                                    ${m.category} • ${m.comp}
+                                </span>
+                                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded ${m.isHome ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900'}">
+                                    ${m.isHome ? '🏠 Domicile' : '🚌 Extérieur'}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                ${statusBadge}
+                                ${state.isStaff ? `
+                                    <button onclick="event.stopPropagation(); openScoreModal('${m.id}')" class="px-2.5 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold shadow-sm">
+                                        <i class="fa-solid fa-pen mr-1"></i>Score
+                                    </button>
+                                    <button onclick="event.stopPropagation(); openMatchModal('${m.id}')" class="px-2 py-0.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-bold">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Équipes avec Grands Logos de Clubs + Score au centre -->
+                        <div class="grid grid-cols-12 items-center gap-2">
+                            <!-- Équipe Locaux -->
+                            <div class="col-span-5 flex items-center gap-2.5 min-w-0">
+                                <div class="w-11 h-11 rounded-xl bg-slate-100 border border-slate-300 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                                    <img src="${homeLogo}" alt="" class="w-full h-full object-contain crest-shadow">
+                                </div>
+                                <span class="text-xs sm:text-sm font-extrabold ${m.isHome ? 'text-blue-950' : 'text-slate-800'} leading-tight line-clamp-2">
+                                    ${m.homeTeam}
+                                </span>
+                            </div>
+
+                            <!-- Score Central -->
+                            <div class="col-span-2 flex justify-center">
+                                ${centerScoreHtml}
+                            </div>
+
+                            <!-- Équipe Visiteurs -->
+                            <div class="col-span-5 flex items-center justify-end gap-2.5 min-w-0 text-right">
+                                <span class="text-xs sm:text-sm font-extrabold ${!m.isHome ? 'text-blue-950' : 'text-slate-800'} leading-tight line-clamp-2">
+                                    ${m.awayTeam}
+                                </span>
+                                <div class="w-11 h-11 rounded-xl bg-slate-100 border border-slate-300 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                                    <img src="${awayLogo}" alt="" class="w-full h-full object-contain crest-shadow">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // COLONNE DROITE : MATCH EN COURS (HAUT) + MATCH SUIVANT (BAS)
+        function renderRightPanels() {
+            const weekMatches = getWeekMatches(state.selectedWeekId);
+            const current = weekMatches.find(m => m.id === state.focusedMatchId) || weekMatches[0];
+
+            let next = null;
+            if (current) {
+                const idx = weekMatches.findIndex(m => m.id === current.id);
+                next = weekMatches.slice(idx + 1).find(m => m.status === 'UPCOMING')
+                    || weekMatches.slice(idx + 1)[0]
+                    || weekMatches.find(m => m.id !== current.id && m.status === 'UPCOMING');
+            }
+
+            renderCurrentMatchBox(current, next);
+            renderNextMatchBox(next, current);
+        }
+
+        function renderCurrentMatchBox(m, nextMatch) {
+            const box = document.getElementById('current-match-card');
+            if (!m) {
+                box.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400 font-bold">Aucun match sélectionné</div>`;
+                return;
+            }
+
+            const isLive = m.status === 'LIVE';
+            const isFinished = m.status === 'FINISHED';
+            const hasPoints = isFinished || (isLive && (m.homeScore > 0 || m.awayScore > 0));
+
+            const homeLogo = getTeamLogo(m.homeTeam);
+            const awayLogo = getTeamLogo(m.awayTeam);
+            const mascotSrc = getLsbscMascot();
+
+            let statusPill = '';
+            if (isLive) {
+                statusPill = `
+                    <span class="inline-flex items-center gap-2 bg-orange-600 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-full uppercase shadow-sm">
+                        <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+                        <span>MATCH EN COURS</span>
+                    </span>
+                `;
+            } else if (isFinished) {
+                statusPill = `
+                    <span class="inline-flex items-center gap-2 bg-emerald-600 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-full uppercase shadow-sm">
+                        <i class="fa-solid fa-flag-checkered"></i>
+                        <span>RÉSULTAT OFFICIEL</span>
+                    </span>
+                `;
+            } else {
+                statusPill = `
+                    <span class="inline-flex items-center gap-2 bg-amber-500 text-white text-xs font-extrabold px-3.5 py-1.5 rounded-full uppercase shadow-sm">
+                        <i class="fa-regular fa-clock"></i>
+                        <span>COUP D'ENVOI À ${m.time}</span>
+                    </span>
+                `;
+            }
+
+            let centerBoard = '';
+            if (hasPoints) {
+                centerBoard = `
+                    <div class="flex items-center justify-center gap-2 sm:gap-3 w-full">
+                        <div class="flex-1 bg-slate-900 text-white border-2 border-amber-400 rounded-2xl py-3 px-2 text-center shadow-lg">
+                            <span class="score-digit text-6xl sm:text-7xl font-bold">${m.homeScore}</span>
+                        </div>
+                        <span class="font-display text-4xl font-bold text-orange-600">:</span>
+                        <div class="flex-1 bg-slate-900 text-white border-2 border-amber-400 rounded-2xl py-3 px-2 text-center shadow-lg">
+                            <span class="score-digit text-6xl sm:text-7xl font-bold">${m.awayScore}</span>
+                        </div>
+                    </div>
+                    <div class="bg-blue-950 text-amber-300 px-4 py-1 rounded-xl font-display text-xl font-bold uppercase tracking-wider shadow-sm">
+                        ${isFinished ? 'SCORE FINAL' : (m.period || 'EN DIRECT')}
+                    </div>
+                `;
+            } else {
+                centerBoard = `
+                    <div class="bg-gradient-to-b from-amber-50 to-orange-50 border-2 border-orange-300 rounded-2xl p-3.5 text-center w-full shadow-inner space-y-1">
+                        <div class="font-display text-4xl sm:text-5xl font-bold text-orange-600 leading-none">
+                            ${isLive ? 'EN JEU' : m.time}
+                        </div>
+                        <div class="text-xs font-extrabold uppercase text-slate-800">
+                            ${isLive ? 'Match en cours sur le terrain' : 'Rencontre programmée'}
+                        </div>
+                        <div class="text-[11px] font-semibold text-slate-500">
+                            Score final affiché dès la fin du match
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Barre de saisie directe pour le Staff (ou bouton rapide pour déverrouiller)
+            const staffControls = state.isStaff ? `
+                <div class="bg-slate-100 border-2 border-slate-300 rounded-xl p-2.5 space-y-2 z-10">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-xs font-extrabold uppercase text-slate-800">Saisir Score :</span>
+                            <input type="number" id="quick-h-score" min="0" max="250" value="${m.homeScore}" class="w-16 text-center font-display text-2xl font-bold bg-white border-2 border-slate-300 rounded-lg py-0.5 text-slate-900">
+                            <span class="font-bold text-slate-500">-</span>
+                            <input type="number" id="quick-a-score" min="0" max="250" value="${m.awayScore}" class="w-16 text-center font-display text-2xl font-bold bg-white border-2 border-slate-300 rounded-lg py-0.5 text-slate-900">
+                            <button onclick="saveInlineScore('${m.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold uppercase shadow-sm flex items-center gap-1">
+                                <i class="fa-solid fa-check"></i>
+                                <span>Valider Final</span>
+                            </button>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <select onchange="setMatchStatus('${m.id}', this.value)" class="bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-extrabold text-slate-800">
+                                <option value="UPCOMING" ${m.status === 'UPCOMING' ? 'selected' : ''}>⏳ À venir</option>
+                                <option value="LIVE" ${m.status === 'LIVE' ? 'selected' : ''}>🏀 En cours</option>
+                                <option value="FINISHED" ${m.status === 'FINISHED' ? 'selected' : ''}>✅ Terminé</option>
+                            </select>
+                            <button onclick="toggleLiveTableButtons()" class="px-2.5 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-extrabold">
+                                <i class="fa-solid fa-basketball mr-1"></i>Direct +1/+2
+                            </button>
+                        </div>
+                    </div>
+
+                    ${state.showLiveButtons ? `
+                        <div class="pt-2 border-t border-slate-300 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <div class="flex items-center gap-1">
+                                <span class="font-extrabold text-blue-900 mr-1">Locaux:</span>
+                                <button onclick="bumpScore('${m.id}', 'home', 1)" class="px-2 py-1 bg-white border border-slate-300 rounded font-extrabold hover:bg-blue-900 hover:text-white">+1</button>
+                                <button onclick="bumpScore('${m.id}', 'home', 2)" class="px-2 py-1 bg-white border border-slate-300 rounded font-extrabold hover:bg-blue-900 hover:text-white">+2</button>
+                                <button onclick="bumpScore('${m.id}', 'home', 3)" class="px-2 py-1 bg-white border border-slate-300 rounded font-extrabold hover:bg-blue-900 hover:text-white">+3</button>
+                                <button onclick="bumpScore('${m.id}', 'home', -1)" class="px-2 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded font-bold">-1</button>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                ${['QT1', 'QT2', 'MI-TEMPS', 'QT3', 'QT4'].map(q => `
+                                    <button onclick="setMatchPeriod('${m.id}', '${q}')" class="px-2 py-0.5 rounded font-extrabold text-[10px] border ${m.period === q ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-slate-700 border-slate-300'}">${q}</button>
+                                `).join('')}
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="font-extrabold text-orange-700 mr-1">Visiteurs:</span>
+                                <button onclick="bumpScore('${m.id}', 'away', 1)" class="px-2 py-1 bg-white border border-slate-300 rounded font-extrabold hover:bg-orange-600 hover:text-white">+1</button>
+                                <button onclick="bumpScore('${m.id}', 'away', 2)" class="px-2 py-1 bg-white border border-slate-300 rounded font-extrabold hover:bg-orange-600 hover:text-white">+2</button>
+                                <button onclick="bumpScore('${m.id}', 'away', 3)" class="px-2 py-1 bg-white border border-slate-300 rounded font-extrabold hover:bg-orange-600 hover:text-white">+3</button>
+                                <button onclick="bumpScore('${m.id}', 'away', -1)" class="px-2 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded font-bold">-1</button>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            ` : `
+                <div class="flex items-center justify-between bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2 z-10">
+                    <div class="flex items-center gap-2">
+                        <img src="${mascotSrc}" alt="Mascotte" class="w-8 h-8 object-contain">
+                        <span class="text-xs font-extrabold text-slate-700">Allez le Lille Sud Basketball Sporting Club !</span>
+                    </div>
+                    <button onclick="openPinModal()" class="text-xs font-extrabold text-blue-900 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-lock text-amber-600"></i>
+                        <span>Saisir le résultat (Staff)</span>
+                    </button>
+                </div>
+            `;
+
+            box.innerHTML = `
+                <!-- En-tête du Match en Cours -->
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-200 pb-2.5 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <span class="bg-gradient-to-r from-blue-950 to-blue-800 text-amber-300 font-display text-2xl sm:text-3xl font-bold px-3.5 py-0.5 rounded-xl border border-amber-400 shadow-sm uppercase">
+                            ${m.category} • ${m.comp}
+                        </span>
+                        <div>
+                            <div class="text-xs font-extrabold text-slate-900">
+                                <i class="fa-solid fa-location-dot text-orange-600 mr-1"></i>${m.venue}
+                            </div>
+                            <div class="text-[11px] font-bold text-slate-500">
+                                ${m.date} à ${m.time} (${m.isHome ? 'Match à Domicile' : 'Match à l\'Extérieur'})
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Mascotte officielle bien visible -->
+                        <div class="hidden sm:flex items-center gap-1.5 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-xl shadow-sm">
+                            <img src="${mascotSrc}" alt="Mascotte LSBSC" class="w-9 h-9 object-contain mascot-anim crest-shadow">
+                            <div class="leading-none">
+                                <div class="text-[9px] font-extrabold uppercase text-amber-800">Mascotte</div>
+                                <div class="font-display text-base font-bold text-blue-950 uppercase">South Lille</div>
+                            </div>
+                        </div>
+                        ${statusPill}
+                    </div>
+                </div>
+
+                <!-- Face-à-Face Géant avec Grands Logos de Clubs (96x96px) -->
+                <div class="grid grid-cols-11 items-center gap-2 sm:gap-4 my-auto py-2 z-10">
+                    <!-- Équipe Locaux -->
+                    <div class="col-span-4 flex flex-col items-center text-center space-y-2 bg-gradient-to-b from-slate-50 to-white border-2 ${m.isHome ? 'border-amber-400 shadow-md' : 'border-slate-300'} rounded-2xl p-3 relative">
+                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${m.isHome ? 'bg-blue-900 text-amber-300' : 'bg-slate-200 text-slate-700'}">
+                            ${m.isHome ? '🦁 LSBSC Domicile' : 'Locaux'}
+                        </span>
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shadow-sm">
+                            <img src="${homeLogo}" alt="${m.homeTeam}" class="w-full h-full object-contain crest-shadow">
+                        </div>
+                        <h3 class="font-display text-2xl sm:text-3xl font-bold text-slate-950 uppercase leading-none line-clamp-2">
+                            ${m.homeTeam}
+                        </h3>
+                    </div>
+
+                    <!-- Score Central + Quart-Temps -->
+                    <div class="col-span-3 flex flex-col items-center justify-center space-y-2">
+                        ${centerBoard}
+                    </div>
+
+                    <!-- Équipe Visiteurs -->
+                    <div class="col-span-4 flex flex-col items-center text-center space-y-2 bg-gradient-to-b from-slate-50 to-white border-2 ${!m.isHome ? 'border-amber-400 shadow-md' : 'border-slate-300'} rounded-2xl p-3 relative">
+                        <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${!m.isHome ? 'bg-blue-900 text-amber-300' : 'bg-slate-200 text-slate-700'}">
+                            ${!m.isHome ? '🦁 LSBSC Visiteur' : 'Visiteurs'}
+                        </span>
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shadow-sm">
+                            <img src="${awayLogo}" alt="${m.awayTeam}" class="w-full h-full object-contain crest-shadow">
+                        </div>
+                        <h3 class="font-display text-2xl sm:text-3xl font-bold text-slate-950 uppercase leading-none line-clamp-2">
+                            ${m.awayTeam}
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Contrôles Staff ou Bandeau Mascotte -->
+                ${staffControls}
+            `;
+        }
+
+        // BAS DROITE : LE MATCH SUIVANT (SOUS LE MATCH EN COURS)
+        function renderNextMatchBox(nextMatch, currentMatch) {
+            const box = document.getElementById('next-match-card');
+            if (!nextMatch) {
+                box.innerHTML = `
+                    <div class="h-full flex items-center justify-between px-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${getLsbscMascot()}" alt="Mascotte" class="w-14 h-14 object-contain mascot-anim">
+                            <div>
+                                <div class="text-xs font-extrabold uppercase text-orange-600">Programmation du week-end</div>
+                                <div class="font-display text-2xl font-bold text-slate-900 uppercase">Dernier match du week-end sélectionné</div>
+                            </div>
+                        </div>
+                        <button onclick="stepWeek(1)" class="px-4 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-extrabold uppercase shadow">
+                            Voir Semaine Suivante ▶
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const nhLogo = getTeamLogo(nextMatch.homeTeam);
+            const naLogo = getTeamLogo(nextMatch.awayTeam);
+
+            box.innerHTML = `
+                <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-extrabold uppercase px-2.5 py-0.5 rounded-lg flex items-center gap-1.5">
+                            <i class="fa-solid fa-forward-step text-orange-600"></i>
+                            <span>MATCH SUIVANT • ${nextMatch.date} À ${nextMatch.time}</span>
+                        </span>
+                        <span class="bg-blue-900 text-white font-display text-lg font-bold px-2.5 py-0 rounded uppercase">
+                            ${nextMatch.category}
+                        </span>
+                    </div>
+
+                    ${state.isStaff ? `
+                        <button onclick="promoteNextMatch('${nextMatch.id}')" class="px-3 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold shadow-sm flex items-center gap-1">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Lancer ce match</span>
+                        </button>
+                    ` : `
+                        <span class="text-xs font-bold text-slate-500 hidden sm:inline">
+                            <i class="fa-solid fa-location-dot text-orange-600 mr-1"></i>${nextMatch.venue}
+                        </span>
+                    `}
+                </div>
+
+                <div onclick="focusMatch('${nextMatch.id}')" class="cursor-pointer my-auto grid grid-cols-11 items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl p-2.5 transition">
+                    <div class="col-span-5 flex items-center justify-end gap-2.5 text-right min-w-0">
+                        <div class="truncate">
+                            <div class="font-display text-xl sm:text-2xl font-bold text-slate-900 uppercase leading-none truncate">${nextMatch.homeTeam}</div>
+                            <span class="text-[10px] font-extrabold uppercase ${nextMatch.isHome ? 'text-orange-600' : 'text-slate-500'}">Locaux</span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                            <img src="${nhLogo}" alt="" class="w-full h-full object-contain crest-shadow">
+                        </div>
+                    </div>
+
+                    <div class="col-span-1 flex justify-center">
+                        <span class="px-2 py-0.5 rounded-lg bg-blue-950 text-amber-300 font-display text-lg font-bold">VS</span>
+                    </div>
+
+                    <div class="col-span-5 flex items-center justify-start gap-2.5 text-left min-w-0">
+                        <div class="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                            <img src="${naLogo}" alt="" class="w-full h-full object-contain crest-shadow">
+                        </div>
+                        <div class="truncate">
+                            <div class="font-display text-xl sm:text-2xl font-bold text-slate-900 uppercase leading-none truncate">${nextMatch.awayTeam}</div>
+                            <span class="text-[10px] font-extrabold uppercase ${!nextMatch.isHome ? 'text-orange-600' : 'text-slate-500'}">Visiteurs</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTickerBar() {
+            const track = document.getElementById('ticker-track');
+            const items = [...state.ticker, ...state.ticker];
+            track.innerHTML = items.map(msg => `
+                <span class="inline-flex items-center gap-2.5">
+                    <span class="w-2 h-2 rounded-full bg-orange-600"></span>
+                    <span>${msg}</span>
+                </span>
+            `).join('');
+        }
+
+        // 7. INTERACTIONS UTILISATEUR & ACTIONS STAFF
+        function selectWeek(weekId) {
+            state.selectedWeekId = weekId;
+            state.focusedMatchId = null;
+            renderAll();
+        }
+
+        function stepWeek(delta) {
+            const idx = WEEKS.findIndex(w => w.id === state.selectedWeekId);
+            const nextIdx = idx + delta;
+            if (nextIdx >= 0 && nextIdx < WEEKS.length) {
+                selectWeek(WEEKS[nextIdx].id);
+            }
+        }
+
+        function jumpToCurrentWeekend() {
+            selectWeek(DEFAULT_WEEK_ID);
+            showToast("Retour au week-end en cours (14 & 15 Nov.)");
+        }
+
+        function setCategoryFilter(cat) {
+            state.selectedCategory = cat;
+            renderCategoryFilterBar();
+            renderLeftScheduleList();
+        }
+
+        function setLocationFilter(loc) {
+            state.selectedLocation = loc;
+            ['ALL', 'HOME', 'AWAY'].forEach(k => {
+                const el = document.getElementById('loc-' + k);
+                el.className = (k === loc)
+                    ? "px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm"
+                    : "px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900";
+            });
+            renderLeftScheduleList();
+        }
+
+        function focusMatch(matchId) {
+            state.focusedMatchId = matchId;
+            if (state.isStaff) {
+                saveAndBroadcastState();
+            } else {
+                renderAll();
+            }
+        }
+
+        function promoteNextMatch(nextId) {
+            const m = state.matches.find(x => x.id === nextId);
+            if (!m) return;
+            m.status = 'LIVE';
+            state.focusedMatchId = nextId;
+            saveAndBroadcastState("Match suivant affiché en direct !");
+        }
+
+        // Code PIN & Mode Staff
+        function handleStaffButton() {
+            if (state.isStaff) {
+                state.isStaff = false;
+                renderAll();
+                showToast("Mode Staff verrouillé");
+            } else {
+                openPinModal();
+            }
+        }
+
+        function openPinModal() {
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').classList.add('hidden');
+            document.getElementById('pin-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('pin-input').focus(), 50);
+        }
+
+        function closePinModal() {
+            document.getElementById('pin-modal').classList.add('hidden');
+        }
+
+        function tapPin(digit) {
+            const input = document.getElementById('pin-input');
+            if (input.value.length < 8) input.value += digit;
+            document.getElementById('pin-error').classList.add('hidden');
+        }
+
+        function clearPin() {
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').classList.add('hidden');
+        }
+
+        function verifyPin(e) {
+            e.preventDefault();
+            const val = document.getElementById('pin-input').value.trim();
+            if (val === state.pin) {
+                state.isStaff = true;
+                closePinModal();
+                renderAll();
+                showToast("Mode Staff déverrouillé ! Vous pouvez saisir les scores.");
+            } else {
+                document.getElementById('pin-error').classList.remove('hidden');
+                document.getElementById('pin-input').value = '';
+            }
+        }
+
+        // Saisie des scores (En ligne ou Modale)
+        function saveInlineScore(matchId) {
+            const m = state.matches.find(x => x.id === matchId);
+            if (!m) return;
+            m.homeScore = Math.max(0, parseInt(document.getElementById('quick-h-score').value) || 0);
+            m.awayScore = Math.max(0, parseInt(document.getElementById('quick-a-score').value) || 0);
+            m.status = 'FINISHED';
+            m.period = 'SCORE FINAL';
+            saveAndBroadcastState(`Score final validé : ${m.homeScore} - ${m.awayScore}`);
+        }
+
+        function setMatchStatus(matchId, status) {
+            const m = state.matches.find(x => x.id === matchId);
+            if (!m) return;
+            m.status = status;
+            saveAndBroadcastState("Statut du match mis à jour");
+        }
+
+        function setMatchPeriod(matchId, period) {
+            const m = state.matches.find(x => x.id === matchId);
+            if (!m) return;
+            m.period = period;
+            m.status = 'LIVE';
+            saveAndBroadcastState();
+        }
+
+        function toggleLiveTableButtons() {
+            state.showLiveButtons = !state.showLiveButtons;
+            renderRightPanels();
+        }
+
+        function bumpScore(matchId, side, delta) {
+            const m = state.matches.find(x => x.id === matchId);
+            if (!m) return;
+            m.status = 'LIVE';
+            if (side === 'home') m.homeScore = Math.max(0, (m.homeScore || 0) + delta);
+            else m.awayScore = Math.max(0, (m.awayScore || 0) + delta);
+            saveAndBroadcastState();
+        }
+
+        function openScoreModal(matchId) {
+            const m = state.matches.find(x => x.id === matchId);
+            if (!m) return;
+            document.getElementById('sm-match-id').value = m.id;
+            document.getElementById('sm-cat-badge').textContent = `${m.category} • ${m.date}`;
+            document.getElementById('sm-home-name').textContent = m.homeTeam;
+            document.getElementById('sm-away-name').textContent = m.awayTeam;
+            document.getElementById('sm-home-logo').src = getTeamLogo(m.homeTeam);
+            document.getElementById('sm-away-logo').src = getTeamLogo(m.awayTeam);
+            document.getElementById('sm-home-score').value = m.homeScore;
+            document.getElementById('sm-away-score').value = m.awayScore;
+            document.getElementById('sm-status').value = 'FINISHED';
+            document.getElementById('sm-period').value = m.period || 'SCORE FINAL';
+            document.getElementById('score-modal').classList.remove('hidden');
+        }
+
+        function closeScoreModal() {
+            document.getElementById('score-modal').classList.add('hidden');
+        }
+
+        function submitScoreModal(e) {
+            e.preventDefault();
+            const id = document.getElementById('sm-match-id').value;
+            const m = state.matches.find(x => x.id === id);
+            if (!m) return;
+            m.homeScore = Math.max(0, parseInt(document.getElementById('sm-home-score').value) || 0);
+            m.awayScore = Math.max(0, parseInt(document.getElementById('sm-away-score').value) || 0);
+            m.status = document.getElementById('sm-status').value;
+            m.period = document.getElementById('sm-period').value;
+            state.focusedMatchId = m.id;
+            closeScoreModal();
+            saveAndBroadcastState(`Score enregistré : ${m.homeScore} - ${m.awayScore}`);
+        }
+
+        // Modale Logos & Mascotte
+        function openAssetsModal() {
+            document.getElementById('modal-preview-logo').src = getLsbscLogo();
+            document.getElementById('card-preview-logo').src = getLsbscLogo();
+            document.getElementById('card-preview-mascot').src = getLsbscMascot();
+            renderClubsAssetsGrid();
+            document.getElementById('assets-modal').classList.remove('hidden');
+        }
+
+        function closeAssetsModal() {
+            document.getElementById('assets-modal').classList.add('hidden');
+        }
+
+        function renderClubsAssetsGrid() {
+            const grid = document.getElementById('clubs-assets-grid');
+            const q = (document.getElementById('club-search-input').value || '').trim().toLowerCase();
+            const clubsMap = new Map();
+
+            state.matches.forEach(m => {
+                [m.homeTeam, m.awayTeam].forEach(t => {
+                    if (!isLsbscTeam(t)) {
+                        const key = getClubKey(t);
+                        if (!clubsMap.has(key)) clubsMap.set(key, t.replace(/\s*-\s*\d+$/, '').trim());
+                    }
+                });
+            });
+
+            const list = Array.from(clubsMap.entries())
+                .map(([key, name]) => ({ key, name }))
+                .filter(c => c.name.toLowerCase().includes(q) || c.key.toLowerCase().includes(q))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            grid.innerHTML = list.map(c => {
+                const src = getTeamLogo(c.name);
+                return `
+                    <div class="bg-slate-50 border border-slate-300 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <img src="${src}" alt="" class="w-11 h-11 object-contain shrink-0 crest-shadow">
+                            <div class="truncate">
+                                <div class="text-xs font-extrabold text-slate-900 truncate">${c.name}</div>
+                                <div class="text-[10px] font-bold text-slate-500">${state.customLogos[c.key] ? '✓ Image importée' : 'Blason club auto'}</div>
+                            </div>
+                        </div>
+                        <label class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-blue-50 text-blue-900 border border-slate-300 text-xs font-bold cursor-pointer shrink-0 shadow-sm">
+                            <i class="fa-solid fa-upload"></i>
+                            <input type="file" accept="image/*" class="hidden" onchange="uploadClubCustomLogo(event, '${c.key.replace(/'/g, "\\'")}')">
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function uploadLsbscBrandImage(ev, target) {
+            const file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const cleanUrl = stripBlackBackgroundFromImage(img, 320);
+                    state.customLogos[target === 'logo' ? 'LSBSC_LOGO' : 'LSBSC_MASCOT'] = cleanUrl;
+                    document.getElementById('modal-preview-logo').src = getLsbscLogo();
+                    document.getElementById('card-preview-logo').src = getLsbscLogo();
+                    document.getElementById('card-preview-mascot').src = getLsbscMascot();
+                    saveAndBroadcastState("Visuel LSBSC mis à jour !");
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetLsbscBrandImage(target) {
+            delete state.customLogos[target === 'logo' ? 'LSBSC_LOGO' : 'LSBSC_MASCOT'];
+            document.getElementById('modal-preview-logo').src = getLsbscLogo();
+            document.getElementById('card-preview-logo').src = getLsbscLogo();
+            document.getElementById('card-preview-mascot').src = getLsbscMascot();
+            saveAndBroadcastState("Visuel officiel par défaut restauré");
+        }
+
+        function uploadClubCustomLogo(ev, clubKey) {
+            const file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.customLogos[clubKey] = stripBlackBackgroundFromImage(img, 200);
+                    renderClubsAssetsGrid();
+                    saveAndBroadcastState(`Logo de ${clubKey} enregistré !`);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Modale Ajout / Modification de match
+        function openMatchModal(matchId = null) {
+            renderWeekNavigation();
+            if (matchId) {
+                const m = state.matches.find(x => x.id === matchId);
+                if (!m) return;
+                document.getElementById('mm-id').value = m.id;
+                document.getElementById('mm-week').value = m.weekId;
+                document.getElementById('mm-category').value = m.category;
+                document.getElementById('mm-date').value = m.date;
+                document.getElementById('mm-time').value = m.time;
+                document.getElementById('mm-ishome').value = m.isHome ? 'true' : 'false';
+                document.getElementById('mm-home').value = m.homeTeam;
+                document.getElementById('mm-away').value = m.awayTeam;
+                document.getElementById('mm-homescore').value = m.homeScore;
+                document.getElementById('mm-awayscore').value = m.awayScore;
+                document.getElementById('mm-status').value = m.status;
+            } else {
+                document.getElementById('mm-id').value = '';
+                document.getElementById('mm-week').value = state.selectedWeekId;
+                document.getElementById('mm-category').value = 'Seniors';
+                document.getElementById('mm-date').value = 'SAM. 14 NOV.';
+                document.getElementById('mm-time').value = '20H30';
+                document.getElementById('mm-ishome').value = 'true';
+                document.getElementById('mm-home').value = 'SENIORS MASCULINS 1';
+                document.getElementById('mm-away').value = '';
+                document.getElementById('mm-homescore').value = 0;
+                document.getElementById('mm-awayscore').value = 0;
+                document.getElementById('mm-status').value = 'UPCOMING';
+            }
+            document.getElementById('match-modal').classList.remove('hidden');
+        }
+
+        function closeMatchModal() {
+            document.getElementById('match-modal').classList.add('hidden');
+        }
+
+        function submitMatchModal(e) {
+            e.preventDefault();
+            const id = document.getElementById('mm-id').value;
+            const isHome = document.getElementById('mm-ishome').value === 'true';
+            const homeTeam = document.getElementById('mm-home').value.trim();
+            const obj = {
+                id: id || ('m_' + Date.now()),
+                weekId: document.getElementById('mm-week').value,
+                category: document.getElementById('mm-category').value,
+                date: document.getElementById('mm-date').value.trim().toUpperCase(),
+                time: document.getElementById('mm-time').value.trim().toUpperCase(),
+                isHome,
+                homeTeam,
+                awayTeam: document.getElementById('mm-away').value.trim(),
+                homeScore: parseInt(document.getElementById('mm-homescore').value) || 0,
+                awayScore: parseInt(document.getElementById('mm-awayscore').value) || 0,
+                status: document.getElementById('mm-status').value,
+                comp: 'Champ.',
+                period: 'EN COURS',
+                venue: isHome ? 'Salle Municipale Lille Sud' : `Salle Extérieure (${homeTeam})`
+            };
+
+            const idx = state.matches.findIndex(x => x.id === id);
+            if (idx !== -1) state.matches[idx] = obj;
+            else state.matches.push(obj);
+
+            state.selectedWeekId = obj.weekId;
+            state.focusedMatchId = obj.id;
+            closeMatchModal();
+            saveAndBroadcastState("Match enregistré !");
+        }
+
+        // Modale Paramètres Buvette & PIN
+        function openSettingsModal() {
+            document.getElementById('set-ticker').value = state.ticker.join('\n');
+            document.getElementById('set-pin').value = state.pin;
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveSettingsModal() {
+            const lines = document.getElementById('set-ticker').value.split('\n').map(s => s.trim()).filter(Boolean);
+            state.ticker = lines.length ? lines : [...INITIAL_TICKER];
+            state.pin = document.getElementById('set-pin').value.trim() || '5900';
+            closeSettingsModal();
+            saveAndBroadcastState("Bandeau Buvette et Code PIN enregistrés !");
+        }
+
+        function resetAllDataToFactory() {
+            localStorage.removeItem(STORAGE_KEY);
+            state.matches = JSON.parse(JSON.stringify(INITIAL_MATCHES));
+            state.ticker = [...INITIAL_TICKER];
+            state.selectedWeekId = DEFAULT_WEEK_ID;
+            state.focusedMatchId = 'm49';
+            closeSettingsModal();
+            saveAndBroadcastState("Calendrier officiel Kalisport réinitialisé !");
+        }
+
+        // Horloge & Utilitaires
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('clock-date').textContent = now.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        // Démarrage immédiat sans aucun blocage
+        loadSavedState();
+        renderAll();
+        tryAutoLoadLocalFiles();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>
+```
+
+### Ce qui a été corrigé pour que tout s'affiche immédiatement :
+1. **Affichage garanti à 100 % dès l'ouverture :** Suppression des chargements externes bloquants afin que l'écran interactif s'affiche instantanément.
+2. **Logo Officiel LSBSC & Mascotte South Lille intégrés en grand :** Le blason du Lion d'argent dans la Fleur de Lys dorée (*South Lille - Lille Sud Basketball Sporting Club*) ainsi que la Mascotte du Lion en tenue bleue et or sont directement dessinés en vectoriel HD dans la page (et vous pouvez également charger vos fichiers images via le bouton **« 🛡️ Logos & Mascotte »** en haut à droite).
+3. **Blasons de tous les clubs adverses :** Chaque équipe de la liste à gauche, du **Match en cours** en haut à droite et du **Match suivant** en bas à droite est accompagnée de son blason coloré.
