@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LSBSC South Lille — Programmation & Résultats des Matchs</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ================= EN-TÊTE PRINCIPAL ================= -->
+  <header class="top-header">
+    <div class="brand-zone">
+      <img id="headerLogoImg" class="club-logo-top" src="assets/logo-lsbsc.png" alt="Logo LSBSC" onclick="requestPinAccess('logos')" title="Gestion Logos & Mascotte">
+      <img id="headerMascotImg" class="club-mascot-top" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC" onclick="requestPinAccess('logos')" title="Gestion Logos & Mascotte">
+      <div class="brand-titles">
+        <h1>LILLE SUD BASKETBALL SPORTING CLUB</h1>
+        <div class="subtitle">SOUTH LILLE • PROGRAMMATION OFFICIELLE & RÉSULTATS</div>
+      </div>
+    </div>
+
+    <div class="weekend-kpi">
+      <span id="kpiTotal" class="kpi-item kpi-total">9 Matchs</span>
+      <span id="kpiWin" class="kpi-item kpi-win">3 V</span>
+      <span id="kpiLoss" class="kpi-item kpi-loss">3 D</span>
+      <span id="kpiDraw" class="kpi-item kpi-draw">0 N</span>
+    </div>
+
+    <div class="header-controls">
+      <div class="clock-box">
+        <div id="liveClock" class="clock-time">15:30:00</div>
+        <span class="clock-sync">● Synchronisé</span>
+      </div>
+      <button class="btn-top btn-logos" onclick="requestPinAccess('logos')">🛡️ Logos & Mascotte</button>
+      <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Saisie Résultats</button>
+      <button class="btn-top btn-cloud" onclick="openCloudModal()" title="Bandeau Buvette & Synchronisation">⚙️ Infos / Sync</button>
+    </div>
+  </header>
+
+  <!-- ================= ESPACE PRINCIPAL PAYSAGE (2 COLONNES) ================= -->
+  <main class="main-workspace">
+
+    <!-- COLONNE GAUCHE : LISTE DES MATCHS DU WEEK-END & NAVIGATION SEMAINES -->
+    <section class="left-column">
+      <div class="week-nav-bar">
+        <button class="btn-week" onclick="shiftWeek(-1)">◀ Sem. précédente</button>
+        <select id="weekSelect" class="week-select" onchange="selectWeek(this.value)"></select>
+        <button class="btn-week current-wk" onclick="selectWeek('w10')">📅 Ce Week-end</button>
+        <button class="btn-week" onclick="shiftWeek(1)">Sem. suivante ▶</button>
+      </div>
+
+      <div id="weekTabsStrip" class="week-tabs-strip"></div>
+
+      <div class="filter-bar">
+        <div class="filter-group">
+          <button class="filter-pill loc-pill active" onclick="setLocFilter('ALL', this)">Tous</button>
+          <button class="filter-pill loc-pill" onclick="setLocFilter('HOME', this)">🏠 Domicile</button>
+          <button class="filter-pill loc-pill" onclick="setLocFilter('AWAY', this)">🚌 Extérieur</button>
+        </div>
+        <div class="filter-group">
+          <button class="filter-pill cat-pill active" onclick="setCatFilter('ALL', this)">Toutes Cat.</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U9', this)">U9</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U11F', this)">U11F</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U13F', this)">U13F</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U15F', this)">U15F</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U15M', this)">U15M</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U18F', this)">U18F</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('U18M', this)">U18M</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('SM1', this)">SM1</button>
+          <button class="filter-pill cat-pill" onclick="setCatFilter('SM2', this)">SM2</button>
+        </div>
+      </div>
+
+      <div id="matchesListContainer" class="matches-list"></div>
+    </section>
+
+    <!-- COLONNE DROITE : MATCH EN COURS (HAUT) + MATCH SUIVANT (BAS) -->
+    <section class="right-column">
+
+      <!-- HAUT : GRAND SCOREBOARD DU MATCH EN COURS / SÉLECTIONNÉ -->
+      <div class="live-scoreboard-card">
+        <img id="sbMascotWatermark" class="scoreboard-Watermark" src="assets/mascotte-lsbsc.png" alt="">
+
+        <div class="sb-top-bar">
+          <span id="sbStatusBadge" class="sb-status-badge live">🔴 MATCH EN COURS</span>
+          <span id="sbMetaInfo" class="sb-meta-info">DIM. 15 NOV. à 15H30 • U13F</span>
+        </div>
+
+        <div class="sb-arena">
+          <div class="sb-team-box">
+            <img id="sbHomeLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Domicile">
+            <div id="sbHomeName" class="sb-team-title">U13 FILLE BENJAMINES</div>
+            <span class="sb-loc-pill">LOCAUX (DOMICILE)</span>
+          </div>
+
+          <div id="sbCenterWrap" class="sb-center-score"></div>
+
+          <div class="sb-team-box">
+            <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
+            <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
+            <span class="sb-loc-pill">VISITEURS</span>
+          </div>
+        </div>
+
+        <div id="staffScorePanel" class="staff-score-panel" style="display:none;"></div>
+      </div>
+
+      <!-- BAS : ENCART DU MATCH SUIVANT -->
+      <div id="nextMatchContainer" class="next-match-card"></div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= BANDEAU INFOS & BUVETTE ================= -->
+  <footer class="bottom-ticker">
+    <div class="ticker-label">🏀 INFOS LSBSC & BUVETTE</div>
+    <div class="ticker-track-wrap">
+      <div id="tickerTextDisplay" class="ticker-track"></div>
+    </div>
+  </footer>
+
+  <!-- ================= MODAL CLAVIER CODE PIN ================= -->
+  <div id="pinModal" class="modal-backdrop">
+    <div class="modal-card" style="max-width:360px;">
+      <div class="modal-header">
+        <h3 id="pinModalTitle">🔒 Code PIN Requis</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖</button>
+      </div>
+      <div id="pinDisplayBox" class="pin-display"></div>
+      <div class="pin-pad">
+        <button class="pin-btn" onclick="pressPinDigit(1)">1</button>
+        <button class="pin-btn" onclick="pressPinDigit(2)">2</button>
+        <button class="pin-btn" onclick="pressPinDigit(3)">3</button>
+        <button class="pin-btn" onclick="pressPinDigit(4)">4</button>
+        <button class="pin-btn" onclick="pressPinDigit(5)">5</button>
+        <button class="pin-btn" onclick="pressPinDigit(6)">6</button>
+        <button class="pin-btn" onclick="pressPinDigit(7)">7</button>
+        <button class="pin-btn" onclick="pressPinDigit(8)">8</button>
+        <button class="pin-btn" onclick="pressPinDigit(9)">9</button>
+        <button class="pin-btn" style="background:#FEE2E2;color:#991B1B;" onclick="pressPinDigit('C')">C</button>
+        <button class="pin-btn" onclick="pressPinDigit(0)">0</button>
+        <button class="pin-btn" style="background:#DCFCE7;color:#166534;" onclick="pressPinDigit('OK')">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL LOGOS & MASCOTTE (PROTÉGÉ) ================= -->
+  <div id="logosModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🛡️ Gestion du Logo LSBSC, Mascotte & Clubs Adverses</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖ Fermer</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="club-logo-item">
+          <strong>Logo Officiel LSBSC</strong>
+          <label class="btn-action-sm btn-save-score" style="cursor:pointer;">
+            Changer Logo LSBSC
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadClubAsset(event, 'logo')">
+          </label>
+        </div>
+        <div class="club-logo-item">
+          <strong>Mascotte Officielle LSBSC</strong>
+          <label class="btn-action-sm btn-save-score" style="cursor:pointer;">
+            Changer Mascotte
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadClubAsset(event, 'mascot')">
+          </label>
+        </div>
+      </div>
+      <h4 style="font-size:0.88rem;color:#1E3A8A;">Blasons des Clubs Adverses (Kalisport) :</h4>
+      <div id="clubsLogoGrid" class="clubs-logo-grid"></div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL INFOS BUVETTE & SYNC MULTI-ÉCRANS ================= -->
+  <div id="cloudModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚙️ Bandeau Buvette & Synchronisation Multi-Écrans</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="font-size:0.82rem;font-weight:800;">Message défilant (Buvette & Annonces Club) :</label>
+        <textarea id="inpTickerText" rows="3" style="width:100%;padding:8px;border-radius:8px;border:1px solid #CBD5E1;font-weight:700;"></textarea>
+
+        <label style="font-size:0.82rem;font-weight:800;">URL Endpoint JSON / Firebase Realtime (optionnel pour synchronisation multi-appareils distante) :</label>
+        <input id="inpSyncUrl" type="text" placeholder="https://votre-base-firebase.firebaseio.com/lsbsc.json" style="width:100%;padding:8px;border-radius:8px;border:1px solid #CBD5E1;">
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <button class="btn-action-sm btn-save-score" onclick="saveCloudAndTicker()">💾 Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
