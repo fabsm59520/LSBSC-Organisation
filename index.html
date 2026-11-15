@@ -29,10 +29,10 @@
     <div class="header-controls">
       <div class="clock-box">
         <div id="liveClock" class="clock-time">15:30:00</div>
-        <span class="clock-sync">● Synchronisé</span>
+        <span id="syncStatusBadge" class="clock-sync">● Direct Synchronisé</span>
       </div>
       <button class="btn-top btn-logos" onclick="requestPinAccess('logos')">🛡️ Logos & Mascotte</button>
-      <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Saisie Résultats</button>
+      <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Saisie Scores</button>
       <button class="btn-top btn-cloud" onclick="openCloudModal()" title="Bandeau Buvette & Synchronisation">⚙️ Infos / Sync</button>
     </div>
   </header>
@@ -91,6 +91,7 @@
             <img id="sbHomeLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Domicile">
             <div id="sbHomeName" class="sb-team-title">U13 FILLE BENJAMINES</div>
             <span class="sb-loc-pill">LOCAUX (DOMICILE)</span>
+            <div id="sbHomeFouls"></div>
           </div>
 
           <div id="sbCenterWrap" class="sb-center-score"></div>
@@ -99,6 +100,7 @@
             <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
             <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
             <span class="sb-loc-pill">VISITEURS</span>
+            <div id="sbAwayFouls"></div>
           </div>
         </div>
 
