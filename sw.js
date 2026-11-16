@@ -1,4 +1,4 @@
-const CACHE_NAME = "lsbsc-pwa-v7";
+const CACHE_NAME = "lsbsc-pwa-v8";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",

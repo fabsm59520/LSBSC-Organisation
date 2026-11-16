@@ -1606,3 +1606,143 @@ body.mode-mobile .club-overview-card,
 body.mode-mobile .sb-summary-bar {
   display: none !important;
 }
+
+/* ==========================================================================
+   STATUTS SPÉCIAUX : MATCH REPORTÉ & FORFAIT (V8)
+   ========================================================================== */
+.match-row.postponed-match {
+  border-color: #9333EA;
+  background: #FAF5FF;
+}
+.match-row.forfeit-match {
+  border-color: #475569;
+  background: #F1F5F9;
+}
+
+.score-pill.postponed {
+  background: #F3E8FF;
+  color: #6B21A8;
+  border: 1px solid #C084FC;
+  font-size: 0.74rem;
+}
+.score-pill.forfeit {
+  background: #E2E8F0;
+  color: #1E293B;
+  border: 1px solid #94A3B8;
+  font-size: 0.78rem;
+}
+.score-pill.forfeit-win {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+}
+.score-pill.forfeit-loss {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+.res-tag.postponed { color: #7E22CE; }
+.res-tag.forfeit { color: #334155; }
+
+.m-note-sub {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #6B21A8;
+  max-width: 112px;
+  text-align: center;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.sb-status-badge.postponed { background: #7E22CE; color: #FFFFFF; }
+.sb-status-badge.forfeit { background: #334155; color: #FFFFFF; }
+
+.special-status-banner {
+  border-radius: 14px;
+  padding: 12px 18px;
+  text-align: center;
+  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.special-status-banner.postponed {
+  background: #F3E8FF;
+  border: 2px solid #9333EA;
+  color: #581C87;
+}
+.special-status-banner.forfeit {
+  background: #F1F5F9;
+  border: 2px solid #475569;
+  color: #0F172A;
+}
+.special-status-title {
+  font-size: 1.05rem;
+  letter-spacing: 0.3px;
+}
+.special-status-reason {
+  font-size: 0.84rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 3px 10px;
+  border-radius: 8px;
+}
+
+.sb-summary-pill.postponed {
+  background: #F3E8FF;
+  color: #6B21A8;
+  border-color: #C084FC;
+}
+.sb-summary-pill.forfeit {
+  background: #E2E8F0;
+  color: #0F172A;
+  border-color: #94A3B8;
+}
+
+/* Panneau Staff : Statut spécial (Reporté / Forfait) */
+.staff-special-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.staff-special-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.inp-special-reason {
+  flex: 1;
+  min-width: 180px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid #93C5FD;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #FFFFFF;
+  color: #0F172A;
+}
+.preset-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.chip-reason {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.chip-reason:hover {
+  background: #DBEAFE;
+  border-color: #60A5FA;
+}
+.btn-postpone { background: #7E22CE; color: #FFFFFF; }
+.btn-forfeit { background: #334155; color: #FFFFFF; }

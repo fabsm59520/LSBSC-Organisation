@@ -274,6 +274,16 @@ function getWeeksList() {
 }
 
 function computeMatchOutcome(m) {
+  if (m.status === "postponed") return "postponed";
+  if (m.status === "forfeit") {
+    if ((m.sh || 0) === 0 && (m.sa || 0) === 0) return "forfeit";
+    const homeIsUs = isLSBSC(m.home);
+    const usScore = homeIsUs ? m.sh : m.sa;
+    const themScore = homeIsUs ? m.sa : m.sh;
+    if (usScore > themScore) return "win";
+    if (usScore < themScore) return "loss";
+    return "forfeit";
+  }
   if (m.status !== "finished") return m.status;
   const homeIsUs = isLSBSC(m.home);
   const usScore = homeIsUs ? m.sh : m.sa;
@@ -378,7 +388,15 @@ function renderMatchesList() {
     let scoreHtml = "";
     let tagHtml = "";
 
-    if (m.status === "finished") {
+    if (m.status === "postponed") {
+      scoreHtml = `<div class="score-pill postponed">📅 REPORTÉ</div>`;
+      tagHtml = `<span class="res-tag postponed">${m.statusNote ? m.statusNote : "Date à fixer"}</span>`;
+    } else if (m.status === "forfeit") {
+      const hasScore = (m.sh || 0) > 0 || (m.sa || 0) > 0;
+      const pillCls = outcome === "win" ? "forfeit-win" : (outcome === "loss" ? "forfeit-loss" : "forfeit");
+      scoreHtml = `<div class="score-pill ${pillCls}">${hasScore ? (m.sh + " - " + m.sa) : "FORFAIT"}</div>`;
+      tagHtml = `<span class="res-tag forfeit">${m.statusNote ? m.statusNote : "Forfait officiel"}</span>`;
+    } else if (m.status === "finished") {
       const lbl = outcome === "win" ? "Victoire LSBSC" : (outcome === "loss" ? "Défaite" : "Égalité");
       scoreHtml = `<div class="score-pill ${outcome}">${m.sh} - ${m.sa}</div>`;
       tagHtml = `<span class="res-tag ${outcome}">${lbl}</span>`;
@@ -399,8 +417,12 @@ function renderMatchesList() {
          </div>`
       : `<div></div>`;
 
+    const rowExtraCls = m.status === "live"
+      ? "live-match"
+      : (m.status === "postponed" ? "postponed-match" : (m.status === "forfeit" ? "forfeit-match" : ""));
+
     return `
-      <div class="match-row ${m.id === state.selectedMatchId ? "selected-match" : ""} ${m.status === "live" ? "live-match" : ""}" onclick="selectMatch(${m.id})">
+      <div class="match-row ${m.id === state.selectedMatchId ? "selected-match" : ""} ${rowExtraCls}" onclick="selectMatch(${m.id})">
         <div class="m-meta">
           <span class="m-date">${m.date}</span>
           <span class="m-time">${m.time}</span>
@@ -438,6 +460,12 @@ function renderRightColumn() {
   if (current.status === "live") {
     sbStatus.className = "sb-status-badge live";
     sbStatus.textContent = `🔴 EN DIRECT — ${current.period || "QT1"}`;
+  } else if (current.status === "postponed") {
+    sbStatus.className = "sb-status-badge postponed";
+    sbStatus.textContent = "📅 MATCH REPORTÉ";
+  } else if (current.status === "forfeit") {
+    sbStatus.className = "sb-status-badge forfeit";
+    sbStatus.textContent = "🚫 MATCH FORFAIT";
   } else if (current.status === "finished") {
     sbStatus.className = "sb-status-badge finished";
     sbStatus.textContent = "✅ MATCH TERMINÉ — SCORE FINAL";
@@ -478,7 +506,11 @@ function renderRightColumn() {
     const venueTxt = homeIsLsbsc ? "📍 Salle Municipale de Lille Sud" : "📍 Déplacement à l'extérieur";
     const diff = Math.abs((current.sh || 0) - (current.sa || 0));
     let outcomePill = "";
-    if (current.status === "finished") {
+    if (current.status === "postponed") {
+      outcomePill = `<span class="sb-summary-pill postponed">📅 Reporté : ${current.statusNote || "Date ultérieure"}</span>`;
+    } else if (current.status === "forfeit") {
+      outcomePill = `<span class="sb-summary-pill forfeit">🚫 ${current.statusNote || "Forfait enregistré"}</span>`;
+    } else if (current.status === "finished") {
       const out = computeMatchOutcome(current);
       if (out === "win") outcomePill = `<span class="sb-summary-pill win">🏆 Victoire LSBSC (+${diff} pts)</span>`;
       else if (out === "loss") outcomePill = `<span class="sb-summary-pill loss">Défaite LSBSC (-${diff} pts)</span>`;
@@ -508,7 +540,28 @@ function renderRightColumn() {
   }
 
   const centerWrap = document.getElementById("sbCenterWrap");
-  if (current.status === "live" && current.liveTracking === false && current.sh === 0 && current.sa === 0) {
+  if (current.status === "postponed") {
+    centerWrap.innerHTML = `
+      <div class="special-status-banner postponed">
+        <span class="special-status-title">📅 RENCONTRE REPORTÉE</span>
+        <span class="special-status-reason">Motif : ${current.statusNote || "Conditions météo / Décision officielle"}</span>
+      </div>
+      <div class="sb-period-pill" style="background:#F3E8FF;color:#6B21A8;border-color:#9333EA;">Nouvelle date à communiquer</div>
+    `;
+  } else if (current.status === "forfeit") {
+    const hasScore = (current.sh || 0) > 0 || (current.sa || 0) > 0;
+    centerWrap.innerHTML = `
+      ${hasScore ? `<div class="big-digits-wrap" style="padding:8px 18px;margin-bottom:4px;">
+        <span class="big-digit" style="font-size:2.2rem;">${current.sh}</span>
+        <span class="big-sep" style="font-size:1.6rem;">-</span>
+        <span class="big-digit" style="font-size:2.2rem;">${current.sa}</span>
+      </div>` : ""}
+      <div class="special-status-banner forfeit">
+        <span class="special-status-title">🚫 RENCONTRE FORFAIT</span>
+        <span class="special-status-reason">${current.statusNote || "Forfait officiel enregistré"}</span>
+      </div>
+    `;
+  } else if (current.status === "live" && current.liveTracking === false && current.sh === 0 && current.sa === 0) {
     centerWrap.innerHTML = `
       <div class="no-live-banner">
         🏀 RENCONTRE EN COURS (SANS TABLE DIRECT)<br>
@@ -545,9 +598,10 @@ function renderRightColumn() {
     if (state.staffMode === "live") {
       staffPanel.innerHTML = `
         <div class="staff-tabs">
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <button class="staff-tab-btn active" onclick="switchStaffMode('live')">🏀 Table Direct</button>
             <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Score Final</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('special')">⚠️ Report / Forfait</button>
           </div>
           <div style="display:flex;gap:5px;">
             <button class="btn-action-sm btn-save-score" onclick="finishCurrentAndLaunchNext(${current.id})">🏁 Terminer & Suivant</button>
@@ -577,12 +631,39 @@ function renderRightColumn() {
           </div>
         </div>
       `;
+    } else if (state.staffMode === "special") {
+      const safeNote = (current.statusNote || "").replace(/"/g, "&quot;");
+      staffPanel.innerHTML = `
+        <div class="staff-tabs">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Table Direct</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Score Final</button>
+            <button class="staff-tab-btn active" onclick="switchStaffMode('special')">⚠️ Report / Forfait</button>
+          </div>
+          <button class="btn-action-sm btn-reset-up" onclick="saveMatchScore(${current.id}, 'upcoming')">🕒 Remettre À venir</button>
+        </div>
+        <div class="staff-special-box">
+          <div class="preset-chips">
+            <button class="chip-reason" onclick="fillSpecialReason('Conditions météo')">🌧️ Conditions météo</button>
+            <button class="chip-reason" onclick="fillSpecialReason('Salle indisponible')">🏟️ Salle indisponible</button>
+            <button class="chip-reason" onclick="fillSpecialReason('Décision Comité / FFBB')">📋 Décision Comité</button>
+            <button class="chip-reason" onclick="fillSpecialReason('Forfait équipe adverse (20-0)')">🏆 Forfait adverse (20-0)</button>
+            <button class="chip-reason" onclick="fillSpecialReason('Forfait LSBSC (0-20)')">🚫 Forfait LSBSC (0-20)</button>
+          </div>
+          <div class="staff-special-row">
+            <input type="text" id="inpSpecialReason" class="inp-special-reason" placeholder="Motif (ex : Conditions météo, Forfait...)" value="${safeNote}">
+            <button class="btn-action-sm btn-postpone" onclick="applySpecialMatchStatus(${current.id}, 'postponed')">📅 Marquer Reporté</button>
+            <button class="btn-action-sm btn-forfeit" onclick="applySpecialMatchStatus(${current.id}, 'forfeit')">🚫 Marquer Forfait</button>
+          </div>
+        </div>
+      `;
     } else {
       staffPanel.innerHTML = `
         <div class="staff-tabs">
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
             <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Table Direct</button>
             <button class="staff-tab-btn active" onclick="switchStaffMode('final')">✏️ Score Final</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('special')">⚠️ Report / Forfait</button>
           </div>
           <button class="btn-action-sm" style="background:#9A3412;color:#FFF;" onclick="setMatchNoLiveTable(${current.id})">En jeu (sans score direct)</button>
         </div>
@@ -603,10 +684,11 @@ function renderRightColumn() {
     staffPanel.style.display = "none";
   }
 
+  const isPlayableNext = (x) => x.status === "live" || x.status === "upcoming";
   const idxInWk = wkMatches.findIndex(m => m.id === current.id);
-  let nextMatch = wkMatches.slice(idxInWk + 1).find(m => m.status !== "finished")
+  let nextMatch = wkMatches.slice(idxInWk + 1).find(isPlayableNext)
                || wkMatches[idxInWk + 1]
-               || state.matches.find(m => m.id > current.id && m.status !== "finished");
+               || state.matches.find(m => m.id > current.id && isPlayableNext(m));
 
   const nextBox = document.getElementById("nextMatchContainer");
   if (nextMatch) {
@@ -835,8 +917,47 @@ window.saveMatchScore = function(id, newStatus) {
   m.sh = newStatus === "upcoming" ? 0 : hVal;
   m.sa = newStatus === "upcoming" ? 0 : aVal;
   m.status = newStatus;
+  m.statusNote = "";
   m.liveTracking = newStatus === "live";
   m.period = newStatus === "finished" ? "Terminé" : (newStatus === "live" ? "QT1" : "À venir");
+  saveState(true);
+  renderAll();
+};
+
+window.fillSpecialReason = function(txt) {
+  const inp = document.getElementById("inpSpecialReason");
+  if (inp) inp.value = txt;
+};
+
+window.applySpecialMatchStatus = function(id, specialStatus) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  const inp = document.getElementById("inpSpecialReason");
+  const reason = inp ? inp.value.trim() : "";
+  m.status = specialStatus;
+  m.liveTracking = false;
+
+  if (specialStatus === "postponed") {
+    m.sh = 0;
+    m.sa = 0;
+    m.period = "Reporté";
+    m.statusNote = reason || "Conditions météo";
+  } else if (specialStatus === "forfeit") {
+    m.period = "Forfait";
+    m.statusNote = reason || "Forfait officiel";
+    const low = m.statusNote.toLowerCase();
+    const homeIsUs = isLSBSC(m.home);
+    if (low.includes("20-0") || low.includes("adverse")) {
+      m.sh = homeIsUs ? 20 : 0;
+      m.sa = homeIsUs ? 0 : 20;
+    } else if (low.includes("0-20") || low.includes("lsbsc")) {
+      m.sh = homeIsUs ? 0 : 20;
+      m.sa = homeIsUs ? 20 : 0;
+    } else {
+      m.sh = 0;
+      m.sa = 0;
+    }
+  }
   saveState(true);
   renderAll();
 };
