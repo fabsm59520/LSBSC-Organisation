@@ -750,6 +750,47 @@ function renderRightColumn() {
       </div>
     `;
   }
+
+  const mqCard = document.getElementById("mobileQuickMatchesCard");
+  if (mqCard) {
+    const itemsHtml = wkMatches.map(m => {
+      const out = computeMatchOutcome(m);
+      let pillHtml = `<span class="score-pill upcoming" style="min-width:68px;padding:4px 6px;font-size:0.78rem;">${m.time}</span>`;
+      if (m.status === "postponed") {
+        pillHtml = `<span class="score-pill postponed" style="min-width:68px;padding:4px 6px;font-size:0.72rem;">REPORTÉ</span>`;
+      } else if (m.status === "forfeit") {
+        pillHtml = `<span class="score-pill forfeit" style="min-width:68px;padding:4px 6px;font-size:0.72rem;">${(m.sh||m.sa) ? (m.sh+" - "+m.sa) : "FORFAIT"}</span>`;
+      } else if (m.status === "finished") {
+        pillHtml = `<span class="score-pill ${out}" style="min-width:68px;padding:4px 6px;font-size:0.84rem;">${m.sh} - ${m.sa}</span>`;
+      } else if (m.status === "live") {
+        pillHtml = `<span class="score-pill live" style="min-width:68px;padding:4px 6px;font-size:0.84rem;">${m.sh} - ${m.sa}</span>`;
+      }
+      return `
+        <div class="mq-item ${m.id === state.selectedMatchId ? "active-mq" : ""}" onclick="selectMatch(${m.id})">
+          <div class="mq-team ${isLSBSC(m.home) ? "is-us" : ""}">
+            <img src="${getTeamBadgeSrc(m.home)}" onerror="this.src=FALLBACK_LOGO_B64" alt="">
+            <span>${m.home}</span>
+          </div>
+          <div class="mq-mid">
+            <span class="mq-cat">${m.cat} • ${m.date.replace(/\.$/,"")}</span>
+            ${pillHtml}
+          </div>
+          <div class="mq-team ${isLSBSC(m.away) ? "is-us" : ""}">
+            <img src="${getTeamBadgeSrc(m.away)}" onerror="this.src=FALLBACK_LOGO_B64" alt="">
+            <span>${m.away}</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    mqCard.innerHTML = `
+      <div class="mq-header">
+        <h4>📅 Programme du Week-end (${wkMatches.length})</h4>
+        <button class="mq-see-all" onclick="switchMobileTab('schedule')">Filtres & Semaines ▶</button>
+      </div>
+      ${itemsHtml}
+    `;
+  }
 }
 
 function renderAll() {

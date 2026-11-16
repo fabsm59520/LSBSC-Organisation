@@ -10,4 +10,5 @@ Application web progressive (**PWA installable** sur téléphone, tablette, PC e
    - Cache hors-ligne intelligent (`sw.js`) pour garder l'affichage actif même en cas de coupure Wi-Fi/4G dans la salle.
 3. **Sélection du format au chargement :**
    - **🖥️ Écran TV Salle / PC (Paysage 16:9)** ou **📱 Téléphone (Version Allégée)**.
-
+4. **Accès sécurisés par Code PIN :**
+   - **Direct & Saisie des scores** (`5900`) et **Gestion Logos & Mascotte** et **Réglages / Bandeau Buvette** (`9694`).

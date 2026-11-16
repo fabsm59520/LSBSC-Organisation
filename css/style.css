@@ -1059,24 +1059,30 @@ html, body {
 }
 
 /* ==========================================================================
-   VERSION TÉLÉPHONE ALLÉGÉE (body.mode-mobile)
-   Interface ultra-légère, sans animations lourdes, à onglets tactiles
+   VERSION TÉLÉPHONE MODERNE, LISIBLE & ERGONOMIQUE (body.mode-mobile)
    ========================================================================== */
+html {
+  font-size: 16px;
+}
+
 body.mode-mobile {
   width: 100%;
+  max-width: 100vw;
   height: auto;
   min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
-  padding-bottom: 20px;
+  background: #E2E8F0;
+  padding-bottom: 28px;
 }
 
+/* Header mobile grand format & lisible */
 body.mode-mobile .top-header {
   height: auto;
   flex-direction: column;
   align-items: stretch;
-  padding: 10px 12px;
-  gap: 8px;
+  padding: 12px 14px;
+  gap: 10px;
 }
 
 body.mode-mobile .brand-zone {
@@ -1084,18 +1090,31 @@ body.mode-mobile .brand-zone {
 }
 body.mode-mobile .club-logo-top,
 body.mode-mobile .club-mascot-top {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
 }
 body.mode-mobile .brand-titles h1 {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
+  line-height: 1.2;
 }
 body.mode-mobile .brand-titles .subtitle {
-  font-size: 0.66rem;
+  font-size: 0.76rem;
+  margin-top: 2px;
 }
 
-/* On masque le compteur KPI et le bandeau défilant animé pour alléger le visuel mobile */
-body.mode-mobile .weekend-kpi,
+/* KPI du week-end bien visibles sur téléphone */
+body.mode-mobile .weekend-kpi {
+  display: flex;
+  justify-content: space-around;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+}
+body.mode-mobile .kpi-item {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+}
+
 body.mode-mobile .bottom-ticker,
 body.mode-mobile .scoreboard-Watermark {
   display: none !important;
@@ -1103,60 +1122,66 @@ body.mode-mobile .scoreboard-Watermark {
 
 body.mode-mobile .header-controls {
   display: grid;
-  grid-template-columns: auto 1fr 1fr auto;
-  gap: 6px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
   width: 100%;
 }
 body.mode-mobile .clock-box {
-  padding: 4px 6px;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
 }
 body.mode-mobile .clock-time {
-  font-size: 0.82rem;
+  font-size: 1rem;
 }
 body.mode-mobile .clock-sync {
-  font-size: 0.56rem;
+  font-size: 0.74rem;
 }
 body.mode-mobile .btn-top {
   justify-content: center;
-  padding: 8px 6px;
-  font-size: 0.72rem;
+  padding: 10px 8px;
+  font-size: 0.84rem;
+  border-radius: 10px;
 }
 body.mode-mobile .btn-logos {
-  display: none;
+  display: inline-flex;
 }
 
-/* Barre d'onglets mobile */
+/* Barre d'onglets mobile tactile (44px+) */
 body.mode-mobile .mobile-nav-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 8px;
   background: #0F172A;
-  padding: 8px 10px;
+  padding: 10px 12px;
   position: sticky;
   top: 0;
   z-index: 25;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
 
 body.mode-mobile .mob-tab {
   border: 1px solid #334155;
   background: #1E293B;
-  color: #CBD5E1;
-  font-size: 0.76rem;
-  font-weight: 800;
-  padding: 9px 4px;
-  border-radius: 8px;
+  color: #E2E8F0;
+  font-size: 0.84rem;
+  font-weight: 900;
+  padding: 11px 6px;
+  border-radius: 10px;
   cursor: pointer;
 }
 body.mode-mobile .mob-tab.active {
-  background: #EA580C;
+  background: linear-gradient(135deg, #EA580C, #D97706);
   color: #FFFFFF;
-  border-color: #FDBA74;
+  border-color: #FDE68A;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
 }
 
 body.mode-mobile .main-workspace {
   display: block;
-  padding: 10px;
+  padding: 12px;
   overflow: visible;
   height: auto;
 }
@@ -1170,89 +1195,210 @@ body.mode-mobile .mobile-infos-card {
 body.mode-mobile .left-column.active-mobile-sec {
   display: flex;
   overflow: visible;
+  border-radius: 16px;
 }
 body.mode-mobile .right-column.active-mobile-sec {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   overflow: visible;
 }
 body.mode-mobile .mobile-infos-card.active-mobile-sec {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   background: #FFFFFF;
-  border-radius: 14px;
-  border: 1px solid #CBD5E1;
-  padding: 16px;
+  border-radius: 16px;
+  border: 2px solid #CBD5E1;
+  padding: 18px;
 }
 
 body.mode-mobile .mobile-infos-card h3 {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 900;
   color: #1E3A8A;
 }
 body.mode-mobile .mobile-info-body {
-  font-size: 0.88rem;
-  line-height: 1.5;
+  font-size: 0.96rem;
+  line-height: 1.55;
   color: #1E293B;
   font-weight: 600;
   background: #F8FAFC;
-  padding: 12px;
-  border-radius: 10px;
-  border-left: 4px solid #EA580C;
+  padding: 14px;
+  border-radius: 12px;
+  border-left: 5px solid #EA580C;
 }
 body.mode-mobile .mobile-info-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* Scoreboard allégé sur téléphone */
+/* Grand Scoreboard bien lisible sur téléphone */
 body.mode-mobile .live-scoreboard-card {
-  padding: 12px 10px;
+  padding: 16px 14px;
+  border-radius: 16px;
+  gap: 12px;
 }
 body.mode-mobile .sb-top-bar {
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 6px;
+}
+body.mode-mobile .sb-status-badge {
+  font-size: 0.85rem;
+  padding: 5px 12px;
+}
+body.mode-mobile .sb-meta-info {
+  font-size: 0.86rem;
 }
 body.mode-mobile .sb-arena {
-  gap: 6px;
-  margin: 10px 0;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  margin: 12px 0;
 }
 body.mode-mobile .sb-logo-lg {
-  width: 52px;
-  height: 52px;
+  width: 68px;
+  height: 68px;
 }
 body.mode-mobile .sb-team-title {
-  font-size: 0.8rem;
+  font-size: 0.92rem;
+  line-height: 1.25;
 }
 body.mode-mobile .sb-loc-pill {
-  font-size: 0.58rem;
-  padding: 2px 5px;
+  font-size: 0.68rem;
+  padding: 3px 8px;
 }
 body.mode-mobile .big-digits-wrap {
-  padding: 8px 12px;
-  gap: 6px;
-  border-width: 2px;
+  padding: 10px 14px;
+  gap: 8px;
+  border-width: 2.5px;
+  border-radius: 12px;
 }
 body.mode-mobile .big-digit {
-  font-size: 1.75rem;
+  font-size: 2.15rem;
 }
 body.mode-mobile .big-sep {
-  font-size: 1.35rem;
+  font-size: 1.55rem;
 }
 body.mode-mobile .sb-period-pill {
-  font-size: 0.72rem;
-  padding: 3px 8px;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+}
+
+/* Barre de synthèse visible aussi sur téléphone */
+body.mode-mobile .sb-summary-bar {
+  display: flex !important;
+  font-size: 0.82rem;
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+/* Carte synthèse club visible et adaptée au mobile */
+body.mode-mobile .club-overview-card {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px;
+  gap: 10px;
+}
+body.mode-mobile .overview-stats {
+  justify-content: space-between;
+}
+body.mode-mobile .ov-stat-box {
+  flex: 1;
+}
+
+/* Carte aperçu des matchs du week-end directement sous Direct & Suivant sur mobile */
+.mobile-quick-matches-card {
+  display: none;
+}
+body.mode-mobile .mobile-quick-matches-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #CBD5E1;
+  padding: 14px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+.mq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #EFF6FF;
+  padding-bottom: 8px;
+}
+.mq-header h4 {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #1E3A8A;
+}
+.mq-see-all {
+  background: #EFF6FF;
+  color: #1E3A8A;
+  border: 1px solid #93C5FD;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mq-item {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  cursor: pointer;
+}
+.mq-item.active-mq {
+  border-color: #2563EB;
+  background: #EFF6FF;
+}
+.mq-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+.mq-team.is-us {
+  color: #1E3A8A;
+  font-weight: 900;
+}
+.mq-team img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.mq-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.mq-cat {
+  font-size: 0.68rem;
+  font-weight: 900;
+  background: #DBEAFE;
+  color: #1E3A8A;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 /* Table de marque tactile sur téléphone */
 body.mode-mobile .staff-tabs {
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 8px;
 }
 body.mode-mobile .staff-tabs > div {
   display: flex;
@@ -1261,23 +1407,23 @@ body.mode-mobile .staff-tabs > div {
 }
 body.mode-mobile .staff-tab-btn {
   flex: 1;
-  padding: 8px 6px;
-  font-size: 0.74rem;
+  padding: 10px 6px;
+  font-size: 0.8rem;
 }
 body.mode-mobile .live-table-grid {
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 body.mode-mobile .live-team-ctrls {
   background: #FFFFFF;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid #BFDBFE;
 }
 body.mode-mobile .btn-pt {
   flex: 1 1 28%;
-  padding: 10px 6px;
-  font-size: 0.86rem;
+  padding: 12px 6px;
+  font-size: 0.95rem;
 }
 body.mode-mobile .period-selector {
   max-width: 100%;
@@ -1285,35 +1431,57 @@ body.mode-mobile .period-selector {
 }
 body.mode-mobile .btn-period {
   flex: 1;
-  padding: 7px 4px;
-  font-size: 0.74rem;
+  padding: 9px 4px;
+  font-size: 0.8rem;
 }
 body.mode-mobile .staff-quick-row {
   flex-direction: column;
   align-items: stretch;
+  gap: 10px;
 }
 body.mode-mobile .staff-quick-row > div {
   justify-content: center;
 }
+body.mode-mobile .score-input-num {
+  width: 82px;
+  padding: 8px;
+  font-size: 1.2rem;
+}
 body.mode-mobile .btn-action-sm {
-  padding: 10px;
-  font-size: 0.82rem;
+  padding: 12px;
+  font-size: 0.88rem;
 }
 
-/* Liste de matchs allégée sur téléphone */
+/* Liste complète des matchs allégée & ultra-lisible sur téléphone */
 body.mode-mobile .week-nav-bar {
   flex-wrap: wrap;
+  padding: 10px;
+  gap: 8px;
 }
 body.mode-mobile .week-select {
   order: -1;
   width: 100%;
   max-width: 100%;
   flex: 1 1 100%;
-  padding: 8px;
+  padding: 10px;
+  font-size: 0.95rem;
 }
 body.mode-mobile .btn-week {
   flex: 1;
-  padding: 8px 4px;
+  padding: 10px 6px;
+  font-size: 0.85rem;
+}
+body.mode-mobile .wk-tab {
+  padding: 7px 12px;
+  font-size: 0.8rem;
+}
+body.mode-mobile .filter-bar {
+  padding: 8px 10px;
+  gap: 8px;
+}
+body.mode-mobile .filter-pill {
+  padding: 6px 11px;
+  font-size: 0.8rem;
 }
 body.mode-mobile .cat-scroll {
   flex-wrap: nowrap;
@@ -1327,53 +1495,87 @@ body.mode-mobile .cat-scroll .filter-pill {
 body.mode-mobile .matches-list {
   overflow-y: visible;
   max-height: none;
+  padding: 10px;
+  gap: 10px;
 }
 body.mode-mobile .match-row {
   grid-template-columns: 1fr auto 1fr;
   grid-template-rows: auto auto;
-  gap: 6px;
-  padding: 10px 8px;
+  gap: 8px;
+  padding: 12px 10px;
+  border-radius: 12px;
 }
 body.mode-mobile .m-meta {
   grid-column: 1 / -1;
   flex-direction: row;
+  align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #E2E8F0;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
+}
+body.mode-mobile .m-date {
+  font-size: 0.8rem;
+}
+body.mode-mobile .m-time {
+  font-size: 0.92rem;
+}
+body.mode-mobile .m-cat-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
 }
 body.mode-mobile .m-team {
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   justify-content: center !important;
   text-align: center !important;
 }
 body.mode-mobile .m-team.home {
   flex-direction: column-reverse;
 }
+body.mode-mobile .club-badge-sm {
+  width: 42px;
+  height: 42px;
+}
 body.mode-mobile .team-name-txt {
   white-space: normal;
-  font-size: 0.75rem;
-  line-height: 1.15;
+  font-size: 0.84rem;
+  line-height: 1.2;
 }
 body.mode-mobile .score-pill {
-  min-width: 72px;
-  font-size: 0.88rem;
+  min-width: 82px;
+  font-size: 1rem;
+  padding: 6px 10px;
+}
+body.mode-mobile .res-tag {
+  font-size: 0.7rem;
 }
 body.mode-mobile .row-staff-actions {
   grid-column: 1 / -1;
   justify-content: center;
   gap: 8px;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px dashed #CBD5E1;
 }
 body.mode-mobile .btn-row-edit {
   flex: 1;
-  padding: 8px;
-  font-size: 0.78rem;
+  padding: 10px;
+  font-size: 0.85rem;
+}
+
+/* Match suivant sur téléphone */
+body.mode-mobile .next-match-card {
+  padding: 14px;
+  border-radius: 16px;
+}
+body.mode-mobile .next-title-badge {
+  font-size: 0.82rem;
+}
+body.mode-mobile .next-datetime {
+  font-size: 0.86rem;
 }
 body.mode-mobile .next-team {
   flex-direction: column;
-  font-size: 0.75rem;
+  font-size: 0.84rem;
   text-align: center !important;
   justify-content: center !important;
 }
@@ -1403,9 +1605,7 @@ body.mode-mobile .next-team.home {
   margin-bottom: 12px;
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
 }
-body.mode-mobile .header-controls {
-  grid-template-columns: auto auto 1fr 1fr auto;
-}
+
 
 /* ==========================================================================
    AMÉLIORATION VISUELLE TV 16:9 — ÉQUILIBRE DE LA COLONNE DROITE (ZÉRO VIDE)
