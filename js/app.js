@@ -37,7 +37,7 @@ const CLUB_PALETTES = {
   "FRETIN": ["#166534", "#86EFAC", "FBC"]
 };
 
-const DEFAULT_CLOUD_SYNC_URL = "https://jsonblob.com/api/jsonBlob/1306984210485985280";
+const DEFAULT_CLOUD_SYNC_URL = "https://lsbsc-ecran-default-rtdb.europe-west1.firebasedatabase.app/lsbsc.json";
 let bcChannel = null;
 try {
   if (typeof BroadcastChannel !== "undefined") {
@@ -67,7 +67,7 @@ const state = {
     mascot: "assets/mascotte-lsbsc.png",
     customBadges: {}
   },
-  syncUrl: localStorage.getItem("lsbsc_sync_url") || ""
+  syncUrl: localStorage.getItem("lsbsc_sync_url") || "https://lsbsc-ecran-default-rtdb.europe-west1.firebasedatabase.app/lsbsc.json"
 };
 
 /* ================= GESTION DU FORMAT (TV 16:9 VS TÉLÉPHONE ALLÉGÉ) ================= */
@@ -890,7 +890,7 @@ window.uploadOpponentLogo = function(ev, clubKey) {
 
 /* ================= CLOUD SYNC & TICKER MODAL ================= */
 window.openCloudModal = function() {
-  document.getElementById("inpSyncUrl").value = state.syncUrl || "";
+  document.getElementById("inpSyncUrl").value = state.syncUrl || "https://lsbsc-ecran-default-rtdb.europe-west1.firebasedatabase.app/lsbsc.json";
   document.getElementById("inpTickerText").value = state.tickerText || "";
   document.getElementById("cloudModal").classList.add("open");
 };
@@ -941,3 +941,44 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(updateClock, 1000);
   setInterval(pollCloudSync, 2500);
 });
+
+
+/* ================= PWA : INSTALLATION SUR TÉLÉPHONE / PC / TV ================= */
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btnInstall = document.getElementById("btnInstallApp");
+  const btnInstallSplash = document.getElementById("btnInstallSplash");
+  if (btnInstall) btnInstall.style.display = "inline-flex";
+  if (btnInstallSplash) btnInstallSplash.style.display = "flex";
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  const btnInstall = document.getElementById("btnInstallApp");
+  const btnInstallSplash = document.getElementById("btnInstallSplash");
+  if (btnInstall) btnInstall.style.display = "none";
+  if (btnInstallSplash) btnInstallSplash.style.display = "none";
+});
+
+window.triggerPwaInstall = async function() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    const choiceResult = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    if (choiceResult && choiceResult.outcome === "accepted") {
+      const btnInstall = document.getElementById("btnInstallApp");
+      if (btnInstall) btnInstall.style.display = "none";
+    }
+  } else {
+    alert("Pour installer l'application LSBSC :\n• Sur Android (Chrome) : Menu (⋮) → « Ajouter à l'écran d'accueil » ou « Installer l'application ».\n• Sur iPhone (Safari) : Bouton Partager (↑) → « Sur l'écran d'accueil ».\n• Sur PC (Chrome/Edge) : Icône d'installation dans la barre d'adresse.");
+  }
+};
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

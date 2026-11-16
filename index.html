@@ -4,6 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LSBSC South Lille — Programmation & Résultats des Matchs</title>
+  <meta name="theme-color" content="#0F172A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LSBSC Direct">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/logo-lsbsc.png">
+  <link rel="apple-touch-icon" href="assets/logo-lsbsc.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="mode-tv">
@@ -38,6 +46,9 @@
         </button>
       </div>
 
+      <button id="btnInstallSplash" class="btn-install-splash" onclick="triggerPwaInstall()" style="display:none;">
+        📲 Installer l'application LSBSC sur cet appareil
+      </button>
       <label class="remember-choice">
         <input type="checkbox" id="chkRememberFormat">
         <span>Mémoriser mon choix sur cet appareil (modifiable à tout moment en haut de l'écran)</span>
@@ -68,6 +79,7 @@
         <div id="liveClock" class="clock-time">15:30:00</div>
         <span id="syncStatusBadge" class="clock-sync">● Direct Synchronisé</span>
       </div>
+      <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application sur l'écran d'accueil">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
       <button class="btn-top btn-logos" onclick="requestPinAccess('logos')">🛡️ Logos</button>
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
