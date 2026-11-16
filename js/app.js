@@ -47,8 +47,10 @@ try {
 
 const state = {
   matches: [],
-  currentWeek: "w10",
-  selectedMatchId: 49,
+  currentWeek: null,   // déterminée automatiquement (detectCurrentWeek)
+  autoWeek: true,      // false dès que l'utilisateur navigue manuellement
+  selectedMatchId: null,
+  baseMatches: [],
   catFilter: "ALL",
   locFilter: "ALL",
   displayMode: "tv", // 'tv' | 'mobile'
@@ -198,8 +200,6 @@ function loadLocalData() {
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed.matches) && parsed.matches.length > 0) state.matches = parsed.matches;
-      if (parsed.currentWeek) state.currentWeek = parsed.currentWeek;
-      if (parsed.selectedMatchId) state.selectedMatchId = parsed.selectedMatchId;
       if (parsed.tickerText) state.tickerText = parsed.tickerText;
       if (parsed.updatedAt) state.lastUpdatedAt = parsed.updatedAt;
       if (parsed.clubAssets) {
@@ -210,6 +210,105 @@ function loadLocalData() {
   if (!state.matches || state.matches.length === 0) {
     state.matches = JSON.parse(JSON.stringify(DEFAULT_MATCHES));
   }
+  if (state.autoWeek || !state.currentWeek) state.currentWeek = detectCurrentWeek();
+}
+
+/* ================= SEMAINE EN COURS (AUTOMATIQUE) ================= */
+const MONTHS_FR = { JAN:0, "FÉV":1, FEV:1, MAR:2, AVR:3, MAI:4, JUN:5, JUIN:5, JUIL:6, "AOÛ":7, AOU:7, SEP:8, OCT:9, NOV:10, "DÉC":11, DEC:11 };
+
+function matchDateOf(m) {
+  const d = /(\d{1,2})\s+([A-ZÉÛ]+)/i.exec(m.date || "");
+  if (!d) return null;
+  const mo = MONTHS_FR[d[2].toUpperCase().replace(/\.$/, "")];
+  if (mo === undefined) return null;
+  const y = /(\d{4})/.exec(m.wkLabel || "");
+  return new Date(y ? +y[1] : new Date().getFullYear(), mo, +d[1]);
+}
+
+// Semaine dont le dernier match n'est pas encore passé (aujourd'hui compris).
+function detectCurrentWeek() {
+  const ends = {};
+  state.matches.forEach(m => {
+    const d = matchDateOf(m);
+    if (d && (!ends[m.wk] || d > ends[m.wk])) ends[m.wk] = d;
+  });
+  const keys = Object.keys(ends).sort();
+  if (keys.length === 0) return state.currentWeek || (state.matches[0] && state.matches[0].wk) || null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return keys.find(k => ends[k] >= today) || keys[keys.length - 1];
+}
+
+function pickDefaultMatch(wkMatches) {
+  return wkMatches.find(m => m.status === "live")
+      || wkMatches.find(m => m.status === "upcoming")
+      || wkMatches[0];
+}
+
+/* ================= PLANNING : data/matches.json ================= */
+const SCHEDULE_FIELDS = ["wk", "wkLabel", "wkShort", "date", "time", "home", "away", "cat", "comp"];
+const DYNAMIC_FIELDS = ["sh", "sa", "status", "period", "fh", "fa", "liveTracking"];
+
+// Réapplique le calendrier officiel (dates, équipes...) sur une liste de matchs (locale ou cloud).
+function overlaySchedule(list) {
+  if (!Array.isArray(state.baseMatches) || state.baseMatches.length === 0) return list;
+  const byId = new Map(list.map(m => [m.id, m]));
+  const out = state.baseMatches.map(b => {
+    const s = byId.get(b.id);
+    if (!s) return Object.assign({}, b);
+    SCHEDULE_FIELDS.forEach(k => { s[k] = b[k]; });
+    return s;
+  });
+  list.forEach(m => { if (!state.baseMatches.some(b => b.id === m.id)) out.push(m); });
+  return out;
+}
+
+function persistLocalOnly() {
+  try {
+    localStorage.setItem("lsbsc_state_v4", JSON.stringify({
+      matches: state.matches, tickerText: state.tickerText,
+      clubAssets: state.clubAssets, updatedAt: state.lastUpdatedAt
+    }));
+  } catch (e) {}
+}
+
+async function loadBaseMatches() {
+  let base = null;
+  try {
+    const res = await fetch("data/matches.json", { cache: "no-cache" });
+    if (res.ok) base = await res.json();
+  } catch (e) {}
+  if (!Array.isArray(base) || base.length === 0) base = DEFAULT_MATCHES;
+  state.baseMatches = base;
+
+  let prev = [];
+  try { prev = JSON.parse(localStorage.getItem("lsbsc_base_prev") || "[]"); } catch (e) {}
+  const nextStr = JSON.stringify(base);
+  const prevStr = JSON.stringify(prev);
+  const prevById = new Map(prev.map(m => [m.id, m]));
+
+  // Les champs dynamiques (score, statut) du fichier ne remplacent ceux du direct
+  // que si le fichier a changé pour ce match depuis la dernière version chargée.
+  const merged = overlaySchedule(state.matches);
+  merged.forEach(m => {
+    const b = base.find(x => x.id === m.id);
+    const p = prevById.get(m.id);
+    if (!b || !p) return;
+    if (DYNAMIC_FIELDS.some(k => b[k] !== p[k])) DYNAMIC_FIELDS.forEach(k => { m[k] = b[k]; });
+  });
+  state.matches = merged;
+  if (nextStr !== prevStr) {
+    try { localStorage.setItem("lsbsc_base_prev", nextStr); } catch (e) {}
+  }
+  persistLocalOnly();
+  if (state.autoWeek) state.currentWeek = detectCurrentWeek();
+  renderAll();
+}
+
+function refreshAutoWeek() {
+  if (!state.autoWeek) return;
+  const wk = detectCurrentWeek();
+  if (wk && wk !== state.currentWeek) window.selectWeek(wk, { auto: true });
 }
 
 function saveState(pushCloud = true) {
@@ -217,8 +316,6 @@ function saveState(pushCloud = true) {
   state.lastUpdatedAt = now;
   const payload = {
     matches: state.matches,
-    currentWeek: state.currentWeek,
-    selectedMatchId: state.selectedMatchId,
     tickerText: state.tickerText,
     clubAssets: state.clubAssets,
     updatedAt: now
@@ -242,24 +339,43 @@ function saveState(pushCloud = true) {
   }
 }
 
+let cloudPolling = false;
+
+// Sur Firebase, on ne lit d'abord que le champ updatedAt (quelques octets).
+function cloudLightUrl(url) {
+  if (!/firebaseio\.com|firebasedatabase\.app/.test(url)) return null;
+  if (!/\.json(\?.*)?$/.test(url)) return null;
+  return url.replace(/\.json(\?.*)?$/, (m, q) => "/updatedAt.json" + (q || ""));
+}
+
 async function pollCloudSync() {
+  if (cloudPolling || document.hidden) return;
   const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
   if (!targetUrl) return;
+  cloudPolling = true;
   try {
+    const light = cloudLightUrl(targetUrl);
+    if (light) {
+      const r = await fetch(light);
+      if (!r.ok) return;
+      const ts = await r.json();
+      if (typeof ts !== "number" || ts <= state.lastUpdatedAt) return;
+    }
     const res = await fetch(targetUrl, { headers: { "Accept": "application/json" } });
     if (!res.ok) return;
     const data = await res.json();
     if (data && Array.isArray(data.matches) && data.updatedAt && data.updatedAt > state.lastUpdatedAt) {
       state.lastUpdatedAt = data.updatedAt;
-      state.matches = data.matches;
-      if (data.currentWeek) state.currentWeek = data.currentWeek;
-      if (data.selectedMatchId) state.selectedMatchId = data.selectedMatchId;
+      state.matches = overlaySchedule(data.matches);
       if (data.tickerText) state.tickerText = data.tickerText;
       if (data.clubAssets) state.clubAssets = Object.assign(state.clubAssets, data.clubAssets);
-      localStorage.setItem("lsbsc_state_v4", JSON.stringify(data));
+      persistLocalOnly();
       renderAll();
     }
-  } catch (e) {}
+  } catch (e) {
+  } finally {
+    cloudPolling = false;
+  }
 }
 
 /* ================= RENDU DE L'INTERFACE ================= */
@@ -435,6 +551,7 @@ function renderMatchesList() {
         <div class="m-score-center">
           ${scoreHtml}
           ${tagHtml}
+          ${(Array.isArray(m.youtubeVideos) && m.youtubeVideos.length > 0) ? `<button class="row-youtube-badge" onclick="event.stopPropagation();openMatchVideoModal(${m.id}, 0)">📺 ${m.youtubeVideos.length} vidéo${m.youtubeVideos.length > 1 ? "s" : ""}</button>` : ""}
         </div>
         <div class="m-team away">
           <img class="club-badge-sm" src="${getTeamBadgeSrc(m.away)}" onerror="this.src=FALLBACK_LOGO_B64" alt="">
@@ -450,7 +567,7 @@ function renderRightColumn() {
   const wkMatches = state.matches.filter(m => m.wk === state.currentWeek);
   let current = state.matches.find(m => m.id === state.selectedMatchId);
   if (!current || current.wk !== state.currentWeek) {
-    current = wkMatches.find(m => m.status === "live") || wkMatches[0] || state.matches[0];
+    current = pickDefaultMatch(wkMatches) || state.matches[0];
     if (current) state.selectedMatchId = current.id;
   }
 
@@ -520,10 +637,15 @@ function renderRightColumn() {
     } else {
       outcomePill = `<span class="sb-summary-pill">⏳ Coup d'envoi ${current.time}</span>`;
     }
+    const vidsCount = Array.isArray(current.youtubeVideos) ? current.youtubeVideos.length : 0;
+    const ytBtnHtml = vidsCount > 0
+      ? `<button class="youtube-pill-btn" onclick="openMatchVideoModal(${current.id}, 0)">📺 Regarder (${vidsCount} vidéo${vidsCount > 1 ? "s" : ""})</button>`
+      : "";
     summaryBar.innerHTML = `
       <span class="sb-summary-pill">${venueTxt}</span>
       <span class="sb-summary-pill">🏀 Catégorie ${current.cat}</span>
       ${outcomePill}
+      ${ytBtnHtml}
     `;
   }
 
@@ -602,6 +724,7 @@ function renderRightColumn() {
             <button class="staff-tab-btn active" onclick="switchStaffMode('live')">🏀 Table Direct</button>
             <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Score Final</button>
             <button class="staff-tab-btn" onclick="switchStaffMode('special')">⚠️ Report / Forfait</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('multivid')">📺 Médias</button>
           </div>
           <div style="display:flex;gap:5px;">
             <button class="btn-action-sm btn-save-score" onclick="finishCurrentAndLaunchNext(${current.id})">🏁 Terminer & Suivant</button>
@@ -639,6 +762,7 @@ function renderRightColumn() {
             <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Table Direct</button>
             <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Score Final</button>
             <button class="staff-tab-btn active" onclick="switchStaffMode('special')">⚠️ Report / Forfait</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('multivid')">📺 Médias</button>
           </div>
           <button class="btn-action-sm btn-reset-up" onclick="saveMatchScore(${current.id}, 'upcoming')">🕒 Remettre À venir</button>
         </div>
@@ -657,6 +781,51 @@ function renderRightColumn() {
           </div>
         </div>
       `;
+    } else if (state.staffMode === "multivid") {
+      const allVids = [
+        ...(Array.isArray(current.youtubeVideos) ? current.youtubeVideos.map((v, i) => ({...v, mediaType: 'youtube', origIdx: i})) : []),
+        ...(Array.isArray(current.twitchVideos) ? current.twitchVideos.map((v, i) => ({...v, mediaType: 'twitch', origIdx: i})) : [])
+      ];
+
+      const chipsHtml = allVids.length > 0
+        ? allVids.map((v, i) => `
+            <span class="${v.mediaType === 'twitch' ? 'staff-tw-chip' : 'staff-yt-chip'}">
+              <span style="cursor:pointer;" onclick="openMatchVideoModal(${current.id}, ${i})">${v.mediaType === 'twitch' ? '🎮 ' : '▶️ '}${v.title}</span>
+              <button class="${v.mediaType === 'twitch' ? 'staff-tw-del' : 'staff-yt-del'}" onclick="removeVideoFromMatch(${current.id}, '${v.mediaType}', ${v.origIdx})" title="Supprimer">✖</button>
+            </span>
+          `).join("")
+        : `<span style="font-size:0.74rem;color:#64748B;font-weight:700;">Aucun flux YouTube ou Twitch associé à ce match.</span>`;
+
+      staffPanel.innerHTML = `
+        <div class="staff-tabs">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Direct</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Score</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('special')">⚠️ Report</button>
+            <button class="staff-tab-btn active" onclick="switchStaffMode('multivid')">📺 Médias (${allVids.length})</button>
+          </div>
+          ${allVids.length > 0 ? `<button class="youtube-pill-btn" onclick="openMatchVideoModal(${current.id}, 0)">▶️ Lancer</button>` : ""}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="staff-youtube-box">
+            <div style="font-size:0.72rem;font-weight:900;color:#991B1B;margin-bottom:2px;">📺 YouTube :</div>
+            <div class="staff-youtube-inputs">
+              <input type="text" id="inpYoutubeUrl" class="inp-youtube" placeholder="Lien YouTube">
+              <input type="text" id="inpYoutubeTitle" class="inp-youtube" style="max-width:90px;" placeholder="Titre">
+              <button class="btn-action-sm btn-youtube-full" onclick="addYoutubeVideoToMatch(${current.id})">➕</button>
+            </div>
+          </div>
+          <div class="staff-twitch-box">
+            <div style="font-size:0.72rem;font-weight:900;color:#6D28D9;margin-bottom:2px;">🎮 Twitch :</div>
+            <div class="staff-twitch-inputs">
+              <input type="text" id="inpTwitchChannel" class="inp-twitch" placeholder="Chaîne Twitch">
+              <input type="text" id="inpTwitchTitle" class="inp-twitch" style="max-width:90px;" placeholder="Titre">
+              <button class="btn-action-sm btn-twitch-full" onclick="addTwitchVideoToMatch(${current.id})">➕</button>
+            </div>
+          </div>
+        </div>
+        <div class="staff-youtube-list" style="margin-top:6px;">${chipsHtml}</div>
+      `;
     } else {
       staffPanel.innerHTML = `
         <div class="staff-tabs">
@@ -664,6 +833,7 @@ function renderRightColumn() {
             <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Table Direct</button>
             <button class="staff-tab-btn active" onclick="switchStaffMode('final')">✏️ Score Final</button>
             <button class="staff-tab-btn" onclick="switchStaffMode('special')">⚠️ Report / Forfait</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('multivid')">📺 Médias</button>
           </div>
           <button class="btn-action-sm" style="background:#9A3412;color:#FFF;" onclick="setMatchNoLiveTable(${current.id})">En jeu (sans score direct)</button>
         </div>
@@ -892,14 +1062,19 @@ window.finishCurrentAndLaunchNext = function(id) {
 };
 
 /* ================= NAVIGATION & FILTERS ================= */
-window.selectWeek = function(wk) {
+window.selectWeek = function(wk, opts) {
+  if (!(opts && opts.auto)) state.autoWeek = false;
   state.currentWeek = wk;
   const wkMatches = state.matches.filter(m => m.wk === wk);
   if (wkMatches.length > 0) {
-    const liveOrFirst = wkMatches.find(m => m.status === "live") || wkMatches[0];
-    state.selectedMatchId = liveOrFirst.id;
+    state.selectedMatchId = pickDefaultMatch(wkMatches).id;
   }
   renderAll();
+};
+
+window.selectCurrentWeek = function() {
+  state.autoWeek = true;
+  window.selectWeek(detectCurrentWeek(), { auto: true });
 };
 
 window.shiftWeek = function(delta) {
@@ -1097,31 +1272,48 @@ function openLogosManagerModal() {
   document.getElementById("logosModal").classList.add("open");
 }
 
+function resizeImageFile(file, maxDim, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const raw = e.target.result;
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const k = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * k));
+        c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        cb(c.toDataURL("image/png"));
+      } catch (err) { cb(raw); }
+    };
+    img.onerror = () => cb(raw);
+    img.src = raw;
+  };
+  reader.readAsDataURL(file);
+}
+
 window.uploadClubAsset = function(ev, type) {
   const file = ev.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    if (type === "logo") state.clubAssets.logo = e.target.result;
-    if (type === "mascot") state.clubAssets.mascot = e.target.result;
+  resizeImageFile(file, 320, data => {
+    if (type === "logo") state.clubAssets.logo = data;
+    if (type === "mascot") state.clubAssets.mascot = data;
     saveState(true);
     renderAll();
-  };
-  reader.readAsDataURL(file);
+  });
 };
 
 window.uploadOpponentLogo = function(ev, clubKey) {
   const file = ev.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
+  resizeImageFile(file, 160, data => {
     if (!state.clubAssets.customBadges) state.clubAssets.customBadges = {};
-    state.clubAssets.customBadges[clubKey] = e.target.result;
+    state.clubAssets.customBadges[clubKey] = data;
     saveState(true);
     openLogosManagerModal();
     renderAll();
-  };
-  reader.readAsDataURL(file);
+  });
 };
 
 /* ================= CLOUD SYNC & TICKER MODAL ================= */
@@ -1161,7 +1353,6 @@ if (bcChannel) {
   bcChannel.onmessage = (ev) => {
     if (ev.data && Array.isArray(ev.data.matches)) {
       state.matches = ev.data.matches;
-      if (ev.data.currentWeek) state.currentWeek = ev.data.currentWeek;
       if (ev.data.selectedMatchId) state.selectedMatchId = ev.data.selectedMatchId;
       if (ev.data.tickerText) state.tickerText = ev.data.tickerText;
       renderAll();
@@ -1173,9 +1364,12 @@ document.addEventListener("DOMContentLoaded", () => {
   initDisplayFormatSelection();
   loadLocalData();
   renderAll();
+  loadBaseMatches();
   updateClock();
   setInterval(updateClock, 1000);
-  setInterval(pollCloudSync, 2500);
+  setInterval(pollCloudSync, 5000);
+  setInterval(refreshAutoWeek, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { pollCloudSync(); refreshAutoWeek(); } });
 });
 
 
@@ -1218,3 +1412,212 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
+
+
+/* ================= INTÉGRATION STREAMING YOUTUBE & TWITCH (V12) ================= */
+function parseYoutubeUrl(rawInput) {
+  const txt = (rawInput || "").trim();
+  if (!txt) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?(?:.*&)?v=)([a-zA-Z0-9_-]{11})/i,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/i,
+    /(?:youtube\.com\/(?:live|shorts|embed)\/)([a-zA-Z0-9_-]{11})/i,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  let videoId = null;
+  for (const rx of patterns) {
+    const m = txt.match(rx);
+    if (m && m[1]) {
+      videoId = m[1];
+      break;
+    }
+  }
+  if (!videoId) return null;
+  return {
+    id: videoId,
+    mediaType: 'youtube',
+    url: `https://www.youtube.com/watch?v=${videoId}`,
+    embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`
+  };
+}
+
+function parseTwitchInput(rawInput) {
+  const txt = (rawInput || "").trim();
+  if (!txt) return null;
+  const urlMatch = txt.match(/twitch\.tv\/([a-zA-Z0-9_]{4,25})/i);
+  const chanName = urlMatch ? urlMatch[1] : (/^[a-zA-Z0-9_]{4,25}$/.test(txt) ? txt : null);
+  if (!chanName) return null;
+
+  const currentHost = window.location.hostname || "";
+  const parents = ["localhost", "127.0.0.1", "github.io", "netlify.app", "vercel.app", "pages.dev", currentHost].filter(Boolean);
+  // Remove duplicates
+  const uniqueParents = Array.from(new Set(parents));
+  const parentParams = uniqueParents.map(p => `parent=${encodeURIComponent(p)}`).join("&");
+
+  return {
+    id: chanName,
+    mediaType: 'twitch',
+    title: `Live Twitch (${chanName})`,
+    url: `https://www.twitch.tv/${chanName}`,
+    embedUrl: `https://player.twitch.tv/?channel=${encodeURIComponent(chanName)}&${parentParams}&autoplay=true`
+  };
+}
+
+window.addYoutubeVideoToMatch = function(matchId) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  const urlInp = document.getElementById("inpYoutubeUrl");
+  const titleInp = document.getElementById("inpYoutubeTitle");
+  const parsed = parseYoutubeUrl(urlInp ? urlInp.value : "");
+  if (!parsed) {
+    alert("Lien YouTube invalide.");
+    return;
+  }
+  if (!Array.isArray(m.youtubeVideos)) m.youtubeVideos = [];
+  const customTitle = (titleInp ? titleInp.value.trim() : "") || "🔴 Direct YouTube";
+  m.youtubeVideos.push({
+    id: parsed.id,
+    mediaType: 'youtube',
+    title: customTitle,
+    url: parsed.url,
+    embedUrl: parsed.embedUrl,
+    addedAt: Date.now()
+  });
+  saveState(true);
+  renderAll();
+};
+
+window.addTwitchVideoToMatch = function(matchId) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  const chanInp = document.getElementById("inpTwitchChannel");
+  const titleInp = document.getElementById("inpTwitchTitle");
+  const parsed = parseTwitchInput(chanInp ? chanInp.value : "");
+  if (!parsed) {
+    alert("Chaîne ou lien Twitch invalide. Exemple : lsbsc_lillesud");
+    return;
+  }
+  if (!Array.isArray(m.twitchVideos)) m.twitchVideos = [];
+  const customTitle = (titleInp ? titleInp.value.trim() : "") || `🎮 Live Twitch (${parsed.id})`;
+  m.twitchVideos.push({
+    id: parsed.id,
+    mediaType: 'twitch',
+    title: customTitle,
+    url: parsed.url,
+    embedUrl: parsed.embedUrl,
+    addedAt: Date.now()
+  });
+  saveState(true);
+  renderAll();
+};
+
+window.removeVideoFromMatch = function(matchId, type, idx) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  if (type === 'youtube' && Array.isArray(m.youtubeVideos)) {
+    m.youtubeVideos.splice(idx, 1);
+  } else if (type === 'twitch' && Array.isArray(m.twitchVideos)) {
+    m.twitchVideos.splice(idx, 1);
+  }
+  saveState(true);
+  renderAll();
+};
+
+window.openMatchVideoModal = function(matchId, globalClipIdx = 0) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  const allVids = [
+    ...(Array.isArray(m.youtubeVideos) ? m.youtubeVideos.map(v => ({...v, mediaType: 'youtube'})) : []),
+    ...(Array.isArray(m.twitchVideos) ? m.twitchVideos.map(v => ({...v, mediaType: 'twitch'})) : [])
+  ];
+  if (allVids.length === 0) return;
+  const safeIdx = Math.max(0, Math.min(allVids.length - 1, globalClipIdx));
+  const clip = allVids[safeIdx];
+
+  document.getElementById("videoModalTitle").textContent = `📺 ${m.cat} • ${m.home} vs ${m.away}`;
+
+  const playlistHtml = allVids.map((v, i) => `
+    <button class="video-clip-item ${i === safeIdx ? "active-clip" : ""}" onclick="openMatchVideoModal(${m.id}, ${i})">
+      <div class="video-clip-meta">
+        <span class="video-clip-title">${i === safeIdx ? "▶️ " : (v.mediaType === 'twitch' ? "🎮 " : "📺 ")}${v.title}</span>
+        <span class="video-clip-sub">${v.url}</span>
+      </div>
+      <span style="font-size:0.75rem;font-weight:900;color:${v.mediaType === 'twitch' ? '#7C3AED' : '#DC2626'};">Regarder</span>
+    </button>
+  `).join("");
+
+  document.getElementById("videoModalBody").innerHTML = `
+    <div class="video-player-frame-wrap">
+      <iframe src="${clip.embedUrl}" title="${clip.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+    <div class="video-player-footer">
+      <div style="font-size:0.86rem;font-weight:900;color:#0F172A;">${clip.title}</div>
+      <a class="video-external-link" style="background:${clip.mediaType === 'twitch' ? '#9146FF' : '#DC2626'};" href="${clip.url}" target="_blank" rel="noopener noreferrer">↗️ Ouvrir sur ${clip.mediaType === 'twitch' ? 'Twitch' : 'YouTube'}</a>
+    </div>
+    <div style="font-size:0.78rem;font-weight:900;color:#475569;">Médias associés à ce match (${allVids.length}) :</div>
+    <div class="video-playlist">${playlistHtml}</div>
+  `;
+
+  document.getElementById("videoModal").classList.add("open");
+};
+
+window.openVideoGalleryModal = function(selectedGlobalIdx = 0) {
+  const allClips = [];
+  state.matches.forEach(m => {
+    if (Array.isArray(m.youtubeVideos)) {
+      m.youtubeVideos.forEach(v => allClips.push({ match: m, clip: {...v, mediaType: 'youtube'} }));
+    }
+    if (Array.isArray(m.twitchVideos)) {
+      m.twitchVideos.forEach(v => allClips.push({ match: m, clip: {...v, mediaType: 'twitch'} }));
+    }
+  });
+
+  document.getElementById("videoModalTitle").textContent = `📺 Directs & Vidéos du Club (YouTube & Twitch) (${allClips.length})`;
+
+  if (allClips.length === 0) {
+    document.getElementById("videoModalBody").innerHTML = `
+      <div style="padding:22px;text-align:center;color:#475569;font-weight:800;line-height:1.5;">
+        Aucun direct YouTube ou Twitch enregistré pour le moment.<br>
+        <span style="font-size:0.82rem;font-weight:600;">Le Staff (PIN 5900) peut ajouter un flux depuis l'onglet « 📺 Médias Live » d'un match.</span>
+      </div>
+    `;
+    document.getElementById("videoModal").classList.add("open");
+    return;
+  }
+
+  const safeIdx = Math.max(0, Math.min(allClips.length - 1, selectedGlobalIdx));
+  const active = allClips[safeIdx];
+
+  const listHtml = allClips.map((item, i) => `
+    <button class="video-clip-item ${i === safeIdx ? "active-clip" : ""}" onclick="openVideoGalleryModal(${i})">
+      <div class="video-clip-meta">
+        <span class="video-clip-title">${i === safeIdx ? "▶️ " : (item.clip.mediaType === 'twitch' ? "🎮 " : "📺 ")}${item.clip.title} (${item.match.cat})</span>
+        <span class="video-clip-sub">${item.match.date} • ${item.match.home} vs ${item.match.away}</span>
+      </div>
+      <span style="font-size:0.75rem;font-weight:900;color:${item.clip.mediaType === 'twitch' ? '#7C3AED' : '#DC2626'};">Regarder</span>
+    </button>
+  `).join("");
+
+  document.getElementById("videoModalBody").innerHTML = `
+    <div class="video-player-frame-wrap">
+      <iframe src="${active.clip.embedUrl}" title="${active.clip.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+    <div class="video-player-footer">
+      <div>
+        <div style="font-size:0.86rem;font-weight:900;color:#0F172A;">${active.clip.title}</div>
+        <div style="font-size:0.74rem;font-weight:700;color:#475569;">${active.match.cat} • ${active.match.home} vs ${active.match.away}</div>
+      </div>
+      <a class="video-external-link" style="background:${active.clip.mediaType === 'twitch' ? '#9146FF' : '#DC2626'};" href="${active.clip.url}" target="_blank" rel="noopener noreferrer">↗️ Ouvrir sur ${active.clip.mediaType === 'twitch' ? 'Twitch' : 'YouTube'}</a>
+    </div>
+    <div class="video-playlist">${listHtml}</div>
+  `;
+
+  document.getElementById("videoModal").classList.add("open");
+};
+
+window.closeVideoModal = function() {
+  const modal = document.getElementById("videoModal");
+  if (modal) modal.classList.remove("open");
+  const body = document.getElementById("videoModalBody");
+  if (body) body.innerHTML = "";
+};

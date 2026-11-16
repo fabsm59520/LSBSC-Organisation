@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="LSBSC Direct">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="assets/logo-lsbsc.png">
-  <link rel="apple-touch-icon" href="assets/logo-lsbsc.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="mode-tv">
@@ -81,6 +81,7 @@
       </div>
       <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application sur l'écran d'accueil">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
+      <button class="btn-top btn-youtube" onclick="openVideoGalleryModal()" title="Regarder les matchs en direct et replays YouTube du club">📺 Vidéos & Live</button>
       <button class="btn-top btn-logos" onclick="requestPinAccess('logos')">🛡️ Logos</button>
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
       <button class="btn-top btn-cloud" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
@@ -102,7 +103,7 @@
       <div class="week-nav-bar">
         <button class="btn-week" onclick="shiftWeek(-1)">◀ Préc.</button>
         <select id="weekSelect" class="week-select" onchange="selectWeek(this.value)"></select>
-        <button class="btn-week current-wk" onclick="selectWeek('w10')">📅 Actuel</button>
+        <button class="btn-week current-wk" onclick="selectCurrentWeek()">📅 Actuel</button>
         <button class="btn-week" onclick="shiftWeek(1)">Suiv. ▶</button>
       </div>
 
@@ -184,6 +185,7 @@
       <h3>🍔 Buvette & Actualités du Club LSBSC</h3>
       <p id="mobileTickerStaticText" class="mobile-info-body"></p>
       <div class="mobile-info-actions">
+        <button class="btn-action-sm btn-youtube-full" onclick="openVideoGalleryModal()">📺 Regarder les Directs & Vidéos YouTube</button>
         <button class="btn-action-sm btn-save-score" onclick="requestPinAccess('settings')">✏️ Modifier l'annonce Buvette / Sync</button>
         <button class="btn-action-sm btn-set-live" onclick="openFormatOverlay()">🖥️ Changer le format d'affichage (TV / Mobile)</button>
       </div>
@@ -270,6 +272,18 @@
           <button class="btn-action-sm btn-save-score" onclick="saveCloudAndTicker()">💾 Enregistrer</button>
         </div>
       </div>
+    </div>
+  </div>
+
+
+  <!-- ================= MODAL LECTEUR YOUTUBE LIVE & REPLAYS ================= -->
+  <div id="videoModal" class="modal-backdrop">
+    <div class="modal-card video-modal-card">
+      <div class="modal-header">
+        <h3 id="videoModalTitle">📺 Directs & Vidéos LSBSC (YouTube & Twitch)</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeVideoModal()">✖ Fermer</button>
+      </div>
+      <div id="videoModalBody" class="video-modal-body"></div>
     </div>
   </div>
 
