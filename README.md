@@ -11,4 +11,4 @@ Application web progressive (**PWA installable** sur téléphone, tablette, PC e
 3. **Sélection du format au chargement :**
    - **🖥️ Écran TV Salle / PC (Paysage 16:9)** ou **📱 Téléphone (Version Allégée)**.
 4. **Accès sécurisés par Code PIN :**
-   - **Direct & Saisie des scores** (`5900`) et **Gestion Logos & Mascotte** (`9694`).
+   - **Direct & Saisie des scores** (`5900`) et **Gestion Logos & Mascotte** et **Réglages / Bandeau Buvette** (`9694`).

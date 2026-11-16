@@ -851,9 +851,13 @@ window.requestPinAccess = function(target) {
   state.pinTarget = target;
   state.pinBuffer = "";
   const titleEl = document.getElementById("pinModalTitle");
-  titleEl.textContent = target === "logos"
-    ? "🛡️ Accès Protégé — Logos & Mascotte"
-    : "🔒 Accès Staff — Direct & Saisie Résultats";
+  if (target === "logos") {
+    titleEl.textContent = "🛡️ Accès Protégé — Logos & Mascotte";
+  } else if (target === "settings") {
+    titleEl.textContent = "⚙️ Accès Protégé — Réglages & Buvette";
+  } else {
+    titleEl.textContent = "🔒 Accès Staff — Direct & Saisie Résultats";
+  }
   document.getElementById("pinDisplayBox").textContent = "";
   document.getElementById("pinModal").classList.add("open");
 };
@@ -874,12 +878,16 @@ window.pressPinDigit = function(d) {
 };
 
 function verifyPinCode() {
-  const expected = state.pinTarget === "logos" ? state.pinLogos : state.pinStaff;
+  const expected = (state.pinTarget === "logos" || state.pinTarget === "settings")
+    ? state.pinLogos
+    : state.pinStaff;
   if (state.pinBuffer === expected) {
     document.getElementById("pinModal").classList.remove("open");
     if (state.pinTarget === "logos") {
       state.logosUnlocked = true;
       openLogosManagerModal();
+    } else if (state.pinTarget === "settings") {
+      openCloudModal();
     } else {
       state.staffUnlocked = true;
       renderAll();

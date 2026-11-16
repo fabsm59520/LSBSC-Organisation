@@ -83,7 +83,7 @@
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
       <button class="btn-top btn-logos" onclick="requestPinAccess('logos')">🛡️ Logos</button>
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
-      <button class="btn-top btn-cloud" onclick="openCloudModal()" title="Bandeau Buvette & Synchronisation">⚙️</button>
+      <button class="btn-top btn-cloud" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
     </div>
   </header>
 
@@ -181,7 +181,7 @@
       <h3>🍔 Buvette & Actualités du Club LSBSC</h3>
       <p id="mobileTickerStaticText" class="mobile-info-body"></p>
       <div class="mobile-info-actions">
-        <button class="btn-action-sm btn-save-score" onclick="openCloudModal()">✏️ Modifier l'annonce Buvette / Sync</button>
+        <button class="btn-action-sm btn-save-score" onclick="requestPinAccess('settings')">✏️ Modifier l'annonce Buvette / Sync</button>
         <button class="btn-action-sm btn-set-live" onclick="openFormatOverlay()">🖥️ Changer le format d'affichage (TV / Mobile)</button>
       </div>
     </section>
