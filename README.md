@@ -1,26 +1,15 @@
-# 🏀 LSBSC South Lille — Écran Interactif Programmation & Résultats
+# 🏀 LSBSC South Lille — Écran Interactif (TV 16:9 & Version Allégée Téléphone)
 
-Application web interactive au **format Paysage (16:9 plein écran)** conçue pour le **Lille Sud Basketball Sporting Club (LSBSC - South Lille)**.
+Application web interactive conçue pour le **Lille Sud Basketball Sporting Club (LSBSC - South Lille)** avec **sélection du format d'affichage au démarrage**.
 
-## ✨ Fonctionnalités principales
-- **Affichage Paysage 2 Colonnes sans défilement de page :**
-  - **À gauche :** Programmation des matchs du week-end avec leurs scores finaux (Victoire en vert, Défaite en rouge), navigation vers les **semaines précédentes et suivantes**, et filtres par catégories (`U9` à `Seniors`).
-  - **À droite (Haut) :** Grand Scoreboard de la rencontre en cours ou sélectionnée (adapté aux matchs avec ou sans table de marque en direct).
-  - **À droite (Bas) :** Encart automatique du **Match suivant**.
-- **Identité visuelle du club intégrée :**
-  - Logo officiel **South Lille (LSBSC)** et **Mascotte du Lion** détourés en haute définition dans `assets/`.
-  - Blasons générés automatiquement pour les 44 clubs adverses du calendrier Kalisport (et personnalisables par import d'image).
-- **Accès sécurisés par code PIN :**
-  - **Saisie des résultats (Mode Staff)** protégée par code PIN.
-  - **Gestion des Logos & Mascotte** protégée par code PIN dédié.
-
-## 🚀 Déploiement sur GitHub Pages
-1. Créez un nouveau dépôt sur GitHub (ex: `lsbsc-ecran-matchs`).
-2. Déposez tous les fichiers et dossiers de cette archive à la racine du dépôt :
-   - `index.html`
-   - `css/style.css`
-   - `js/app.js`
-   - `data/matches.json`
-   - `assets/logo-lsbsc.png`
-   - `assets/mascotte-lsbsc.png`
-3. Dans **Settings > Pages**, sélectionnez la branche `main` (dossier `/root`) puis cliquez sur **Save**.
+## ✨ Nouveautés de cette version
+1. **Sélection du format au chargement :**
+   - **🖥️ Écran TV Salle / PC (Paysage 16:9) :** Affichage complet en 2 colonnes sans défilement de page avec bandeau défilant Buvette.
+   - **📱 Téléphone (Version Allégée) :** Interface épurée, sans animations lourdes, organisée autour de 3 onglets rapides (**🔴 Direct & Suivant**, **📅 Matchs Week-end**, **🍔 Infos Club**) et d'une Table de Marque tactile adaptée aux pouces.
+   - Bouton **« 📱 Version Mobile / 🖥️ Mode TV »** en haut à droite pour basculer à tout moment.
+2. **Suivi en Direct & Saisie Après-Match :**
+   - Table de marque en direct (`+1`, `+2`, `+3`, `-1`, fautes d'équipe avec voyant **BONUS**, quart-temps) + saisie rapide des scores finaux après match.
+   - Synchronisation temps réel entre la TV de la salle, les PC et les téléphones.
+3. **Accès protégés par Code PIN :**
+   - **Direct & Saisie des scores** protégé par le code PIN Staff.
+   - **Gestion Logos & Mascotte** protégé par son code PIN dédié (`9694`).

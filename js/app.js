@@ -1,7 +1,6 @@
 /* ==========================================================================
    LILLE SUD BASKETBALL SPORTING CLUB (LSBSC - SOUTH LILLE)
-   Application Interactive — Direct (Table de Marque), Saisie Finale,
-   Logos, Sécurité PIN & Synchronisation Temps Réel Multi-Appareils
+   Sélection de Format (TV 16:9 / Téléphone Allégé), Direct, Saisie & PIN
    ========================================================================== */
 
 const DEFAULT_MATCHES = [{"id": 1, "wk": "w01", "wkLabel": "Week-end du 05 Sep. 2026", "wkShort": "05 Sep", "date": "SAM. 05 SEP.", "time": "18H00", "home": "SEQUEDIN OSM", "away": "U18 GARÇONS CADETS", "sh": 86, "sa": 55, "status": "finished", "cat": "U18M", "comp": "Amical", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 2, "wk": "w02", "wkLabel": "Week-end des 12 & 13 Sep. 2026", "wkShort": "12-13 Sep", "date": "SAM. 12 SEP.", "time": "15H30", "home": "U15 FILLES MINIMES", "away": "TOURCOING US F - 1", "sh": 27, "sa": 46, "status": "finished", "cat": "U15F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 3, "wk": "w02", "wkLabel": "Week-end des 12 & 13 Sep. 2026", "wkShort": "12-13 Sep", "date": "SAM. 12 SEP.", "time": "18H30", "home": "LILLE-EST BASKET - 1", "away": "U18 FILLES CADETTE", "sh": 66, "sa": 21, "status": "finished", "cat": "U18F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 4, "wk": "w02", "wkLabel": "Week-end des 12 & 13 Sep. 2026", "wkShort": "12-13 Sep", "date": "DIM. 13 SEP.", "time": "14H00", "home": "LOMME BASKET CLUB (LBC) - 1", "away": "U18 GARÇONS CADETS", "sh": 87, "sa": 45, "status": "finished", "cat": "U18M", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 5, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "SAM. 19 SEP.", "time": "17H00", "home": "U13 FILLE BENJAMINES", "away": "BAILLEULOIS B C", "sh": 45, "sa": 27, "status": "finished", "cat": "U13F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 6, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "SAM. 19 SEP.", "time": "17H00", "home": "COMINOISE LL", "away": "U11 FILLES POUSSINES", "sh": 15, "sa": 27, "status": "finished", "cat": "U11F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 7, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "SAM. 19 SEP.", "time": "18H30", "home": "U18 FILLES CADETTE", "away": "WATTRELOS BC", "sh": 55, "sa": 44, "status": "finished", "cat": "U18F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 8, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "SAM. 19 SEP.", "time": "20H30", "home": "SENIORS MASCULINS 2", "away": "BAUVIN B C - 2", "sh": 50, "sa": 61, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 9, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "DIM. 20 SEP.", "time": "10H30", "home": "U18 GARÇONS CADETS", "away": "ORCHESIEN B C - 2", "sh": 60, "sa": 112, "status": "finished", "cat": "U18M", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 10, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "DIM. 20 SEP.", "time": "11H00", "home": "ESTAIRES BC - 2", "away": "SENIORS MASCULINS 1", "sh": 35, "sa": 72, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 11, "wk": "w03", "wkLabel": "Week-end des 19 & 20 Sep. 2026", "wkShort": "19-20 Sep", "date": "DIM. 20 SEP.", "time": "14H00", "home": "LOMME BASKET CLUB (LBC)", "away": "U15 FILLES MINIMES", "sh": 44, "sa": 34, "status": "finished", "cat": "U15F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 12, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "SAM. 26 SEP.", "time": "17H00", "home": "U15 FILLES MINIMES", "away": "WASQUEHAL FEM B - 1", "sh": 11, "sa": 81, "status": "finished", "cat": "U15F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 13, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "SAM. 26 SEP.", "time": "17H00", "home": "LOMME BASKET CLUB (LBC)", "away": "U13 FILLE BENJAMINES", "sh": 31, "sa": 31, "status": "finished", "cat": "U13F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 14, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "SAM. 26 SEP.", "time": "18H30", "home": "U18 GARÇONS CADETS", "away": "WAMBRECHIES J - 1", "sh": 46, "sa": 86, "status": "finished", "cat": "U18M", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 15, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "SAM. 26 SEP.", "time": "18H30", "home": "WAMBRECHIES J", "away": "U18 FILLES CADETTE", "sh": 40, "sa": 32, "status": "finished", "cat": "U18F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 16, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "SAM. 26 SEP.", "time": "20H30", "home": "SENIORS MASCULINS 1", "away": "HELLEMMES LILLE BFC - 3", "sh": 62, "sa": 57, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 17, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "DIM. 27 SEP.", "time": "11H00", "home": "U9 MIXTE MINI-POUSSINS", "away": "CHAPELLE D'ARMENTIERES OSM", "sh": 6, "sa": 50, "status": "finished", "cat": "U9", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 18, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "DIM. 27 SEP.", "time": "15H00", "home": "HELLEMMES LILLE BFC - 2", "away": "SENIORS MASCULINS 2", "sh": 56, "sa": 39, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 19, "wk": "w04", "wkLabel": "Week-end des 26 & 27 Sep. 2026", "wkShort": "26-27 Sep", "date": "DIM. 27 SEP.", "time": "16H00", "home": "U11 FILLES POUSSINES", "away": "SPORTS OUVRIERS ARMENTIEROIS - 1", "sh": 35, "sa": 8, "status": "finished", "cat": "U11F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 20, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "SAM. 03 OCT.", "time": "14H00", "home": "RONCHIN BC - 1", "away": "U11 FILLES POUSSINES", "sh": 14, "sa": 36, "status": "finished", "cat": "U11F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 21, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "SAM. 03 OCT.", "time": "15H30", "home": "HEM S B B", "away": "U15 FILLES MINIMES", "sh": 48, "sa": 18, "status": "finished", "cat": "U15F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 22, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "SAM. 03 OCT.", "time": "17H00", "home": "U18 FILLES CADETTE", "away": "MARCQ EN BAROEUL ASJ", "sh": 37, "sa": 70, "status": "finished", "cat": "U18F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 23, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "SAM. 03 OCT.", "time": "18H30", "home": "SENIORS MASCULINS 1", "away": "CHERENG ABC - 3", "sh": 103, "sa": 29, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 24, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "SAM. 03 OCT.", "time": "20H30", "home": "SENIORS MASCULINS 2", "away": "HEM S B B - 2", "sh": 67, "sa": 69, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 25, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "SAM. 03 OCT.", "time": "20H30", "home": "CROIX BASKET BALL - 1", "away": "U18 GARÇONS CADETS", "sh": 86, "sa": 65, "status": "finished", "cat": "U18M", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 26, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "DIM. 04 OCT.", "time": "09H00", "home": "SAINT ANDRE US", "away": "U13 FILLE BENJAMINES", "sh": 19, "sa": 64, "status": "finished", "cat": "U13F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 27, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "DIM. 04 OCT.", "time": "11H00", "home": "U9 MIXTE MINI-POUSSINS", "away": "LILLE-EST BASKET", "sh": 10, "sa": 10, "status": "finished", "cat": "U9", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 28, "wk": "w05", "wkLabel": "Week-end des 03 & 04 Oct. 2026", "wkShort": "03-04 Oct", "date": "MER. 07 OCT.", "time": "20H30", "home": "CTC PÉVÈLE TEMPLEUVE", "away": "U18 GARÇONS CADETS", "sh": 160, "sa": 38, "status": "finished", "cat": "U18M", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 29, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "SAM. 10 OCT.", "time": "15H30", "home": "LOMME BASKET CLUB (LBC) - 2", "away": "U9 MIXTE MINI-POUSSINS", "sh": 2, "sa": 12, "status": "finished", "cat": "U9", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 30, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "SAM. 10 OCT.", "time": "17H00", "home": "COMINOISE LL", "away": "U15 FILLES MINIMES", "sh": 75, "sa": 31, "status": "finished", "cat": "U15F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 31, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "SAM. 10 OCT.", "time": "17H00", "home": "U13 FILLE BENJAMINES", "away": "SPORTS OUVRIERS ARMENTIEROIS - 2", "sh": 52, "sa": 17, "status": "finished", "cat": "U13F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 32, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "SAM. 10 OCT.", "time": "18H30", "home": "U18 FILLES CADETTE", "away": "LOOSSOIS BASKET CLUB", "sh": 61, "sa": 23, "status": "finished", "cat": "U18F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 33, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "SAM. 10 OCT.", "time": "20H30", "home": "BASKET CLUB LEZENNOIS", "away": "SENIORS MASCULINS 2", "sh": 75, "sa": 34, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 34, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "DIM. 11 OCT.", "time": "10H30", "home": "VILLENEUVE D'ASCQ ESB - 2", "away": "SENIORS MASCULINS 1", "sh": 47, "sa": 51, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 35, "wk": "w06", "wkLabel": "Week-end des 10 & 11 Oct. 2026", "wkShort": "10-11 Oct", "date": "DIM. 11 OCT.", "time": "16H00", "home": "U11 FILLES POUSSINES", "away": "MARCQ EN BAROEUL ASJ", "sh": 34, "sa": 24, "status": "finished", "cat": "U11F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 36, "wk": "w07", "wkLabel": "Week-end des 17 & 18 Oct. 2026", "wkShort": "17-18 Oct", "date": "SAM. 17 OCT.", "time": "17H00", "home": "U9 MIXTE MINI-POUSSINS", "away": "SEQUEDIN OSM", "sh": 10, "sa": 21, "status": "finished", "cat": "U9", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 37, "wk": "w07", "wkLabel": "Week-end des 17 & 18 Oct. 2026", "wkShort": "17-18 Oct", "date": "SAM. 17 OCT.", "time": "20H30", "home": "SENIORS MASCULINS 1", "away": "TOURCOING IC - 3", "sh": 71, "sa": 64, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 38, "wk": "w07", "wkLabel": "Week-end des 17 & 18 Oct. 2026", "wkShort": "17-18 Oct", "date": "DIM. 18 OCT.", "time": "09H00", "home": "COMINOISE L L - 3", "away": "SENIORS MASCULINS 2", "sh": 113, "sa": 52, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 39, "wk": "w08", "wkLabel": "Week-end du 24 Oct. 2026", "wkShort": "24 Oct", "date": "SAM. 24 OCT.", "time": "14H00", "home": "COEUR DE FLANDRE BASKET BALL - 1", "away": "U9 MIXTE MINI-POUSSINS", "sh": 29, "sa": 9, "status": "finished", "cat": "U9", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 40, "wk": "w09", "wkLabel": "Week-end du 07 Nov. 2026", "wkShort": "07 Nov", "date": "SAM. 07 NOV.", "time": "18H30", "home": "BAUVIN B C - 2", "away": "SENIORS MASCULINS 2", "sh": 91, "sa": 46, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 41, "wk": "w09", "wkLabel": "Week-end du 07 Nov. 2026", "wkShort": "07 Nov", "date": "SAM. 07 NOV.", "time": "20H30", "home": "SENIORS MASCULINS 1", "away": "ESTAIRES BC - 2", "sh": 76, "sa": 48, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 42, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "SAM. 14 NOV.", "time": "14H00", "home": "COEUR DE FLANDRE BASKET BALL - 2", "away": "U9 MIXTE MINI-POUSSINS", "sh": 6, "sa": 52, "status": "finished", "cat": "U9", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 43, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "SAM. 14 NOV.", "time": "17H00", "home": "U11 FILLES POUSSINES", "away": "BEUVRAGES ASM - 1", "sh": 13, "sa": 22, "status": "finished", "cat": "U11F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 44, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "SAM. 14 NOV.", "time": "18H30", "home": "U18 GARÇONS CADETS", "away": "GAYANT BASKET - 2", "sh": 53, "sa": 50, "status": "finished", "cat": "U18M", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 45, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "SAM. 14 NOV.", "time": "20H30", "home": "HELLEMMES LILLE BFC - 3", "away": "SENIORS MASCULINS 1", "sh": 62, "sa": 65, "status": "finished", "cat": "SM1", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 46, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "SAM. 14 NOV.", "time": "20H30", "home": "SENIORS MASCULINS 2", "away": "HELLEMMES LILLE BFC - 2", "sh": 39, "sa": 82, "status": "finished", "cat": "SM2", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 47, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "SAM. 14 NOV.", "time": "20H30", "home": "LAMBERSART J F - 2", "away": "U18 FILLES CADETTE", "sh": 101, "sa": 38, "status": "finished", "cat": "U18F", "comp": "Champ.", "period": "Terminé", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 48, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "DIM. 15 NOV.", "time": "10H30", "home": "U15 FILLES MINIMES", "away": "WORMHOUT AS - 1", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 49, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "DIM. 15 NOV.", "time": "15H30", "home": "U13 FILLE BENJAMINES", "away": "WATTIGNIES/TEMPLEMARS AS", "sh": 28, "sa": 22, "status": "live", "cat": "U13F", "comp": "Champ.", "period": "QT2", "fh": 2, "fa": 3, "liveTracking": true}, {"id": 50, "wk": "w10", "wkLabel": "Week-end des 14 & 15 Nov. 2026", "wkShort": "14-15 Nov", "date": "DIM. 15 NOV.", "time": "17H00", "home": "MINIMES GARCONS U15 M1", "away": "COEUR DE FLANDRE BASKET BALL - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 51, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "14H00", "home": "HOYMILLE ACS", "away": "U11 FILLES POUSSINES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U11F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 52, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "17H00", "home": "THUMERIES A G - 1", "away": "U13 FILLE BENJAMINES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U13F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 53, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "18H30", "home": "CHERENG ABC - 3", "away": "SENIORS MASCULINS 1", "sh": 0, "sa": 0, "status": "upcoming", "cat": "SM1", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 54, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "18H30", "home": "U18 FILLES CADETTE", "away": "VILLENEUVE D'ASCQ ESB - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 55, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "18H30", "home": "SAINT POL SUR MER BC", "away": "U15 FILLES MINIMES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 56, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "20H30", "home": "HEM S B B - 2", "away": "SENIORS MASCULINS 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "SM2", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 57, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "SAM. 21 NOV.", "time": "20H30", "home": "BASKET CLUB PEVELE", "away": "U18 GARÇONS CADETS", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 58, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "DIM. 22 NOV.", "time": "11H00", "home": "U9 MIXTE MINI-POUSSINS", "away": "PHALEMPIN B C", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U9", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 59, "wk": "w11", "wkLabel": "Week-end des 21 & 22 Nov. 2026", "wkShort": "21-22 Nov", "date": "DIM. 22 NOV.", "time": "14H00", "home": "BC BLARINGHEM", "away": "MINIMES GARCONS U15 M1", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 60, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "SAM. 28 NOV.", "time": "15H30", "home": "SAINT POL SUR MER BC", "away": "U11 FILLES POUSSINES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U11F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 61, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "SAM. 28 NOV.", "time": "17H00", "home": "U13 FILLE BENJAMINES", "away": "LEERS OSBB", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U13F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 62, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "SAM. 28 NOV.", "time": "18H30", "home": "SENIORS MASCULINS 1", "away": "VILLENEUVE D'ASCQ ESB - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "SM1", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 63, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "SAM. 28 NOV.", "time": "20H30", "home": "SENIORS MASCULINS 2", "away": "BASKET CLUB LEZENNOIS", "sh": 0, "sa": 0, "status": "upcoming", "cat": "SM2", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 64, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "SAM. 28 NOV.", "time": "20H30", "home": "TOURCOING US F - 1", "away": "U18 FILLES CADETTE", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 65, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "DIM. 29 NOV.", "time": "11H00", "home": "U9 MIXTE MINI-POUSSINS", "away": "BASKET CLUB BONDUES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U9", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 66, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "DIM. 29 NOV.", "time": "14H00", "home": "ESTAIRES BC - 1", "away": "U15 FILLES MINIMES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 67, "wk": "w12", "wkLabel": "Week-end des 28 & 29 Nov. 2026", "wkShort": "28-29 Nov", "date": "DIM. 29 NOV.", "time": "16H00", "home": "U18 GARÇONS CADETS", "away": "LAMBRES BASKET CLUB - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 68, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "SAM. 05 DÉC.", "time": "10H30", "home": "RONCQ U S - 2", "away": "U9 MIXTE MINI-POUSSINS", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U9", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 69, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "SAM. 05 DÉC.", "time": "15H30", "home": "LILLE-EST BASKET", "away": "U13 FILLE BENJAMINES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U13F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 70, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "SAM. 05 DÉC.", "time": "17H00", "home": "U11 FILLES POUSSINES", "away": "DUNKERQUE MALO BASKET CLUB - 1", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U11F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 71, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "SAM. 05 DÉC.", "time": "18H30", "home": "U18 FILLES CADETTE", "away": "RONCHIN BC - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 72, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "SAM. 05 DÉC.", "time": "20H30", "home": "TOURCOING IC - 3", "away": "SENIORS MASCULINS 1", "sh": 0, "sa": 0, "status": "upcoming", "cat": "SM1", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 73, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "SAM. 05 DÉC.", "time": "20H30", "home": "SENIORS MASCULINS 2", "away": "COMINOISE L L - 3", "sh": 0, "sa": 0, "status": "upcoming", "cat": "SM2", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 74, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "DIM. 06 DÉC.", "time": "09H00", "home": "STEENWERCK BC - 2", "away": "MINIMES GARCONS U15 M1", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 75, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "DIM. 06 DÉC.", "time": "10H30", "home": "U15 FILLES MINIMES", "away": "BASKET CLUB BRAY DUNES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 76, "wk": "w13", "wkLabel": "Week-end des 05 & 06 Déc. 2026", "wkShort": "05-06 Déc", "date": "DIM. 06 DÉC.", "time": "17H00", "home": "FRETIN BC", "away": "U18 GARÇONS CADETS", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 77, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "SAM. 12 DÉC.", "time": "14H00", "home": "LILLE-EST BASKET", "away": "U11 FILLES POUSSINES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U11F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 78, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "SAM. 12 DÉC.", "time": "17H00", "home": "U13 FILLE BENJAMINES", "away": "COMINOISE LL", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U13F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 79, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "SAM. 12 DÉC.", "time": "18H30", "home": "ANNOEULLIN B C", "away": "U18 GARÇONS CADETS", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 80, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "SAM. 12 DÉC.", "time": "18H30", "home": "U18 FILLES CADETTE", "away": "DOUAI BASKET FEMININ - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U18F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 81, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "SAM. 12 DÉC.", "time": "18H30", "home": "MARCQ EN BAROEUL ASJ", "away": "U15 FILLES MINIMES", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15F", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 82, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "DIM. 13 DÉC.", "time": "11H00", "home": "U9 MIXTE MINI-POUSSINS", "away": "FRETIN BC - 2", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U9", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}, {"id": 83, "wk": "w14", "wkLabel": "Week-end des 12 & 13 Déc. 2026", "wkShort": "12-13 Déc", "date": "DIM. 13 DÉC.", "time": "16H00", "home": "MINIMES GARCONS U15 M1", "away": "CROIX BASKET BALL - 3", "sh": 0, "sa": 0, "status": "upcoming", "cat": "U15M", "comp": "Champ.", "period": "À venir", "fh": 0, "fa": 0, "liveTracking": false}];
@@ -38,7 +37,6 @@ const CLUB_PALETTES = {
   "FRETIN": ["#166534", "#86EFAC", "FBC"]
 };
 
-// Canal de diffusion temps réel local + Relais Cloud public sans configuration requise
 const DEFAULT_CLOUD_SYNC_URL = "https://jsonblob.com/api/jsonBlob/1306984210485985280";
 let bcChannel = null;
 try {
@@ -53,8 +51,10 @@ const state = {
   selectedMatchId: 49,
   catFilter: "ALL",
   locFilter: "ALL",
+  displayMode: "tv", // 'tv' | 'mobile'
+  mobileTab: "live", // 'live' | 'schedule' | 'buvette'
   staffUnlocked: false,
-  staffMode: "live", // 'live' (Table de marque en direct) | 'final' (Saisie après match)
+  staffMode: "live",
   logosUnlocked: false,
   pinStaff: "5900",
   pinLogos: "9694",
@@ -70,6 +70,79 @@ const state = {
   syncUrl: localStorage.getItem("lsbsc_sync_url") || ""
 };
 
+/* ================= GESTION DU FORMAT (TV 16:9 VS TÉLÉPHONE ALLÉGÉ) ================= */
+function initDisplayFormatSelection() {
+  const isSmallScreen = window.innerWidth <= 820;
+  const recTv = document.getElementById("badgeRecTv");
+  const recMob = document.getElementById("badgeRecMobile");
+  if (recTv && recMob) {
+    recTv.style.display = isSmallScreen ? "none" : "inline-block";
+    recMob.style.display = isSmallScreen ? "inline-block" : "none";
+  }
+
+  const splashLogo = document.getElementById("splashLogoImg");
+  const splashMasc = document.getElementById("splashMascotImg");
+  if (splashLogo) splashLogo.onerror = () => { splashLogo.src = FALLBACK_LOGO_B64; };
+  if (splashMasc) splashMasc.onerror = () => { splashMasc.src = FALLBACK_MASCOT_B64; };
+
+  const savedMode = localStorage.getItem("lsbsc_preferred_format");
+  if (savedMode === "tv" || savedMode === "mobile") {
+    applyDisplayMode(savedMode);
+    document.getElementById("formatSelectorOverlay").classList.remove("open");
+  } else {
+    // Pré-applique visuellement en arrière-plan selon l'appareil tout en laissant le choix au démarrage
+    applyDisplayMode(isSmallScreen ? "mobile" : "tv");
+    document.getElementById("formatSelectorOverlay").classList.add("open");
+  }
+}
+
+function applyDisplayMode(mode) {
+  state.displayMode = mode;
+  document.body.classList.remove("mode-tv", "mode-mobile");
+  document.body.classList.add(mode === "mobile" ? "mode-mobile" : "mode-tv");
+  const switchBtn = document.getElementById("btnSwitchFormat");
+  if (switchBtn) {
+    switchBtn.innerHTML = mode === "mobile" ? "🖥️ Mode TV" : "📱 Version Mobile";
+  }
+  if (mode === "mobile") {
+    switchMobileTab(state.mobileTab || "live");
+  }
+}
+
+window.chooseDisplayMode = function(mode) {
+  const remember = document.getElementById("chkRememberFormat");
+  if (remember && remember.checked) {
+    localStorage.setItem("lsbsc_preferred_format", mode);
+  }
+  applyDisplayMode(mode);
+  document.getElementById("formatSelectorOverlay").classList.remove("open");
+};
+
+window.toggleDisplayMode = function() {
+  const nextMode = state.displayMode === "mobile" ? "tv" : "mobile";
+  localStorage.setItem("lsbsc_preferred_format", nextMode);
+  applyDisplayMode(nextMode);
+};
+
+window.openFormatOverlay = function() {
+  localStorage.removeItem("lsbsc_preferred_format");
+  document.getElementById("formatSelectorOverlay").classList.add("open");
+};
+
+window.switchMobileTab = function(tabName) {
+  state.mobileTab = tabName;
+  document.querySelectorAll(".mob-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabName);
+  });
+  const secLive = document.getElementById("sectionLive");
+  const secSched = document.getElementById("sectionSchedule");
+  const secInfos = document.getElementById("sectionMobileInfos");
+  if (secLive) secLive.classList.toggle("active-mobile-sec", tabName === "live");
+  if (secSched) secSched.classList.toggle("active-mobile-sec", tabName === "schedule");
+  if (secInfos) secInfos.classList.toggle("active-mobile-sec", tabName === "buvette");
+};
+
+/* ================= UTILITAIRES CLUBS & LOGOS ================= */
 function isLSBSC(teamName) {
   const up = (teamName || "").toUpperCase();
   return LSBSC_KEYWORDS.some(k => up.includes(k));
@@ -118,9 +191,10 @@ function getTeamBadgeSrc(teamName) {
   return generateClubSvgDataUri(teamName);
 }
 
+/* ================= SAUVEGARDE & SYNCHRONISATION TEMPS RÉEL ================= */
 function loadLocalData() {
   try {
-    const saved = localStorage.getItem("lsbsc_state_v3");
+    const saved = localStorage.getItem("lsbsc_state_v4");
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed.matches) && parsed.matches.length > 0) state.matches = parsed.matches;
@@ -132,9 +206,7 @@ function loadLocalData() {
         state.clubAssets = Object.assign(state.clubAssets, parsed.clubAssets);
       }
     }
-  } catch (e) {
-    console.warn("Local load warning:", e);
-  }
+  } catch (e) {}
   if (!state.matches || state.matches.length === 0) {
     state.matches = JSON.parse(JSON.stringify(DEFAULT_MATCHES));
   }
@@ -152,10 +224,8 @@ function saveState(pushCloud = true) {
     updatedAt: now
   };
   try {
-    localStorage.setItem("lsbsc_state_v3", JSON.stringify(payload));
-  } catch (e) {
-    console.warn("Storage quota:", e);
-  }
+    localStorage.setItem("lsbsc_state_v4", JSON.stringify(payload));
+  } catch (e) {}
   if (bcChannel) {
     try { bcChannel.postMessage(payload); } catch (e) {}
   }
@@ -186,12 +256,13 @@ async function pollCloudSync() {
       if (data.selectedMatchId) state.selectedMatchId = data.selectedMatchId;
       if (data.tickerText) state.tickerText = data.tickerText;
       if (data.clubAssets) state.clubAssets = Object.assign(state.clubAssets, data.clubAssets);
-      localStorage.setItem("lsbsc_state_v3", JSON.stringify(data));
+      localStorage.setItem("lsbsc_state_v4", JSON.stringify(data));
       renderAll();
     }
   } catch (e) {}
 }
 
+/* ================= RENDU DE L'INTERFACE ================= */
 function getWeeksList() {
   const map = new Map();
   state.matches.forEach(m => {
@@ -261,13 +332,15 @@ function renderHeaderAndTicker() {
   const staffBtn = document.getElementById("btnStaffToggle");
   if (state.staffUnlocked) {
     staffBtn.classList.add("unlocked");
-    staffBtn.innerHTML = "🔓 Mode Staff & Direct (Verrouiller)";
+    staffBtn.innerHTML = "🔓 Staff Actif";
   } else {
     staffBtn.classList.remove("unlocked");
-    staffBtn.innerHTML = "🔒 Direct / Saisie Scores";
+    staffBtn.innerHTML = "🔒 Direct / Scores";
   }
 
   document.getElementById("tickerTextDisplay").textContent = state.tickerText;
+  const mobInfoEl = document.getElementById("mobileTickerStaticText");
+  if (mobInfoEl) mobInfoEl.textContent = state.tickerText;
 }
 
 function renderWeekNavigation() {
@@ -321,8 +394,8 @@ function renderMatchesList() {
 
     const staffRowBtn = state.staffUnlocked
       ? `<div class="row-staff-actions">
-           <button class="btn-row-edit" style="background:#EA580C;" onclick="event.stopPropagation();startLiveMatch(${m.id})" title="Scorer en direct">🏀 Direct</button>
-           <button class="btn-row-edit" onclick="event.stopPropagation();selectMatchForEdit(${m.id})" title="Saisir le score final">✏️ Score</button>
+           <button class="btn-row-edit" style="background:#EA580C;" onclick="event.stopPropagation();startLiveMatch(${m.id})">🏀 Direct</button>
+           <button class="btn-row-edit" onclick="event.stopPropagation();selectMatchForEdit(${m.id})">✏️ Score</button>
          </div>`
       : `<div></div>`;
 
@@ -387,7 +460,6 @@ function renderRightColumn() {
   homeTitle.className = "sb-team-title " + (isLSBSC(current.home) ? "is-lsbsc" : "");
   awayTitle.className = "sb-team-title " + (isLSBSC(current.away) ? "is-lsbsc" : "");
 
-  // Fouls display under team names when match is live
   const homeFoulsEl = document.getElementById("sbHomeFouls");
   const awayFoulsEl = document.getElementById("sbAwayFouls");
   if (homeFoulsEl && awayFoulsEl) {
@@ -427,7 +499,6 @@ function renderRightColumn() {
     `;
   }
 
-  // Staff Panel: Dual Mode -> 1) Table de Marque en Direct (+1/+2/+3, QT, Fautes) OR 2) Saisie Score Final après match
   const staffPanel = document.getElementById("staffScorePanel");
   if (state.staffUnlocked) {
     staffPanel.style.display = "flex";
@@ -440,11 +511,11 @@ function renderRightColumn() {
       staffPanel.innerHTML = `
         <div class="staff-tabs">
           <div style="display:flex;gap:6px;">
-            <button class="staff-tab-btn active" onclick="switchStaffMode('live')">🏀 Table de Marque en Direct</button>
-            <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Saisie Score Après-Match</button>
+            <button class="staff-tab-btn active" onclick="switchStaffMode('live')">🏀 Table Direct</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('final')">✏️ Score Final</button>
           </div>
           <div style="display:flex;gap:5px;">
-            <button class="btn-action-sm btn-save-score" onclick="finishCurrentAndLaunchNext(${current.id})">🏁 Terminer & Lancer Suivant</button>
+            <button class="btn-action-sm btn-save-score" onclick="finishCurrentAndLaunchNext(${current.id})">🏁 Terminer & Suivant</button>
           </div>
         </div>
         <div class="live-table-grid">
@@ -455,7 +526,7 @@ function renderRightColumn() {
             <button class="btn-pt pt-plus3" onclick="updateLivePoints(${current.id}, 'home', 3)">+3</button>
             <button class="btn-pt pt-minus" onclick="updateLivePoints(${current.id}, 'home', -1)">-1</button>
             <button class="btn-pt pt-foul" onclick="updateLiveFouls(${current.id}, 'home', 1)">+Faute (${current.fh || 0})</button>
-            <button class="btn-pt pt-minus" onclick="updateLiveFouls(${current.id}, 'home', -1)" title="Retirer une faute">-F</button>
+            <button class="btn-pt pt-minus" onclick="updateLiveFouls(${current.id}, 'home', -1)">-F</button>
           </div>
           <div class="period-selector">
             ${periodButtonsHtml}
@@ -467,7 +538,7 @@ function renderRightColumn() {
             <button class="btn-pt pt-plus3" onclick="updateLivePoints(${current.id}, 'away', 3)">+3</button>
             <button class="btn-pt pt-minus" onclick="updateLivePoints(${current.id}, 'away', -1)">-1</button>
             <button class="btn-pt pt-foul" onclick="updateLiveFouls(${current.id}, 'away', 1)">+Faute (${current.fa || 0})</button>
-            <button class="btn-pt pt-minus" onclick="updateLiveFouls(${current.id}, 'away', -1)" title="Retirer une faute">-F</button>
+            <button class="btn-pt pt-minus" onclick="updateLiveFouls(${current.id}, 'away', -1)">-F</button>
           </div>
         </div>
       `;
@@ -475,8 +546,8 @@ function renderRightColumn() {
       staffPanel.innerHTML = `
         <div class="staff-tabs">
           <div style="display:flex;gap:6px;">
-            <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Table de Marque en Direct</button>
-            <button class="staff-tab-btn active" onclick="switchStaffMode('final')">✏️ Saisie Score Après-Match</button>
+            <button class="staff-tab-btn" onclick="switchStaffMode('live')">🏀 Table Direct</button>
+            <button class="staff-tab-btn active" onclick="switchStaffMode('final')">✏️ Score Final</button>
           </div>
           <button class="btn-action-sm" style="background:#9A3412;color:#FFF;" onclick="setMatchNoLiveTable(${current.id})">En jeu (sans score direct)</button>
         </div>
@@ -558,6 +629,7 @@ window.startLiveMatch = function(id) {
   }
   saveState(true);
   renderAll();
+  if (state.displayMode === "mobile") switchMobileTab("live");
 };
 
 window.updateLivePoints = function(id, side, delta) {
@@ -595,9 +667,6 @@ window.setLivePeriod = function(id, period) {
   m.status = "live";
   m.liveTracking = true;
   m.period = period;
-  if (period === "QT2" || period === "QT3" || period === "QT4") {
-    // Optionnel : les fautes restent modifiables manuellement
-  }
   saveState(true);
   renderAll();
 };
@@ -669,9 +738,9 @@ window.selectMatch = function(id) {
   state.selectedMatchId = id;
   renderMatchesList();
   renderRightColumn();
-  if (window.innerWidth <= 1024) {
-    const sb = document.querySelector(".live-scoreboard-card");
-    if (sb) sb.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (state.displayMode === "mobile") {
+    switchMobileTab("live");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 };
 
@@ -680,10 +749,14 @@ window.selectMatchForEdit = function(id) {
   state.staffMode = "final";
   renderMatchesList();
   renderRightColumn();
+  if (state.displayMode === "mobile") {
+    switchMobileTab("live");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
   setTimeout(() => {
     const inp = document.getElementById("inpScoreHome");
     if (inp) inp.focus();
-  }, 50);
+  }, 60);
 };
 
 window.saveMatchScore = function(id, newStatus) {
@@ -702,7 +775,7 @@ window.saveMatchScore = function(id, newStatus) {
   renderAll();
 };
 
-/* ================= PIN SECURITY (STAFF vs LOGOS & MASCOTTE) ================= */
+/* ================= PIN SECURITY (STAFF 5900 vs LOGOS & MASCOTTE 9694) ================= */
 window.requestPinAccess = function(target) {
   if (target === "staff" && state.staffUnlocked) {
     state.staffUnlocked = false;
@@ -744,6 +817,7 @@ function verifyPinCode() {
     } else {
       state.staffUnlocked = true;
       renderAll();
+      if (state.displayMode === "mobile") switchMobileTab("live");
     }
   } else {
     const box = document.getElementById("pinDisplayBox");
@@ -841,7 +915,7 @@ function updateClock() {
 }
 
 window.addEventListener("storage", (e) => {
-  if (e.key === "lsbsc_state_v3") {
+  if (e.key === "lsbsc_state_v4") {
     loadLocalData();
     renderAll();
   }
@@ -860,6 +934,7 @@ if (bcChannel) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initDisplayFormatSelection();
   loadLocalData();
   renderAll();
   updateClock();
