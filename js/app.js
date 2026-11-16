@@ -455,10 +455,45 @@ function renderRightColumn() {
 
   const homeTitle = document.getElementById("sbHomeName");
   const awayTitle = document.getElementById("sbAwayName");
+  const homeIsLsbsc = isLSBSC(current.home);
+  const awayIsLsbsc = isLSBSC(current.away);
   homeTitle.textContent = current.home;
   awayTitle.textContent = current.away;
-  homeTitle.className = "sb-team-title " + (isLSBSC(current.home) ? "is-lsbsc" : "");
-  awayTitle.className = "sb-team-title " + (isLSBSC(current.away) ? "is-lsbsc" : "");
+  homeTitle.className = "sb-team-title " + (homeIsLsbsc ? "is-lsbsc" : "");
+  awayTitle.className = "sb-team-title " + (awayIsLsbsc ? "is-lsbsc" : "");
+
+  const homeLocPill = document.getElementById("sbHomeLocPill");
+  const awayLocPill = document.getElementById("sbAwayLocPill");
+  if (homeLocPill) {
+    homeLocPill.textContent = homeIsLsbsc ? "🦁 LSBSC • DOMICILE" : "🏠 LOCAUX (DOMICILE)";
+    homeLocPill.className = "sb-loc-pill" + (homeIsLsbsc ? " lsbsc-pill" : "");
+  }
+  if (awayLocPill) {
+    awayLocPill.textContent = awayIsLsbsc ? "🦁 LSBSC • EXTÉRIEUR" : "🚌 VISITEURS";
+    awayLocPill.className = "sb-loc-pill" + (awayIsLsbsc ? " lsbsc-pill" : "");
+  }
+
+  const summaryBar = document.getElementById("sbMatchSummaryBar");
+  if (summaryBar) {
+    const venueTxt = homeIsLsbsc ? "📍 Salle Municipale de Lille Sud" : "📍 Déplacement à l'extérieur";
+    const diff = Math.abs((current.sh || 0) - (current.sa || 0));
+    let outcomePill = "";
+    if (current.status === "finished") {
+      const out = computeMatchOutcome(current);
+      if (out === "win") outcomePill = `<span class="sb-summary-pill win">🏆 Victoire LSBSC (+${diff} pts)</span>`;
+      else if (out === "loss") outcomePill = `<span class="sb-summary-pill loss">Défaite LSBSC (-${diff} pts)</span>`;
+      else outcomePill = `<span class="sb-summary-pill">Match Nul</span>`;
+    } else if (current.status === "live") {
+      outcomePill = `<span class="sb-summary-pill live">🔥 Écart actuel : ${diff} pt${diff > 1 ? "s" : ""}</span>`;
+    } else {
+      outcomePill = `<span class="sb-summary-pill">⏳ Coup d'envoi ${current.time}</span>`;
+    }
+    summaryBar.innerHTML = `
+      <span class="sb-summary-pill">${venueTxt}</span>
+      <span class="sb-summary-pill">🏀 Catégorie ${current.cat}</span>
+      ${outcomePill}
+    `;
+  }
 
   const homeFoulsEl = document.getElementById("sbHomeFouls");
   const awayFoulsEl = document.getElementById("sbAwayFouls");
@@ -599,6 +634,37 @@ function renderRightColumn() {
       </div>
       <div style="font-size:0.85rem;font-weight:800;color:#64748B;text-align:center;padding:6px;">
         Tous les matchs de cette sélection ont été joués. Utilisez les onglets de semaine pour voir la suite.
+      </div>
+    `;
+  }
+
+  const ovCard = document.getElementById("clubOverviewCard");
+  if (ovCard) {
+    const homeCount = wkMatches.filter(m => isLSBSC(m.home)).length;
+    const awayCount = wkMatches.filter(m => !isLSBSC(m.home)).length;
+    const playedCount = wkMatches.filter(m => m.status === "finished").length;
+    const mascSrc = state.clubAssets.mascot || FALLBACK_MASCOT_B64;
+    ovCard.innerHTML = `
+      <div class="overview-left">
+        <img class="overview-mascot" src="${mascSrc}" onerror="this.src=FALLBACK_MASCOT_B64" alt="Mascotte LSBSC">
+        <div class="overview-texts">
+          <h4>🦁 Lille Sud Basketball Sporting Club</h4>
+          <p>${current.wkLabel} • ${playedCount}/${wkMatches.length} matchs joués</p>
+        </div>
+      </div>
+      <div class="overview-stats">
+        <div class="ov-stat-box">
+          <span class="ov-stat-val">${homeCount}</span>
+          <span class="ov-stat-lbl">Domicile</span>
+        </div>
+        <div class="ov-stat-box">
+          <span class="ov-stat-val">${awayCount}</span>
+          <span class="ov-stat-lbl">Extérieur</span>
+        </div>
+        <div class="ov-stat-box">
+          <span class="ov-stat-val">${wkMatches.length - playedCount}</span>
+          <span class="ov-stat-lbl">À jouer</span>
+        </div>
       </div>
     `;
   }

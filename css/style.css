@@ -1406,3 +1406,203 @@ body.mode-mobile .next-team.home {
 body.mode-mobile .header-controls {
   grid-template-columns: auto auto 1fr 1fr auto;
 }
+
+/* ==========================================================================
+   AMÉLIORATION VISUELLE TV 16:9 — ÉQUILIBRE DE LA COLONNE DROITE (ZÉRO VIDE)
+   ========================================================================== */
+body.mode-tv .right-column {
+  grid-template-rows: 1fr auto auto;
+  gap: 12px;
+}
+
+body.mode-tv .live-scoreboard-card {
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 16px 22px;
+  background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #F1F5F9 100%);
+  border: 2px solid #93C5FD;
+}
+
+body.mode-tv .sb-arena-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 0;
+}
+
+body.mode-tv .sb-arena {
+  width: 100%;
+  gap: 18px;
+  margin: 0;
+}
+
+body.mode-tv .sb-logo-lg {
+  width: 112px;
+  height: 112px;
+  transition: transform 0.2s;
+}
+
+body.mode-tv .sb-team-title {
+  font-size: 1.24rem;
+  max-width: 240px;
+}
+
+body.mode-tv .sb-loc-pill.lsbsc-pill {
+  background: #DBEAFE;
+  color: #1E3A8A;
+  border: 1px solid #93C5FD;
+}
+
+body.mode-tv .big-digits-wrap {
+  padding: 16px 28px;
+  gap: 14px;
+  border-radius: 16px;
+}
+
+body.mode-tv .big-digit {
+  font-size: 3.4rem;
+}
+
+body.mode-tv .big-sep {
+  font-size: 2.4rem;
+}
+
+body.mode-tv .sb-period-pill {
+  font-size: 0.9rem;
+  padding: 5px 16px;
+}
+
+.sb-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 10px;
+  padding: 7px 14px;
+  width: 100%;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1E3A8A;
+}
+
+.sb-summary-pill {
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+}
+.sb-summary-pill.win {
+  background: #DCFCE7;
+  color: #15803D;
+  border-color: #86EFAC;
+}
+.sb-summary-pill.loss {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border-color: #FCA5A5;
+}
+.sb-summary-pill.live {
+  background: #FFEDD5;
+  color: #C2410C;
+  border-color: #FDBA74;
+}
+
+body.mode-tv .scoreboard-Watermark {
+  width: 150px;
+  height: 150px;
+  right: 16px;
+  bottom: 12px;
+  opacity: 0.12;
+}
+
+/* Carte Match Suivant agrandie sur TV */
+body.mode-tv .next-match-card {
+  padding: 14px 18px;
+  gap: 10px;
+}
+body.mode-tv .next-match-card .club-badge-sm {
+  width: 44px;
+  height: 44px;
+}
+body.mode-tv .next-team {
+  font-size: 0.96rem;
+}
+
+/* Carte Synthèse Week-end & Infos Club (Bas Droite TV) */
+.club-overview-card {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+  color: #FFFFFF;
+  border-radius: 14px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 2px solid #F59E0B;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.overview-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.overview-mascot {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.overview-texts h4 {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #FCD34D;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.overview-texts p {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #E2E8F0;
+}
+
+.overview-stats {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ov-stat-box {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  padding: 5px 10px;
+  text-align: center;
+  min-width: 58px;
+}
+.ov-stat-val {
+  display: block;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+.ov-stat-lbl {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #CBD5E1;
+  text-transform: uppercase;
+}
+
+/* Masquer la carte synthèse bas droite en mode téléphone allégé */
+body.mode-mobile .club-overview-card,
+body.mode-mobile .sb-summary-bar {
+  display: none !important;
+}

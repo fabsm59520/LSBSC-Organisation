@@ -131,7 +131,7 @@
       <div id="matchesListContainer" class="matches-list"></div>
     </section>
 
-    <!-- COLONNE DROITE : MATCH EN COURS (HAUT) + MATCH SUIVANT (BAS) -->
+    <!-- COLONNE DROITE : MATCH EN COURS (HAUT) + MATCH SUIVANT (MILIEU) + BILAN CLUB (BAS) -->
     <section id="sectionLive" class="right-column active-mobile-sec">
 
       <!-- HAUT : GRAND SCOREBOARD DU MATCH EN COURS / SÉLECTIONNÉ -->
@@ -143,29 +143,36 @@
           <span id="sbMetaInfo" class="sb-meta-info">DIM. 15 NOV. à 15H30 • U13F</span>
         </div>
 
-        <div class="sb-arena">
-          <div class="sb-team-box">
-            <img id="sbHomeLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Domicile">
-            <div id="sbHomeName" class="sb-team-title">U13 FILLE BENJAMINES</div>
-            <span class="sb-loc-pill">LOCAUX (DOMICILE)</span>
-            <div id="sbHomeFouls"></div>
+        <div class="sb-arena-wrap">
+          <div class="sb-arena">
+            <div class="sb-team-box">
+              <img id="sbHomeLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Domicile">
+              <div id="sbHomeName" class="sb-team-title">U13 FILLE BENJAMINES</div>
+              <span id="sbHomeLocPill" class="sb-loc-pill">LOCAUX (DOMICILE)</span>
+              <div id="sbHomeFouls"></div>
+            </div>
+
+            <div id="sbCenterWrap" class="sb-center-score"></div>
+
+            <div class="sb-team-box">
+              <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
+              <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
+              <span id="sbAwayLocPill" class="sb-loc-pill">VISITEURS</span>
+              <div id="sbAwayFouls"></div>
+            </div>
           </div>
 
-          <div id="sbCenterWrap" class="sb-center-score"></div>
-
-          <div class="sb-team-box">
-            <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
-            <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
-            <span class="sb-loc-pill">VISITEURS</span>
-            <div id="sbAwayFouls"></div>
-          </div>
+          <div id="sbMatchSummaryBar" class="sb-summary-bar"></div>
         </div>
 
         <div id="staffScorePanel" class="staff-score-panel" style="display:none;"></div>
       </div>
 
-      <!-- BAS : ENCART DU MATCH SUIVANT -->
+      <!-- MILIEU : ENCART DU MATCH SUIVANT -->
       <div id="nextMatchContainer" class="next-match-card"></div>
+
+      <!-- BAS : SYNTHÈSE DU WEEK-END & INFOS SALLE (TV) -->
+      <div id="clubOverviewCard" class="club-overview-card"></div>
 
     </section>
 
