@@ -2281,3 +2281,791 @@ document.addEventListener("DOMContentLoaded", () => {
   lastFrameTime = performance.now();
   requestAnimationFrame(stepTvKioskLoop);
 });
+
+
+/* ================= CORRECTIFS : PERSISTANCE BOUTONS GPS (TV & MOBILE) + FORÇAGE PLEIN ÉCRAN ================= */
+
+// 1. Surcharger renderMatchesList et renderRightColumn pour que les boutons GPS restent TOUJOURS affichés
+// même lorsqu'on clique sur un autre match, qu'on filtre par catégorie/lieu ou qu'on change d'onglet.
+const _rawRenderMatchesList = renderMatchesList;
+renderMatchesList = function() {
+  _rawRenderMatchesList();
+  enhanceTvAndAddressesUI();
+};
+
+const _rawRenderRightColumn = renderRightColumn;
+renderRightColumn = function() {
+  _rawRenderRightColumn();
+  enhanceTvAndAddressesUI();
+};
+
+// 2. Enrichir enhanceTvAndAddressesUI pour ajouter aussi le bouton GPS dans les cartes rapides Mobile (#mobileQuickMatchesCard)
+const _prevEnhanceTvAndAddressesUI = enhanceTvAndAddressesUI;
+enhanceTvAndAddressesUI = function() {
+  _prevEnhanceTvAndAddressesUI();
+
+  // Ajouter le bouton GPS sur chaque match de l'aperçu rapide Mobile (onglet Direct & Suivant)
+  const wkMatches = state.matches.filter(m => m.wk === state.currentWeek);
+  const mqItems = document.querySelectorAll("#mobileQuickMatchesCard .mq-item");
+  mqItems.forEach((item, idx) => {
+    const m = wkMatches[idx];
+    if (!m) return;
+    const info = getMatchVenueInfo(m);
+    const mid = item.querySelector(".mq-mid");
+    if (mid && !mid.querySelector(".mq-gps-link")) {
+      mid.insertAdjacentHTML(
+        "beforeend",
+        `<a class="mq-gps-link" href="${info.gpsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${info.salle} (GPS ↗)</a>`
+      );
+    }
+  });
+};
+
+// 3. Forcer l'affichage Plein Écran (Fullscreen API) en Mode TV
+window.forceFullScreen = function() {
+  const docEl = document.documentElement;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(() => {});
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen();
+    }
+  }
+};
+
+window.toggleFullScreen = function() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    window.forceFullScreen();
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+};
+
+// Déclencher automatiquement le plein écran dès qu'on choisit le Mode TV ou au premier clic sur l'écran TV
+const _origChooseDisplayMode = window.chooseDisplayMode;
+window.chooseDisplayMode = function(mode) {
+  _origChooseDisplayMode(mode);
+  if (mode === "tv") {
+    window.forceFullScreen();
+  }
+};
+
+document.addEventListener("click", function(e) {
+  // En mode TV passif (hors saisie dans un champ ou clic sur un lien externe), basculer automatiquement en plein écran au premier clic
+  if (state.displayMode === "tv" && !document.fullscreenElement && !document.webkitFullscreenElement) {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : "";
+    if (!["INPUT", "SELECT", "TEXTAREA", "A"].includes(tag) && !e.target.closest("#btnFullscreen")) {
+      window.forceFullScreen();
+    }
+  }
+}, { passive: true });
+
+// Ré-appliquer immédiatement au chargement
+document.addEventListener("DOMContentLoaded", () => {
+  enhanceTvAndAddressesUI();
+  if (state.displayMode === "tv") {
+    window.forceFullScreen();
+  }
+});
+
+
+/* ================= EXTENSION V21 : DÉMARRAGE DIRECT EN MODE TV & CODES PIN PERSONNES DE CONFIANCE ================= */
+
+const DEFAULT_TRUSTED_PINS = [
+  { id: "tp_1", name: "Table de marque", pin: "5900" },
+  { id: "tp_2", name: "Bénévole / Coach 1", pin: "1111" },
+  { id: "tp_3", name: "Bénévole / Coach 2", pin: "2222" }
+];
+
+state.pinMaster = "9694";
+state.trustedPins = JSON.parse(JSON.stringify(DEFAULT_TRUSTED_PINS));
+state.activeStaffName = "";
+state.isAdminUser = false;
+
+// 1. Charger les codes PIN de confiance depuis le stockage local
+function loadTrustedPinsFromStorage() {
+  try {
+    const saved = localStorage.getItem("lsbsc_state_v4");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed.trustedPins) && parsed.trustedPins.length > 0) {
+        state.trustedPins = parsed.trustedPins;
+      }
+    }
+  } catch (e) {}
+}
+loadTrustedPinsFromStorage();
+
+// 2. Réactiver la fenêtre de choix de format (TV 16:9 vs Téléphone) au démarrage
+function restoreFormatOverlayBehavior() {
+  const overlay = document.getElementById("formatSelectorOverlay");
+  if (overlay) {
+    overlay.style.display = "";
+  }
+  initDisplayFormatSelection();
+}
+restoreFormatOverlayBehavior();
+
+window.openFormatOverlay = function() {
+  localStorage.removeItem("lsbsc_preferred_format");
+  const overlay = document.getElementById("formatSelectorOverlay");
+  if (overlay) {
+    overlay.style.display = "";
+    overlay.classList.add("open");
+  }
+};
+
+// Navigation par tuiles (4 onglets Mobile : 'live', 'schedule', 'buvette', 'infos')
+window.switchMobileTab = function(tabName) {
+  state.mobileTab = tabName;
+  document.querySelectorAll(".mob-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabName);
+  });
+  const secLive = document.getElementById("sectionLive");
+  const secSched = document.getElementById("sectionSchedule");
+  const secInfos = document.getElementById("sectionMobileInfos");
+
+  if (secLive) secLive.classList.toggle("active-mobile-sec", tabName === "live");
+  if (secSched) secSched.classList.toggle("active-mobile-sec", tabName === "schedule");
+  if (secInfos) secInfos.classList.toggle("active-mobile-sec", tabName === "buvette" || tabName === "infos");
+
+  // Afficher soit les tuiles Buvette, soit les tuiles Infos Club selon l'onglet touché
+  const buvMirror = document.getElementById("mobileBuvetteMirror");
+  const infMirror = document.getElementById("mobileInfosMirror");
+  const tickerBody = document.getElementById("mobileTickerStaticText");
+  const infoTitle = secInfos ? secInfos.querySelector("h3") : null;
+
+  if (tabName === "buvette") {
+    if (infoTitle) infoTitle.innerHTML = "🍔 Carte & Tarifs de la Buvette LSBSC";
+    if (buvMirror) buvMirror.style.display = "block";
+    if (infMirror) infMirror.style.display = "none";
+    if (tickerBody) tickerBody.style.display = "none";
+  } else if (tabName === "infos") {
+    if (infoTitle) infoTitle.innerHTML = "ℹ️ Informations & Vie du Club LSBSC";
+    if (buvMirror) buvMirror.style.display = "none";
+    if (infMirror) infMirror.style.display = "block";
+    if (tickerBody) tickerBody.style.display = "block";
+  }
+};
+
+// 3. Sauvegarder et synchroniser les codes PIN de confiance avec Firebase & LocalStorage
+persistLocalOnly = function() {
+  try {
+    localStorage.setItem("lsbsc_state_v4", JSON.stringify({
+      matches: state.matches,
+      tickerText: state.tickerText,
+      clubAssets: state.clubAssets,
+      buvetteMenuText: state.buvetteMenuText,
+      clubInfosText: state.clubInfosText,
+      tvDurations: state.tvDurations,
+      trustedPins: state.trustedPins,
+      updatedAt: state.lastUpdatedAt
+    }));
+  } catch (e) {}
+};
+
+saveState = function(pushCloud = true) {
+  const now = Date.now();
+  state.lastUpdatedAt = now;
+  const payload = {
+    matches: state.matches,
+    tickerText: state.tickerText,
+    clubAssets: state.clubAssets,
+    buvetteMenuText: state.buvetteMenuText,
+    clubInfosText: state.clubInfosText,
+    tvDurations: state.tvDurations,
+    trustedPins: state.trustedPins,
+    updatedAt: now
+  };
+  try {
+    localStorage.setItem("lsbsc_state_v4", JSON.stringify(payload));
+  } catch (e) {}
+  if (bcChannel) {
+    try { bcChannel.postMessage(payload); } catch (e) {}
+  }
+  const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+  if (pushCloud && targetUrl) {
+    fetch(targetUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(() => {
+      const syncEl = document.getElementById("syncStatusBadge");
+      if (syncEl) syncEl.textContent = "● Direct Synchronisé";
+    }).catch(() => {});
+  }
+};
+
+// Surcharger pollCloudSync pour récupérer aussi les nouveaux codes PIN de confiance mis à jour par l'Admin
+pollCloudSync = async function() {
+  if (cloudPolling || document.hidden) return;
+  const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+  if (!targetUrl) return;
+  cloudPolling = true;
+  try {
+    const light = cloudLightUrl(targetUrl);
+    if (light) {
+      const r = await fetch(light);
+      if (!r.ok) return;
+      const ts = await r.json();
+      if (typeof ts !== "number" || ts <= state.lastUpdatedAt) return;
+    }
+    const res = await fetch(targetUrl, { headers: { "Accept": "application/json" } });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && Array.isArray(data.matches) && data.updatedAt && data.updatedAt > state.lastUpdatedAt) {
+      state.lastUpdatedAt = data.updatedAt;
+      state.matches = overlaySchedule(data.matches);
+      if (data.tickerText) state.tickerText = data.tickerText;
+      if (data.buvetteMenuText) state.buvetteMenuText = data.buvetteMenuText;
+      if (data.clubInfosText) state.clubInfosText = data.clubInfosText;
+      if (data.tvDurations) state.tvDurations = Object.assign(state.tvDurations, data.tvDurations);
+      if (Array.isArray(data.trustedPins)) state.trustedPins = data.trustedPins;
+      if (data.clubAssets) state.clubAssets = Object.assign(state.clubAssets, data.clubAssets);
+      persistLocalOnly();
+      renderAll();
+    }
+  } catch (e) {
+  } finally {
+    cloudPolling = false;
+  }
+};
+
+// 4. Vérification multi-PIN : Code Maître Admin (9694) vs Codes PIN Personnes de Confiance
+window.requestPinAccess = function(target) {
+  if (target === "staff" && state.staffUnlocked) {
+    state.staffUnlocked = false;
+    state.isAdminUser = false;
+    state.activeStaffName = "";
+    renderAll();
+    return;
+  }
+  // Si l'utilisateur est déjà connecté en tant qu'Admin Maître (9694), ouvrir directement les fenêtres de réglages ou logos
+  if ((target === "settings" || target === "logos") && state.staffUnlocked && state.isAdminUser) {
+    if (target === "logos") {
+      state.logosUnlocked = true;
+      openLogosManagerModal();
+    } else {
+      openCloudModal();
+    }
+    return;
+  }
+
+  state.pinTarget = target;
+  state.pinBuffer = "";
+  const titleEl = document.getElementById("pinModalTitle");
+  if (target === "logos") {
+    titleEl.textContent = "🛡️ Code Admin Requis — Logos & Mascotte";
+  } else if (target === "settings") {
+    titleEl.textContent = "⚙️ Code Admin Requis — Réglages & Buvette";
+  } else {
+    titleEl.textContent = "🔒 Code PIN — Direct / Scores (Staff ou Admin)";
+  }
+  document.getElementById("pinDisplayBox").textContent = "";
+  document.getElementById("pinModal").classList.add("open");
+};
+
+window.pressPinDigit = function(d) {
+  if (d === "C") {
+    state.pinBuffer = "";
+  } else if (d === "OK") {
+    verifyMultiUserPinCode();
+    return;
+  } else if (state.pinBuffer.length < 6) {
+    state.pinBuffer += String(d);
+  }
+  document.getElementById("pinDisplayBox").textContent = "•".repeat(state.pinBuffer.length);
+
+  // Vérification automatique dès que le code saisi correspond à un code à 4 chiffres connu
+  if (state.pinBuffer.length >= 4) {
+    const code = state.pinBuffer;
+    const isAdminMatch = (code === state.pinMaster);
+    const isTrustedMatch = (state.pinTarget === "staff") && (state.trustedPins || []).some(u => String(u.pin).trim() === code);
+    if (isAdminMatch || isTrustedMatch || state.pinBuffer.length === 4) {
+      setTimeout(verifyMultiUserPinCode, 120);
+    }
+  }
+};
+
+function verifyMultiUserPinCode() {
+  const code = (state.pinBuffer || "").trim();
+  if (!code) return;
+
+  // Pour Logos et Réglages/Buvette : seul le code Admin Maître (9694) est autorisé
+  if (state.pinTarget === "logos" || state.pinTarget === "settings") {
+    if (code === state.pinMaster) {
+      state.staffUnlocked = true;
+      state.isAdminUser = true;
+      state.activeStaffName = "Admin";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      if (state.pinTarget === "logos") {
+        state.logosUnlocked = true;
+        openLogosManagerModal();
+      } else {
+        openCloudModal();
+      }
+      return;
+    }
+  } else {
+    // Pour Direct / Scores : accepte soit le code Admin Maître (9694), soit le code PIN d'une personne de confiance
+    if (code === state.pinMaster) {
+      state.staffUnlocked = true;
+      state.isAdminUser = true;
+      state.activeStaffName = "Admin";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      if (state.displayMode === "mobile") switchMobileTab("live");
+      return;
+    }
+
+    const trustedUser = (state.trustedPins || []).find(u => String(u.pin).trim() === code);
+    if (trustedUser) {
+      state.staffUnlocked = true;
+      state.isAdminUser = false;
+      state.activeStaffName = trustedUser.name || "Staff";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      if (state.displayMode === "mobile") switchMobileTab("live");
+      return;
+    }
+  }
+
+  // Code erroné
+  const box = document.getElementById("pinDisplayBox");
+  if (box) {
+    box.style.borderColor = "#DC2626";
+    box.textContent = "CODE ERRONÉ";
+    state.pinBuffer = "";
+    setTimeout(() => {
+      box.style.borderColor = "#CBD5E1";
+      box.textContent = "";
+    }, 900);
+  }
+}
+
+// Afficher le nom de la personne de confiance connectée sur le bouton en haut de l'écran
+const _prevRenderHeaderAndTicker = renderHeaderAndTicker;
+renderHeaderAndTicker = function() {
+  _prevRenderHeaderAndTicker();
+  const staffBtn = document.getElementById("btnStaffToggle");
+  if (staffBtn) {
+    if (state.staffUnlocked) {
+      staffBtn.classList.add("unlocked");
+      const label = state.activeStaffName ? `🔓 Direct : ${state.activeStaffName}` : "🔓 Staff Actif";
+      staffBtn.innerHTML = label;
+    } else {
+      staffBtn.classList.remove("unlocked");
+      staffBtn.innerHTML = "🔒 Direct / Scores";
+    }
+  }
+};
+
+// Tracer le nom de la personne de confiance qui met à jour un score
+function stampMatchScorer(matchId) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (m && state.activeStaffName) {
+    m.updatedBy = state.activeStaffName;
+  }
+}
+
+const _prevUpdateLivePoints = window.updateLivePoints;
+window.updateLivePoints = function(id, side, delta) {
+  stampMatchScorer(id);
+  _prevUpdateLivePoints(id, side, delta);
+};
+
+const _prevSaveMatchScore = window.saveMatchScore;
+window.saveMatchScore = function(id, newStatus) {
+  stampMatchScorer(id);
+  _prevSaveMatchScore(id, newStatus);
+};
+
+// 5. Interface de gestion des codes PIN Personnes de Confiance dans la modale Réglages & Buvette (⚙️)
+function renderTrustedPinsManager() {
+  const container = document.getElementById("trustedPinsListContainer");
+  if (!container) return;
+  if (!Array.isArray(state.trustedPins) || state.trustedPins.length === 0) {
+    container.innerHTML = `<div style="font-size:0.78rem;color:#64748B;font-weight:700;padding:6px;">Aucun code PIN secondaire configuré.</div>`;
+    return;
+  }
+  container.innerHTML = state.trustedPins.map((u, idx) => `
+    <div class="trusted-pin-row">
+      <div class="trusted-pin-info">
+        <span style="font-size:1rem;">👤</span>
+        <input type="text" value="${(u.name || "").replace(/"/g, "&quot;")}" onchange="updateTrustedPinEntry(${idx}, 'name', this.value)" style="flex:1;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:0.82rem;font-weight:800;color:#0F172A;" title="Nom de la personne de confiance">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:0.72rem;font-weight:800;color:#475569;">PIN :</span>
+        <input type="text" class="trusted-pin-input-edit" inputmode="numeric" maxlength="6" value="${(u.pin || "").replace(/"/g, "&quot;")}" onchange="updateTrustedPinEntry(${idx}, 'pin', this.value)" title="Modifier le code PIN">
+        <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#B91C1C;padding:5px 8px;" onclick="removeTrustedPinUser(${idx})" title="Supprimer cet accès">🗑️</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+window.updateTrustedPinEntry = function(idx, field, val) {
+  if (!state.trustedPins || !state.trustedPins[idx]) return;
+  const clean = (val || "").trim();
+  if (!clean) return;
+  if (field === "pin" && !/^\d{4,6}$/.test(clean)) {
+    alert("Le code PIN doit contenir entre 4 et 6 chiffres.");
+    renderTrustedPinsManager();
+    return;
+  }
+  state.trustedPins[idx][field] = clean;
+  saveState(true);
+  renderTrustedPinsManager();
+};
+
+window.addTrustedPinUser = function() {
+  const nameInp = document.getElementById("inpNewTrustedName");
+  const pinInp = document.getElementById("inpNewTrustedPin");
+  const name = nameInp ? nameInp.value.trim() : "";
+  const pin = pinInp ? pinInp.value.trim() : "";
+
+  if (!name) {
+    alert("Veuillez indiquer le prénom ou le rôle de la personne de confiance (ex : Sarah, Noah, Coach U13...).");
+    return;
+  }
+  if (!/^\d{4,6}$/.test(pin)) {
+    alert("Veuillez saisir un code PIN de 4 à 6 chiffres (ex : 1234).");
+    return;
+  }
+  if (pin === state.pinMaster || (state.trustedPins || []).some(u => String(u.pin).trim() === pin)) {
+    alert("Ce code PIN est déjà utilisé. Choisissez un code différent.");
+    return;
+  }
+
+  if (!Array.isArray(state.trustedPins)) state.trustedPins = [];
+  state.trustedPins.push({
+    id: "tp_" + Date.now(),
+    name: name,
+    pin: pin
+  });
+
+  if (nameInp) nameInp.value = "";
+  if (pinInp) pinInp.value = "";
+  saveState(true);
+  renderTrustedPinsManager();
+};
+
+window.removeTrustedPinUser = function(idx) {
+  if (!state.trustedPins || !state.trustedPins[idx]) return;
+  const target = state.trustedPins[idx];
+  if (confirm(`Supprimer l'accès Direct / Scores de « ${target.name} » (PIN ${target.pin}) ?`)) {
+    state.trustedPins.splice(idx, 1);
+    saveState(true);
+    renderTrustedPinsManager();
+  }
+};
+
+// Surcharger openCloudModal pour afficher la liste des codes PIN de confiance à chaque ouverture
+const _prevOpenCloudModal = window.openCloudModal;
+window.openCloudModal = function() {
+  _prevOpenCloudModal();
+  renderTrustedPinsManager();
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  restoreFormatOverlayBehavior();
+  loadTrustedPinsFromStorage();
+  renderAll();
+});
+
+
+/* ================= EXTENSION V23 : TUILE SÉLECTION D'ÉQUIPE & TOUS SES MATCHS (PASSÉS / À VENIR) SUR MOBILE ================= */
+
+const LSBSC_TEAMS_CATALOG = [
+  { cat: "U9",   short: "U9 Mixte",       fullName: "U9 Mixte Mini-Poussins" },
+  { cat: "U11F", short: "U11F Poussines", fullName: "U11 Filles Poussines" },
+  { cat: "U13F", short: "U13F Benjamines",fullName: "U13 Filles Benjamines" },
+  { cat: "U15F", short: "U15F Minimes",   fullName: "U15 Filles Minimes" },
+  { cat: "U15M", short: "U15M Minimes G", fullName: "U15 Garçons Minimes" },
+  { cat: "U18F", short: "U18F Cadettes",  fullName: "U18 Filles Cadettes" },
+  { cat: "U18M", short: "U18M Cadets",    fullName: "U18 Garçons Cadets" },
+  { cat: "SM1",  short: "Seniors M1",     fullName: "Seniors Masculins 1" },
+  { cat: "SM2",  short: "Seniors M2",     fullName: "Seniors Masculins 2" }
+];
+
+state.mobileSelectedTeamCat = localStorage.getItem("lsbsc_mob_selected_team") || "";
+state.mobileTeamTimeFilter = "ALL"; // 'ALL' | 'UPCOMING' | 'PAST'
+state.mobileTeamGridCollapsed = false;
+
+window.selectMobileTeam = function(catCode) {
+  state.mobileSelectedTeamCat = catCode || "";
+  if (catCode) {
+    localStorage.setItem("lsbsc_mob_selected_team", catCode);
+    state.mobileTeamGridCollapsed = true;
+  } else {
+    localStorage.removeItem("lsbsc_mob_selected_team");
+    state.mobileTeamGridCollapsed = false;
+  }
+  const tabLbl = document.getElementById("mobTabTeamsLbl");
+  if (tabLbl) {
+    tabLbl.textContent = catCode ? `Équipe ${catCode}` : "Sélection Équipe";
+  }
+  renderMobileTeamsSection();
+  setTimeout(() => {
+    const banner = document.getElementById("mobSelectedTeamAnchor");
+    if (banner && catCode) {
+      banner.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, 60);
+};
+
+window.toggleMobileTeamGrid = function() {
+  state.mobileTeamGridCollapsed = !state.mobileTeamGridCollapsed;
+  renderMobileTeamsSection();
+};
+
+window.setMobileTeamTimeFilter = function(filterMode) {
+  state.mobileTeamTimeFilter = filterMode || "ALL";
+  renderMobileTeamsSection();
+};
+
+function renderSingleMobileMatchTile(m) {
+  const outcome = computeMatchOutcome(m);
+  const homeUs = isLSBSC(m.home);
+  const awayUs = isLSBSC(m.away);
+  const info = getMatchVenueInfo(m);
+
+  let scoreHtml = "";
+  let tagHtml = "";
+
+  if (m.status === "postponed") {
+    scoreHtml = `<div class="score-pill postponed">📅 REPORTÉ</div>`;
+    tagHtml = `<span class="res-tag postponed">${m.statusNote || "Date à fixer"}</span>`;
+  } else if (m.status === "forfeit") {
+    const hasScore = (m.sh || 0) > 0 || (m.sa || 0) > 0;
+    const pillCls = outcome === "win" ? "forfeit-win" : (outcome === "loss" ? "forfeit-loss" : "forfeit");
+    scoreHtml = `<div class="score-pill ${pillCls}">${hasScore ? (m.sh + " - " + m.sa) : "FORFAIT"}</div>`;
+    tagHtml = `<span class="res-tag forfeit">${m.statusNote || "Forfait officiel"}</span>`;
+  } else if (m.status === "finished") {
+    const lbl = outcome === "win" ? "✅ Victoire LSBSC" : (outcome === "loss" ? "❌ Défaite" : "🤝 Égalité");
+    scoreHtml = `<div class="score-pill ${outcome}">${m.sh} - ${m.sa}</div>`;
+    tagHtml = `<span class="res-tag ${outcome}">${lbl}</span>`;
+  } else if (m.status === "live") {
+    scoreHtml = `<div class="score-pill live">${m.sh} - ${m.sa}</div>`;
+    tagHtml = `<span class="res-tag live">🔴 EN DIRECT (${m.period || "QT1"})</span>`;
+  } else {
+    scoreHtml = `<div class="score-pill upcoming">${m.time}</div>`;
+    tagHtml = `<span class="res-tag" style="color:#1E3A8A;">🕒 À venir</span>`;
+  }
+
+  const locBadge = homeUs
+    ? `<span style="background:#DCFCE7;color:#166534;font-size:0.75rem;font-weight:900;padding:3px 8px;border-radius:6px;border:1px solid #86EFAC;">🏠 Domicile</span>`
+    : `<span style="background:#FEF3C7;color:#9A3412;font-size:0.75rem;font-weight:900;padding:3px 8px;border-radius:6px;border:1px solid #FDE68A;">🚌 Extérieur</span>`;
+
+  const staffRowBtn = state.staffUnlocked
+    ? `<div class="row-staff-actions">
+         <button class="btn-row-edit" style="background:#EA580C;" onclick="event.stopPropagation();startLiveMatch(${m.id})">🏀 Direct</button>
+         <button class="btn-row-edit" onclick="event.stopPropagation();selectMatchForEdit(${m.id})">✏️ Score</button>
+         <button class="btn-row-edit" style="background:#1E3A8A;" onclick="event.stopPropagation();openMatchSheetModal(${m.id})">📍 Fiche</button>
+       </div>`
+    : "";
+
+  return `
+    <div class="match-row ${m.status === "live" ? "live-match" : ""}" onclick="selectMatch(${m.id})">
+      <div class="m-meta">
+        <span class="m-date">📅 ${m.date} (${m.wkShort || ""})</span>
+        <span class="m-time">⏰ ${m.time}</span>
+        ${locBadge}
+      </div>
+      <div class="m-team home">
+        <span class="team-name-txt ${homeUs ? "is-lsbsc" : ""}">${m.home}</span>
+        <img class="club-badge-sm" src="${getTeamBadgeSrc(m.home)}" onerror="this.src=FALLBACK_LOGO_B64" alt="">
+      </div>
+      <div class="m-score-center">
+        ${scoreHtml}
+        ${tagHtml}
+        <a class="m-address-sub" href="${info.gpsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${info.salle} (GPS ↗)</a>
+        ${info.precision ? `<span class="m-precision-tag">📌 ${info.precision}</span>` : ""}
+      </div>
+      <div class="m-team away">
+        <img class="club-badge-sm" src="${getTeamBadgeSrc(m.away)}" onerror="this.src=FALLBACK_LOGO_B64" alt="">
+        <span class="team-name-txt ${awayUs ? "is-lsbsc" : ""}">${m.away}</span>
+      </div>
+      ${staffRowBtn}
+    </div>
+  `;
+}
+
+function renderMobileTeamsSection() {
+  const container = document.getElementById("mobileTeamsViewContainer");
+  if (!container) return;
+
+  const tabLbl = document.getElementById("mobTabTeamsLbl");
+  if (tabLbl) {
+    tabLbl.textContent = state.mobileSelectedTeamCat ? `Équipe ${state.mobileSelectedTeamCat}` : "Sélection Équipe";
+  }
+
+  const tilesHtml = LSBSC_TEAMS_CATALOG.map(t => {
+    const teamMatches = state.matches.filter(m => m.cat === t.cat);
+    let w = 0, l = 0;
+    teamMatches.forEach(m => {
+      const out = computeMatchOutcome(m);
+      if (out === "win") w++;
+      else if (out === "loss") l++;
+    });
+    const isSelected = state.mobileSelectedTeamCat === t.cat;
+    return `
+      <button type="button" class="mob-team-tile ${isSelected ? "active-team-tile" : ""}" onclick="selectMobileTeam('${t.cat}')">
+        <div class="mob-team-tile-top">
+          <span class="mob-team-cat-badge">${t.cat}</span>
+          <span class="mob-team-record">${w}V - ${l}D</span>
+        </div>
+        <div class="mob-team-full-name">${t.fullName}</div>
+        <div style="font-size:0.74rem;font-weight:800;opacity:0.85;">📅 ${teamMatches.length} matchs (passés & à venir)</div>
+      </button>
+    `;
+  }).join("");
+
+  const selectedTeamObj = LSBSC_TEAMS_CATALOG.find(t => t.cat === state.mobileSelectedTeamCat);
+
+  let teamHistoryHtml = "";
+  if (selectedTeamObj) {
+    const allTeamMatches = state.matches.filter(m => m.cat === selectedTeamObj.cat);
+    const upcomingMatches = allTeamMatches.filter(m => m.status !== "finished" && m.status !== "forfeit");
+    const pastMatches = allTeamMatches.filter(m => m.status === "finished" || m.status === "forfeit").slice().reverse();
+
+    let wins = 0, losses = 0;
+    allTeamMatches.forEach(m => {
+      const out = computeMatchOutcome(m);
+      if (out === "win") wins++;
+      else if (out === "loss") losses++;
+    });
+
+    const showUpcoming = state.mobileTeamTimeFilter === "ALL" || state.mobileTeamTimeFilter === "UPCOMING";
+    const showPast = state.mobileTeamTimeFilter === "ALL" || state.mobileTeamTimeFilter === "PAST";
+
+    const upcomingSectionHtml = showUpcoming ? `
+      <div class="mob-section-divider">
+        <span>🕒 MATCHS À VENIR & EN DIRECT</span>
+        <span>${upcomingMatches.length} match${upcomingMatches.length > 1 ? "s" : ""}</span>
+      </div>
+      ${upcomingMatches.length > 0
+        ? `<div class="matches-list">${upcomingMatches.map(renderSingleMobileMatchTile).join("")}</div>`
+        : `<div style="background:#FFFFFF;border-radius:14px;padding:16px;text-align:center;font-weight:800;color:#64748B;border:1.5px solid #CBD5E1;">Aucun match à venir programmé pour ${selectedTeamObj.cat}.</div>`
+      }
+    ` : "";
+
+    const pastSectionHtml = showPast ? `
+      <div class="mob-section-divider past-div">
+        <span>✅ MATCHS PASSÉS (RÉSULTATS)</span>
+        <span>${pastMatches.length} joué${pastMatches.length > 1 ? "s" : ""}</span>
+      </div>
+      ${pastMatches.length > 0
+        ? `<div class="matches-list">${pastMatches.map(renderSingleMobileMatchTile).join("")}</div>`
+        : `<div style="background:#FFFFFF;border-radius:14px;padding:16px;text-align:center;font-weight:800;color:#64748B;border:1.5px solid #CBD5E1;">Aucun match terminé pour ${selectedTeamObj.cat}.</div>`
+      }
+    ` : "";
+
+    teamHistoryHtml = `
+      <div id="mobSelectedTeamAnchor" class="mob-selected-team-banner">
+        <div class="mob-st-top">
+          <div>
+            <div class="mob-st-title">🏀 ${selectedTeamObj.fullName} (${selectedTeamObj.cat})</div>
+            <div class="mob-st-sub">Saison complète : ${allTeamMatches.length} matchs • Bilan : ${wins} Victoire${wins > 1 ? "s" : ""} / ${losses} Défaite${losses > 1 ? "s" : ""}</div>
+          </div>
+          <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#0F172A;font-weight:900;padding:8px 12px;border-radius:10px;white-space:nowrap;" onclick="toggleMobileTeamGrid()">
+            ${state.mobileTeamGridCollapsed ? "🔄 Changer d'équipe" : "🔼 Masquer les tuiles"}
+          </button>
+        </div>
+        <div class="mob-period-filter-row">
+          <button type="button" class="mob-pf-btn ${state.mobileTeamTimeFilter === "ALL" ? "active" : ""}" onclick="setMobileTeamTimeFilter('ALL')">
+            📋 Tous (${allTeamMatches.length})
+          </button>
+          <button type="button" class="mob-pf-btn ${state.mobileTeamTimeFilter === "UPCOMING" ? "active" : ""}" onclick="setMobileTeamTimeFilter('UPCOMING')">
+            🕒 À venir (${upcomingMatches.length})
+          </button>
+          <button type="button" class="mob-pf-btn ${state.mobileTeamTimeFilter === "PAST" ? "active" : ""}" onclick="setMobileTeamTimeFilter('PAST')">
+            ✅ Passés (${pastMatches.length})
+          </button>
+        </div>
+      </div>
+      ${upcomingSectionHtml}
+      ${pastSectionHtml}
+    `;
+  } else {
+    teamHistoryHtml = `
+      <div style="background:#FFFFFF;border:2px dashed #93C5FD;border-radius:16px;padding:18px;text-align:center;color:#1E3A8A;font-weight:900;font-size:0.95rem;">
+        👆 Touchez une équipe ci-dessus pour afficher tous ses matchs passés et à venir !
+      </div>
+    `;
+  }
+
+  const showGrid = !selectedTeamObj || !state.mobileTeamGridCollapsed;
+
+  container.innerHTML = `
+    ${showGrid ? `
+      <div class="mob-team-selector-card">
+        <div class="mob-team-selector-title">
+          <h3>🏀 Sélectionnez votre équipe LSBSC</h3>
+          <span style="font-size:0.76rem;font-weight:900;color:#EA580C;background:#FFF7ED;padding:4px 8px;border-radius:8px;border:1px solid #FDBA74;">9 Équipes</span>
+        </div>
+        <div class="mob-team-tiles-grid">
+          ${tilesHtml}
+        </div>
+      </div>
+    ` : ""}
+    ${teamHistoryHtml}
+  `;
+}
+
+// Surcharger switchMobileTab pour gérer l'onglet 'teams' (Sélection Équipe) placé juste à côté de 'live' (Direct)
+window.switchMobileTab = function(tabName) {
+  if (tabName === "schedule") tabName = "teams";
+  state.mobileTab = tabName;
+  document.querySelectorAll(".mob-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tabName);
+  });
+
+  const secLive = document.getElementById("sectionLive");
+  const secSched = document.getElementById("sectionSchedule");
+  const secTeams = document.getElementById("sectionMobileTeams");
+  const secInfos = document.getElementById("sectionMobileInfos");
+
+  if (secLive) secLive.classList.toggle("active-mobile-sec", tabName === "live");
+  if (secSched) secSched.classList.remove("active-mobile-sec");
+  if (secTeams) secTeams.classList.toggle("active-mobile-sec", tabName === "teams");
+  if (secInfos) secInfos.classList.toggle("active-mobile-sec", tabName === "buvette" || tabName === "infos");
+
+  if (tabName === "teams") {
+    renderMobileTeamsSection();
+  }
+
+  const buvMirror = document.getElementById("mobileBuvetteMirror");
+  const infMirror = document.getElementById("mobileInfosMirror");
+  const tickerBody = document.getElementById("mobileTickerStaticText");
+  const infoTitle = secInfos ? secInfos.querySelector("h3") : null;
+
+  if (tabName === "buvette") {
+    if (infoTitle) infoTitle.innerHTML = "🍔 Carte & Tarifs de la Buvette LSBSC";
+    if (buvMirror) buvMirror.style.display = "block";
+    if (infMirror) infMirror.style.display = "none";
+    if (tickerBody) tickerBody.style.display = "none";
+  } else if (tabName === "infos") {
+    if (infoTitle) infoTitle.innerHTML = "ℹ️ Informations & Vie du Club LSBSC";
+    if (buvMirror) buvMirror.style.display = "none";
+    if (infMirror) infMirror.style.display = "block";
+    if (tickerBody) tickerBody.style.display = "block";
+  }
+};
+
+// Surcharger renderAll pour mettre à jour aussi la vue Équipe Mobile
+const _prevRenderAllV22 = renderAll;
+renderAll = function() {
+  _prevRenderAllV22();
+  renderMobileTeamsSection();
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderMobileTeamsSection();
+});

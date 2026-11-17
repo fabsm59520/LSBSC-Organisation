@@ -1801,10 +1801,15 @@ body.mode-tv .next-team {
   text-transform: uppercase;
 }
 
-/* Masquer la carte synthèse bas droite en mode téléphone allégé */
-body.mode-mobile .club-overview-card,
+/* Conserver la barre GPS & synthèse visible en mode téléphone */
 body.mode-mobile .sb-summary-bar {
-  display: none !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+body.mode-mobile .club-overview-card {
+  display: flex !important;
 }
 
 /* ==========================================================================
@@ -2789,4 +2794,910 @@ body.mode-tv .ticker-track {
 body.mode-mobile .buvette-categories-grid,
 body.mode-mobile .infos-cards-grid {
   grid-template-columns: 1fr;
+}
+
+
+/* ================= CORRECTIFS BOUTON GPS (TV & MOBILE) + PLEIN ÉCRAN FORCÉ ================= */
+.btn-fullscreen {
+  background: #0F172A;
+  color: #FDE68A;
+  border: 1.5px solid #F59E0B;
+}
+.btn-fullscreen:hover {
+  background: #1E3A8A;
+  color: #FFFFFF;
+}
+
+/* Masquer le bouton plein écran une fois que l'écran est déjà en plein écran */
+:fullscreen .btn-fullscreen,
+:-webkit-full-screen .btn-fullscreen {
+  display: none !important;
+}
+
+/* Bouton GPS bien visible sur chaque carte de match (TV et Mobile) */
+.m-address-sub {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #1D4ED8;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.m-address-sub:hover, .m-address-sub:active {
+  background: #DBEAFE;
+  border-color: #3B82F6;
+}
+
+body.mode-mobile .m-address-sub {
+  font-size: 0.78rem;
+  padding: 5px 10px;
+  margin-top: 5px;
+  border-radius: 8px;
+}
+
+/* Bouton GPS sur l'aperçu rapide des matchs en mode Mobile */
+.mq-gps-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #93C5FD;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.mq-gps-link:active {
+  background: #DBEAFE;
+}
+
+body.mode-mobile .sb-summary-pill.gps-pill {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  padding: 8px 10px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  background: #DBEAFE;
+  color: #1E3A8A;
+  border: 1.5px solid #3B82F6;
+}
+
+
+/* ================= GESTION DES CODES PIN PERSONNES DE CONFIANCE & DÉMARRAGE DIRECT TV ================= */
+.trusted-pin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1.5px solid #FDE68A;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.trusted-pin-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.trusted-pin-badge {
+  background: #1E3A8A;
+  color: #FFFFFF;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 1px;
+}
+
+.trusted-pin-name {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #0F172A;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trusted-pin-input-edit {
+  width: 90px;
+  padding: 4px 6px;
+  border: 1.5px solid #93C5FD;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-align: center;
+  color: #1E3A8A;
+  background: #F8FAFC;
+}
+
+.scorer-author-tag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #0369A1;
+  background: #E0F2FE;
+  border: 1px solid #BAE6FD;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+
+/* ==========================================================================
+   REFONTE TOTALE VERSION MOBILE — ARCHITECTURE EN TUILES (BENTO / TILES UI)
+   Texte grand et ultra-lisible, occupation optimale du format vertical 100vw
+   ========================================================================== */
+
+body.mode-mobile {
+  background: #0F172A;
+  color: #0F172A;
+  padding-bottom: 84px; /* Espace pour la barre de navigation ou le bas de page */
+}
+
+/* 1. En-tête Mobile compact en Tuiles Bento */
+body.mode-mobile .top-header {
+  background: linear-gradient(160deg, #0F172A 0%, #1E3A8A 100%);
+  padding: 10px 10px 12px 10px;
+  gap: 10px;
+  border-bottom: 3px solid #F59E0B;
+}
+
+body.mode-mobile .brand-zone {
+  display: grid;
+  grid-template-columns: 46px 1fr 46px;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+body.mode-mobile .club-logo-top {
+  width: 46px;
+  height: 46px;
+  grid-column: 1;
+}
+
+body.mode-mobile .club-mascot-top {
+  width: 46px;
+  height: 46px;
+  grid-column: 3;
+  grid-row: 1;
+}
+
+body.mode-mobile .brand-titles {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: center;
+}
+
+body.mode-mobile .brand-titles h1 {
+  font-size: 0.98rem;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: 0.3px;
+}
+
+body.mode-mobile .brand-titles .subtitle {
+  font-size: 0.72rem;
+  color: #FDE68A;
+  font-weight: 800;
+}
+
+/* Tuiles KPI du Week-end en grille 4 colonnes bien lisibles */
+body.mode-mobile .weekend-kpi {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+body.mode-mobile .kpi-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 12px;
+  font-size: 0.96rem;
+  font-weight: 900;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Grille de boutons d'action en tuiles tactiles dans le header */
+body.mode-mobile .header-controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+body.mode-mobile .clock-box {
+  grid-column: 1 / -1;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid #F59E0B;
+  border-radius: 12px;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+body.mode-mobile .clock-time {
+  font-size: 1.12rem;
+  letter-spacing: 0.5px;
+}
+
+body.mode-mobile .clock-sync {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+body.mode-mobile .btn-top {
+  min-height: 44px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 900;
+  padding: 8px 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+body.mode-mobile #btnFullscreen {
+  display: none !important;
+}
+
+/* 2. Barre de navigation mobile en 4 grandes Tuiles icône + texte */
+body.mode-mobile .mobile-nav-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  background: #0F172A;
+  padding: 8px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 2px solid #1E3A8A;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+body.mode-mobile .mob-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  min-height: 54px;
+  border-radius: 12px;
+  background: #1E293B;
+  border: 1.5px solid #334155;
+  color: #CBD5E1;
+  transition: all 0.15s ease;
+}
+
+body.mode-mobile .mob-tab-ico {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+body.mode-mobile .mob-tab-lbl {
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+body.mode-mobile .mob-tab.active {
+  background: linear-gradient(135deg, #EA580C 0%, #D97706 100%);
+  color: #FFFFFF;
+  border-color: #FDE68A;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.45);
+}
+
+/* 3. Espace principal Mobile plein-cadre */
+body.mode-mobile .main-workspace {
+  padding: 10px 8px;
+  background: #F1F5F9;
+  min-height: calc(100vh - 210px);
+}
+
+/* 4. Tuile Scoreboard Direct sur Mobile : grands logos, gros score, texte ultra-lisible */
+body.mode-mobile .live-scoreboard-card {
+  background: #FFFFFF;
+  border: 2.5px solid #2563EB;
+  border-radius: 18px;
+  padding: 14px 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+body.mode-mobile .sb-top-bar {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #F1F5F9;
+}
+
+body.mode-mobile .sb-status-badge {
+  font-size: 0.84rem;
+  padding: 6px 12px;
+  border-radius: 10px;
+}
+
+body.mode-mobile .sb-meta-info {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #1E3A8A;
+}
+
+/* Grille 2 tuiles d'équipes + Score géant au centre */
+body.mode-mobile .sb-arena {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+body.mode-mobile .sb-team-box {
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px 8px;
+  gap: 6px;
+  justify-content: center;
+}
+
+body.mode-mobile .sb-logo-lg {
+  width: 64px;
+  height: 64px;
+}
+
+body.mode-mobile .sb-team-title {
+  font-size: 0.96rem;
+  font-weight: 900;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+body.mode-mobile .sb-center-score {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+  border-radius: 16px;
+  padding: 12px;
+  border: 2.5px solid #F59E0B;
+  width: 100%;
+}
+
+body.mode-mobile .big-digits-wrap {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 2px 10px;
+  justify-content: center;
+  gap: 16px;
+}
+
+body.mode-mobile .big-digit {
+  font-size: 2.75rem;
+  color: #FFFFFF;
+}
+
+body.mode-mobile .big-sep {
+  font-size: 2rem;
+  color: #FBBF24;
+}
+
+body.mode-mobile .sb-period-pill {
+  font-size: 0.88rem;
+  padding: 5px 14px;
+  border-radius: 999px;
+}
+
+/* Tuiles d'infos sous le Scoreboard (Catégorie, Écart, Bouton GPS pleine largeur) */
+body.mode-mobile .sb-summary-bar {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  padding: 4px 0 0 0;
+}
+
+body.mode-mobile .sb-summary-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 12px;
+  font-size: 0.86rem;
+  font-weight: 900;
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+}
+
+body.mode-mobile .sb-summary-pill.gps-pill,
+body.mode-mobile .sb-summary-pill.precision-pill,
+body.mode-mobile .youtube-pill-btn {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  border-radius: 12px;
+}
+
+body.mode-mobile .sb-summary-pill.gps-pill {
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  color: #FFFFFF !important;
+  border: 2px solid #93C5FD;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+}
+
+/* 5. Grille de Tuiles pour les Matchs du Week-end (Aperçu rapide & Onglet Matchs) */
+body.mode-mobile .mobile-quick-matches-card {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  gap: 10px;
+}
+
+body.mode-mobile .mq-header {
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border-left: 5px solid #F59E0B;
+}
+
+body.mode-mobile .mq-header h4 {
+  color: #FFFFFF;
+  font-size: 1rem;
+}
+
+body.mode-mobile .mq-see-all {
+  background: #F59E0B;
+  color: #0F172A;
+  border: none;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  border-radius: 10px;
+}
+
+/* Chaque match en Tuile Bento sur Mobile */
+body.mode-mobile .mq-item {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 16px;
+  padding: 12px 10px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+}
+
+body.mode-mobile .mq-item.active-mq {
+  border-color: #EA580C;
+  background: #FFF7ED;
+  box-shadow: 0 6px 14px rgba(234, 88, 12, 0.18);
+}
+
+body.mode-mobile .mq-team img {
+  width: 44px;
+  height: 44px;
+}
+
+body.mode-mobile .mq-team span {
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+body.mode-mobile .mq-cat {
+  font-size: 0.76rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+body.mode-mobile .mq-gps-link {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1.5px solid #93C5FD;
+  border-radius: 8px;
+}
+
+/* 6. Onglet Matchs (Liste complète en Tuiles Cartes spacieuses) */
+body.mode-mobile .left-column.active-mobile-sec {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  gap: 10px;
+}
+
+body.mode-mobile .week-nav-bar {
+  background: #FFFFFF;
+  border: 2px solid #93C5FD;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+}
+
+body.mode-mobile .week-select {
+  font-size: 1rem;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 2px solid #1E3A8A;
+}
+
+body.mode-mobile .btn-week {
+  min-height: 44px;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+
+body.mode-mobile .filter-bar {
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 16px;
+  padding: 10px;
+}
+
+body.mode-mobile .filter-select-pill {
+  min-height: 44px;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+
+body.mode-mobile .matches-list {
+  padding: 0;
+  gap: 12px;
+}
+
+body.mode-mobile .match-row {
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 18px;
+  padding: 14px 12px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.07);
+  gap: 10px;
+}
+
+body.mode-mobile .m-meta {
+  background: #F8FAFC;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #E2E8F0;
+}
+
+body.mode-mobile .m-date {
+  font-size: 0.86rem;
+  color: #1E293B;
+}
+
+body.mode-mobile .m-time {
+  font-size: 1rem;
+  color: #EA580C;
+}
+
+body.mode-mobile .m-cat-badge {
+  font-size: 0.82rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+body.mode-mobile .club-badge-sm {
+  width: 50px;
+  height: 50px;
+}
+
+body.mode-mobile .team-name-txt {
+  font-size: 0.92rem;
+  font-weight: 900;
+  line-height: 1.22;
+}
+
+body.mode-mobile .score-pill {
+  font-size: 1.15rem;
+  padding: 8px 12px;
+  min-width: 94px;
+  border-radius: 10px;
+}
+
+body.mode-mobile .m-address-sub {
+  font-size: 0.82rem;
+  font-weight: 900;
+  padding: 7px 12px;
+  margin-top: 6px;
+  background: #EFF6FF;
+  color: #1E3A8A;
+  border: 1.5px solid #93C5FD;
+  border-radius: 10px;
+}
+
+/* 7. Onglets Buvette & Infos Club en Tuiles dédiées sur Mobile */
+body.mode-mobile .buvette-cat-card,
+body.mode-mobile .info-topic-card {
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+body.mode-mobile .buvette-cat-title {
+  font-size: 1.05rem;
+}
+
+body.mode-mobile .buvette-item-row {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+body.mode-mobile .buvette-item-name {
+  font-size: 0.95rem;
+}
+
+body.mode-mobile .buvette-item-price {
+  font-size: 0.96rem;
+  padding: 5px 12px;
+  border-radius: 8px;
+}
+
+body.mode-mobile .info-topic-title {
+  font-size: 1.05rem;
+}
+
+body.mode-mobile .info-topic-body {
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   VERSION MOBILE ÉPURÉE + TUILE SÉLECTION D'ÉQUIPE & HISTORIQUE COMPLET
+   ========================================================================== */
+
+.mobile-teams-sec {
+  display: none;
+}
+
+body.mode-mobile .mobile-teams-sec.active-mobile-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Épurer l'en-tête et l'onglet Direct sur Mobile : supprimer les blocs encombrants */
+body.mode-mobile .weekend-kpi,
+body.mode-mobile .clock-box,
+body.mode-mobile #btnInstallApp,
+body.mode-mobile #mobileQuickMatchesCard,
+body.mode-mobile #clubOverviewCard {
+  display: none !important;
+}
+
+/* En-tête mobile ultra-propre : Titre + 2 tuiles d'action (Mode TV & Direct/Scores) */
+body.mode-mobile .top-header {
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+body.mode-mobile .header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+body.mode-mobile .header-controls .btn-top {
+  flex: 1 1 45%;
+  min-height: 42px;
+  font-size: 0.85rem;
+}
+
+/* Grille de Tuiles de Sélection d'Équipe (2 colonnes sur téléphone) */
+.mob-team-selector-card {
+  background: #FFFFFF;
+  border-radius: 18px;
+  border: 2px solid #CBD5E1;
+  padding: 14px 12px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mob-team-selector-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 2px solid #F1F5F9;
+  padding-bottom: 8px;
+}
+
+.mob-team-selector-title h3 {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.mob-team-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.mob-team-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: #F8FAFC;
+  border: 2px solid #CBD5E1;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  min-height: 82px;
+}
+
+.mob-team-tile:active,
+.mob-team-tile.active-team-tile {
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  border-color: #F59E0B;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.mob-team-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 6px;
+}
+
+.mob-team-cat-badge {
+  background: #EA580C;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 8px;
+  letter-spacing: 0.3px;
+}
+
+.mob-team-tile.active-team-tile .mob-team-cat-badge {
+  background: #F59E0B;
+  color: #0F172A;
+}
+
+.mob-team-record {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #475569;
+  background: #E2E8F0;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.mob-team-tile.active-team-tile .mob-team-record {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FEF08A;
+}
+
+.mob-team-full-name {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.mob-team-tile.active-team-tile .mob-team-full-name {
+  color: #FFFFFF;
+}
+
+/* En-tête de l'équipe sélectionnée + Bilan V/D + Filtres (Tous / À venir / Passés) */
+.mob-selected-team-banner {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 14px;
+  border: 2px solid #F59E0B;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+.mob-st-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mob-st-title {
+  font-size: 1.12rem;
+  font-weight: 900;
+  color: #FDE68A;
+  line-height: 1.2;
+}
+
+.mob-st-sub {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #E2E8F0;
+  margin-top: 2px;
+}
+
+.mob-period-filter-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.mob-pf-btn {
+  padding: 9px 6px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  color: #CBD5E1;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+  text-align: center;
+}
+
+.mob-pf-btn.active {
+  background: #F59E0B;
+  color: #0F172A;
+  border-color: #FEF08A;
+}
+
+.mob-section-divider {
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 900;
+  border-left: 5px solid #EA580C;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mob-section-divider.past-div {
+  border-left-color: #16A34A;
+  background: #1E293B;
 }

@@ -79,6 +79,7 @@
         <div id="liveClock" class="clock-time">15:30:00</div>
         <span id="syncStatusBadge" class="clock-sync">● Direct Synchronisé</span>
       </div>
+      <button id="btnFullscreen" class="btn-top btn-fullscreen" onclick="toggleFullScreen()" title="Afficher en plein écran (F11)">⛶ Plein Écran</button>
       <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
 
@@ -92,11 +93,24 @@
     </div>
   </header>
 
-  <!-- ================= BARRE D'ONGLETS RAPIDES (VERSION TÉLÉPHONE ALLÉGÉE) ================= -->
+  <!-- ================= BARRE DE TUILES DE NAVIGATION (VERSION TÉLÉPHONE REPENSÉE) ================= -->
   <nav id="mobileNavTabs" class="mobile-nav-tabs">
-    <button class="mob-tab active" data-tab="live" onclick="switchMobileTab('live')">🔴 Direct & Suivant</button>
-    <button class="mob-tab" data-tab="schedule" onclick="switchMobileTab('schedule')">📅 Matchs Week-end</button>
-    <button class="mob-tab" data-tab="buvette" onclick="switchMobileTab('buvette')">🍔 Infos Club</button>
+    <button class="mob-tab active" data-tab="live" onclick="switchMobileTab('live')">
+      <span class="mob-tab-ico">🔴</span>
+      <span class="mob-tab-lbl">Direct</span>
+    </button>
+    <button class="mob-tab" data-tab="teams" onclick="switchMobileTab('teams')">
+      <span class="mob-tab-ico">🏀</span>
+      <span class="mob-tab-lbl" id="mobTabTeamsLbl">Sélection Équipe</span>
+    </button>
+    <button class="mob-tab" data-tab="buvette" onclick="switchMobileTab('buvette')">
+      <span class="mob-tab-ico">🍔</span>
+      <span class="mob-tab-lbl">Buvette</span>
+    </button>
+    <button class="mob-tab" data-tab="infos" onclick="switchMobileTab('infos')">
+      <span class="mob-tab-ico">ℹ️</span>
+      <span class="mob-tab-lbl">Infos Club</span>
+    </button>
   </nav>
 
   <!-- ================= ESPACE PRINCIPAL ================= -->
@@ -223,6 +237,11 @@
       <!-- APERÇU RAPIDE DES MATCHS DU WEEK-END (MODE TÉLÉPHONE) -->
       <div id="mobileQuickMatchesCard" class="mobile-quick-matches-card"></div>
 
+    </section>
+
+    <!-- SECTION SÉLECTION D'ÉQUIPE & TOUS SES MATCHS PASSÉS / À VENIR (VERSION MOBILE) -->
+    <section id="sectionMobileTeams" class="mobile-teams-sec">
+      <div id="mobileTeamsViewContainer"></div>
     </section>
 
     <!-- SECTION INFOS CLUB & BUVETTE (ONGLET MOBILE DEDIE) -->
@@ -405,6 +424,22 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="club-addr-card" style="border-color:#F59E0B;background:#FFFBEB;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <strong style="color:#92400E;font-size:0.9rem;">🔑 Codes PIN — Personnes de Confiance (Accès Direct / Scores)</strong>
+            <span style="font-size:0.72rem;font-weight:900;background:#FEF3C7;color:#B45309;padding:3px 8px;border-radius:6px;border:1px solid #F59E0B;">Code Admin Maître : 9694</span>
+          </div>
+          <p style="font-size:0.75rem;color:#78350F;font-weight:700;line-height:1.35;">
+            Chaque personne ci-dessous peut déverrouiller « 🔒 Direct / Scores » avec son propre code PIN (4 chiffres) pour gérer les scores en direct depuis son téléphone, sans avoir accès à ces réglages ni aux logos.
+          </p>
+          <div id="trustedPinsListContainer" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;padding-top:8px;border-top:1px dashed #FCD34D;">
+            <input id="inpNewTrustedName" type="text" placeholder="Prénom / Rôle (ex: Sarah, Coach U13...)" style="flex:1;min-width:150px;padding:7px 10px;border-radius:8px;border:1.5px solid #F59E0B;font-size:0.82rem;font-weight:700;">
+            <input id="inpNewTrustedPin" type="text" inputmode="numeric" maxlength="6" placeholder="Code PIN (ex: 1234)" style="width:140px;padding:7px 10px;border-radius:8px;border:1.5px solid #F59E0B;font-size:0.82rem;font-weight:900;text-align:center;">
+            <button type="button" class="btn-action-sm btn-save-score" onclick="addTrustedPinUser()">➕ Ajouter ce code PIN</button>
+          </div>
+        </div>
+
         <div class="club-addr-card">
           <strong style="color:#1E3A8A;font-size:0.88rem;">⏱️ Durées d'affichage du Carrousel TV (en secondes)</strong>
           <div class="form-grid-2" style="grid-template-columns: repeat(3, 1fr);">
