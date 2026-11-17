@@ -1870,3 +1870,414 @@ window.applyClubAddressToAllMatches = function(clubKey, idx) {
   renderAll();
   alert(`Adresse enregistrée sur ${count} match(s) à domicile de ${clubKey} !`);
 };
+
+
+/* ================= EXTENSION KIOSQUE TV : CARROUSEL 3 VUES + AUTO-SCROLL VERTICAL + TARIFS BUVETTE & INFOS ================= */
+const DEFAULT_BUVETTE_MENU = [
+  "Boissons Fraîches & Chaudes | Eau Cristaline (50cl) | 1,00 €",
+  "Boissons Fraîches & Chaudes | Coca-Cola, Oasis, Ice Tea, Fanta (33cl) | 2,00 €",
+  "Boissons Fraîches & Chaudes | Capri-Sun / Jus de fruits | 1,50 €",
+  "Boissons Fraîches & Chaudes | Café Expresso / Thé chaud | 1,00 €",
+  "Snacks & Restauration Chaude | Croque-Monsieur (Jambon/Fromage ou Volaille) | 2,50 €",
+  "Snacks & Restauration Chaude | Hot-Dog chaud (Ketchup / Mayo / Moutarde) | 2,50 €",
+  "Snacks & Restauration Chaude | Sandwich Baguette Frais | 3,00 €",
+  "Snacks & Restauration Chaude | Chips (Sachet individuel) | 1,00 €",
+  "Sucré, Crêpes & Goûter | Crêpe Maison (Sucre / Chocolat / Spéculoos) | 1,50 €",
+  "Sucré, Crêpes & Goûter | Gaufre / Pâtisserie maison | 2,00 €",
+  "Sucré, Crêpes & Goûter | Barre chocolatée (Kinder, Mars, Twix, Snickers) | 1,50 €",
+  "Sucré, Crêpes & Goûter | Sachet de Bonbons | 1,00 €",
+  "Formules Supporters LSBSC | Formule Match (1 Croque ou Hot-Dog + 1 Boisson) | 4,00 €",
+  "Formules Supporters LSBSC | Formule Goûter (1 Crêpe + 1 Capri-Sun ou Café) | 2,50 €"
+].join("\n");
+
+const DEFAULT_CLUB_INFOS = [
+  "🏟️ | Salle Antoine Blondin — Lille Sud | Bienvenue au complexe sportif Antoine Blondin (3 rue François Coppée, 59000 Lille). Merci de respecter la propreté des tribunes et le travail de nos bénévoles.",
+  "🦁 | Esprit Sportif & Fair-Play | Au LSBSC South Lille, nous encourageons nos équipes avec passion et dans le respect absolu des arbitres, des adversaires et des jeunes officiels.",
+  "👕 | Boutique, Goodies & Atelier Flocage | Soutenez le club avec nos gourdes, mugs, t-shirts et sweats personnalisés aux couleurs des Lions de Lille Sud ! Renseignements auprès du staff à la buvette.",
+  "🤝 | Vie du Club & Actions Solidaires | Toutes les recettes de la buvette financent directement les équipements, les tournois jeunes et les actions solidaires du club (Octobre Rose, événements jeunes)."
+].join("\n");
+
+state.tvCurrentSlide = "matches"; // 'matches' | 'buvette' | 'infos'
+state.tvCarouselPaused = false;
+state.tvDurations = { matches: 18, buvette: 14, infos: 14 };
+state.buvetteMenuText = DEFAULT_BUVETTE_MENU;
+state.clubInfosText = DEFAULT_CLUB_INFOS;
+
+// Charger les données Buvette & Infos depuis localStorage si présentes
+function loadTvKioskExtraData() {
+  try {
+    const saved = localStorage.getItem("lsbsc_state_v4");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.buvetteMenuText) state.buvetteMenuText = parsed.buvetteMenuText;
+      if (parsed.clubInfosText) state.clubInfosText = parsed.clubInfosText;
+      if (parsed.tvDurations) state.tvDurations = Object.assign(state.tvDurations, parsed.tvDurations);
+    }
+  } catch (e) {}
+}
+loadTvKioskExtraData();
+
+// Surcharger saveState et persistLocalOnly pour inclure les tarifs buvette et infos club
+const _basePersistLocalOnly = persistLocalOnly;
+persistLocalOnly = function() {
+  try {
+    localStorage.setItem("lsbsc_state_v4", JSON.stringify({
+      matches: state.matches,
+      tickerText: state.tickerText,
+      clubAssets: state.clubAssets,
+      buvetteMenuText: state.buvetteMenuText,
+      clubInfosText: state.clubInfosText,
+      tvDurations: state.tvDurations,
+      updatedAt: state.lastUpdatedAt
+    }));
+  } catch (e) {}
+};
+
+saveState = function(pushCloud = true) {
+  const now = Date.now();
+  state.lastUpdatedAt = now;
+  const payload = {
+    matches: state.matches,
+    tickerText: state.tickerText,
+    clubAssets: state.clubAssets,
+    buvetteMenuText: state.buvetteMenuText,
+    clubInfosText: state.clubInfosText,
+    tvDurations: state.tvDurations,
+    updatedAt: now
+  };
+  try {
+    localStorage.setItem("lsbsc_state_v4", JSON.stringify(payload));
+  } catch (e) {}
+  if (bcChannel) {
+    try { bcChannel.postMessage(payload); } catch (e) {}
+  }
+  const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+  if (pushCloud && targetUrl) {
+    fetch(targetUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(() => {
+      const syncEl = document.getElementById("syncStatusBadge");
+      if (syncEl) syncEl.textContent = "● Direct Synchronisé";
+    }).catch(() => {});
+  }
+};
+
+function parseBuvetteCategories(rawText) {
+  const lines = (rawText || DEFAULT_BUVETTE_MENU).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const catMap = new Map();
+  lines.forEach(line => {
+    const parts = line.split("|").map(s => s.trim());
+    if (parts.length >= 3) {
+      const [cat, name, price] = parts;
+      if (!catMap.has(cat)) catMap.set(cat, []);
+      catMap.get(cat).push({ name, price });
+    } else if (parts.length === 2) {
+      const [name, price] = parts;
+      const cat = "Carte Buvette";
+      if (!catMap.has(cat)) catMap.set(cat, []);
+      catMap.get(cat).push({ name, price });
+    }
+  });
+  return Array.from(catMap.entries()).map(([category, items]) => ({ category, items }));
+}
+
+function parseClubInfosList(rawText) {
+  const lines = (rawText || DEFAULT_CLUB_INFOS).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  return lines.map(line => {
+    const parts = line.split("|").map(s => s.trim());
+    if (parts.length >= 3) {
+      return { icon: parts[0] || "🏀", title: parts[1], body: parts.slice(2).join(" | ") };
+    } else if (parts.length === 2) {
+      return { icon: "🏀", title: parts[0], body: parts[1] };
+    }
+    return { icon: "ℹ️", title: "Information LSBSC", body: line };
+  });
+}
+
+function getCategoryIcon(catName) {
+  const low = (catName || "").toLowerCase();
+  if (low.includes("boisson") || low.includes("café")) return "🥤";
+  if (low.includes("snack") || low.includes("chaud") || low.includes("salé")) return "🌭";
+  if (low.includes("sucré") || low.includes("crêpe") || low.includes("goûter")) return "🥞";
+  if (low.includes("formule") || low.includes("menu")) return "⭐";
+  return "🍔";
+}
+
+function renderBuvetteAndInfosViews() {
+  const buvContainer = document.getElementById("tvBuvetteContainer");
+  const infContainer = document.getElementById("tvInfosContainer");
+  const mobBuvMirror = document.getElementById("mobileBuvetteMirror");
+  const mobInfMirror = document.getElementById("mobileInfosMirror");
+
+  const categories = parseBuvetteCategories(state.buvetteMenuText);
+  const categoriesHtml = categories.map(cat => `
+    <div class="buvette-cat-card">
+      <div class="buvette-cat-title">
+        <span>${getCategoryIcon(cat.category)}</span>
+        <span>${cat.category}</span>
+      </div>
+      <div class="buvette-items-list">
+        ${cat.items.map(it => `
+          <div class="buvette-item-row">
+            <span class="buvette-item-name">${it.name}</span>
+            <span class="buvette-item-dots"></span>
+            <span class="buvette-item-price">${it.price}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  const buvetteFullHtml = `
+    <div class="buvette-hero-banner">
+      <div class="buvette-hero-left">
+        <span class="buvette-hero-icon">🍔</span>
+        <div class="buvette-hero-titles">
+          <h3>Buvette des Lions — Tarifs & Carte</h3>
+          <p>Ouverte pendant toutes les rencontres à domicile • Au profit des jeunes du club</p>
+        </div>
+      </div>
+      <div class="buvette-pay-badges">
+        <span class="buvette-pay-pill">💳 CB / SumUp & Espèces</span>
+        <span class="buvette-pay-pill">🦁 100% Club LSBSC</span>
+      </div>
+    </div>
+    <div class="buvette-categories-grid">
+      ${categoriesHtml}
+    </div>
+    <div class="buvette-footer-note">
+      🙏 Merci pour votre soutien ! Chaque consommation aide à financer les équipements et tournois de nos équipes jeunes.
+    </div>
+  `;
+
+  if (buvContainer) buvContainer.innerHTML = buvetteFullHtml;
+  if (mobBuvMirror) mobBuvMirror.innerHTML = `<div class="buvette-categories-grid" style="margin-top:8px;">${categoriesHtml}</div>`;
+
+  const infoCards = parseClubInfosList(state.clubInfosText);
+  const logoSrc = state.clubAssets.logo || FALLBACK_LOGO_B64;
+  const mascSrc = state.clubAssets.mascot || FALLBACK_MASCOT_B64;
+
+  const infoCardsHtml = infoCards.map(c => `
+    <div class="info-topic-card">
+      <div class="info-topic-header">
+        <span class="info-topic-icon">${c.icon}</span>
+        <span class="info-topic-title">${c.title}</span>
+      </div>
+      <div class="info-topic-body">${c.body}</div>
+    </div>
+  `).join("");
+
+  const infosFullHtml = `
+    <div class="infos-hero-banner">
+      <div class="infos-hero-left">
+        <img src="${logoSrc}" onerror="this.src=FALLBACK_LOGO_B64" alt="Logo LSBSC">
+        <div class="infos-hero-titles">
+          <h3>Informations & Vie du Club LSBSC</h3>
+          <p>Lille Sud Basketball Sporting Club • Complexe Sportif Antoine Blondin</p>
+        </div>
+      </div>
+      <img src="${mascSrc}" onerror="this.src=FALLBACK_MASCOT_B64" alt="Mascotte" style="width:clamp(48px,4.2vw,76px);height:clamp(48px,4.2vw,76px);object-fit:contain;">
+    </div>
+    <div class="infos-cards-grid">
+      ${infoCardsHtml}
+    </div>
+    <div class="buvette-footer-note" style="background:#EFF6FF;border-color:#60A5FA;color:#1E3A8A;">
+      📲 Scannez le QR Code affiché à droite de l'écran pour retrouver le programme complet et les adresses GPS sur votre téléphone !
+    </div>
+  `;
+
+  if (infContainer) infContainer.innerHTML = infosFullHtml;
+  if (mobInfMirror) mobInfMirror.innerHTML = `<div class="infos-cards-grid" style="margin-top:8px;">${infoCardsHtml}</div>`;
+
+  // Mettre à jour le libellé de la pastille "Matchs du Week-end" avec le nom de la semaine active
+  const wkObj = getWeeksList().find(w => w.wk === state.currentWeek);
+  const lblEl = document.getElementById("tvSlideMatchesLabel");
+  if (lblEl && wkObj) {
+    lblEl.textContent = wkObj.label || "Matchs du Week-end";
+  }
+}
+
+// Surcharger renderAll pour rafraîchir aussi les vues Buvette & Infos
+const _prevRenderAll = renderAll;
+renderAll = function() {
+  _prevRenderAll();
+  renderBuvetteAndInfosViews();
+};
+
+// Surcharger openCloudModal et saveCloudAndTicker pour éditer aussi les tarifs Buvette, Infos et Durées TV
+window.openCloudModal = function() {
+  document.getElementById("inpSyncUrl").value = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+  document.getElementById("inpTickerText").value = state.tickerText || "";
+  const buvEl = document.getElementById("inpBuvetteMenu");
+  const infEl = document.getElementById("inpClubInfos");
+  const dM = document.getElementById("inpDurMatches");
+  const dB = document.getElementById("inpDurBuvette");
+  const dI = document.getElementById("inpDurInfos");
+  if (buvEl) buvEl.value = state.buvetteMenuText || DEFAULT_BUVETTE_MENU;
+  if (infEl) infEl.value = state.clubInfosText || DEFAULT_CLUB_INFOS;
+  if (dM) dM.value = (state.tvDurations && state.tvDurations.matches) || 18;
+  if (dB) dB.value = (state.tvDurations && state.tvDurations.buvette) || 14;
+  if (dI) dI.value = (state.tvDurations && state.tvDurations.infos) || 14;
+  document.getElementById("cloudModal").classList.add("open");
+};
+
+window.saveCloudAndTicker = function() {
+  state.syncUrl = document.getElementById("inpSyncUrl").value.trim();
+  state.tickerText = document.getElementById("inpTickerText").value.trim() || state.tickerText;
+  const buvEl = document.getElementById("inpBuvetteMenu");
+  const infEl = document.getElementById("inpClubInfos");
+  const dM = document.getElementById("inpDurMatches");
+  const dB = document.getElementById("inpDurBuvette");
+  const dI = document.getElementById("inpDurInfos");
+  if (buvEl && buvEl.value.trim()) state.buvetteMenuText = buvEl.value.trim();
+  if (infEl && infEl.value.trim()) state.clubInfosText = infEl.value.trim();
+  state.tvDurations = {
+    matches: Math.max(8, parseInt(dM ? dM.value : 18, 10) || 18),
+    buvette: Math.max(6, parseInt(dB ? dB.value : 14, 10) || 14),
+    infos: Math.max(6, parseInt(dI ? dI.value : 14, 10) || 14)
+  };
+  localStorage.setItem("lsbsc_sync_url", state.syncUrl);
+  saveState(true);
+  renderAll();
+  closeModals();
+};
+
+/* ================= MOTEUR DE ROTATION & AUTO-SCROLL VERTICAL FLUIDE (MODE TV) ================= */
+const TV_SLIDE_ORDER = ["matches", "buvette", "infos"];
+let tvSlideStartTime = performance.now();
+let tvScrollPhase = "top_pause"; // 'top_pause' | 'scrolling_down' | 'bottom_pause'
+let tvPhaseStartTime = performance.now();
+let tvCurrentScrollY = 0;
+
+function getActiveSlideContainer() {
+  if (state.tvCurrentSlide === "buvette") return document.getElementById("tvBuvetteContainer");
+  if (state.tvCurrentSlide === "infos") return document.getElementById("tvInfosContainer");
+  return document.getElementById("matchesListContainer");
+}
+
+window.setTvSlide = function(slideName, manualClick = false) {
+  if (!TV_SLIDE_ORDER.includes(slideName)) slideName = "matches";
+  state.tvCurrentSlide = slideName;
+
+  document.querySelectorAll(".tv-slide-pill").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-slide") === slideName);
+  });
+
+  const mEl = document.getElementById("matchesListContainer");
+  const bEl = document.getElementById("tvBuvetteContainer");
+  const iEl = document.getElementById("tvInfosContainer");
+  if (mEl) mEl.classList.toggle("active-slide", slideName === "matches");
+  if (bEl) bEl.classList.toggle("active-slide", slideName === "buvette");
+  if (iEl) iEl.classList.toggle("active-slide", slideName === "infos");
+
+  const activeContainer = getActiveSlideContainer();
+  if (activeContainer) {
+    activeContainer.scrollTop = 0;
+  }
+  tvCurrentScrollY = 0;
+  tvSlideStartTime = performance.now();
+  tvPhaseStartTime = performance.now();
+  tvScrollPhase = "top_pause";
+
+  const progEl = document.getElementById("tvSlideProgressBar");
+  if (progEl) progEl.style.width = "0%";
+};
+
+window.toggleTvCarouselPause = function() {
+  state.tvCarouselPaused = !state.tvCarouselPaused;
+  const btn = document.getElementById("btnToggleTvPause");
+  if (btn) {
+    btn.innerHTML = state.tvCarouselPaused ? "▶️ Reprendre rotation" : "⏸️ Pause rotation";
+    btn.style.background = state.tvCarouselPaused ? "#DCFCE7" : "#FEF3C7";
+    btn.style.color = state.tvCarouselPaused ? "#166534" : "#9A3412";
+  }
+  tvSlideStartTime = performance.now();
+  tvPhaseStartTime = performance.now();
+};
+
+let lastFrameTime = performance.now();
+
+function stepTvKioskLoop(now) {
+  const dt = Math.min(0.1, (now - lastFrameTime) / 1000);
+  lastFrameTime = now;
+
+  // Le carrousel et l'auto-scroll ne tournent qu'en Mode TV et si non mis en pause
+  const isOverlayOpen = document.getElementById("formatSelectorOverlay")?.classList.contains("open");
+  const isAnyModalOpen = document.querySelector(".modal-backdrop.open") !== null;
+
+  if (state.displayMode === "tv" && !state.tvCarouselPaused && !isOverlayOpen && !isAnyModalOpen) {
+    const container = getActiveSlideContainer();
+    if (container) {
+      const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+      const baseDurationMs = ((state.tvDurations && state.tvDurations[state.tvCurrentSlide]) || 15) * 1000;
+      const topPauseMs = 3500;
+      const bottomPauseMs = 3500;
+      const scrollSpeedPxPerSec = 36; // Vitesse de défilement vertical douce et lisible à distance
+
+      let progressPct = 0;
+
+      if (maxScroll > 8) {
+        // Il y a du contenu à faire défiler verticalement (ex: 9 matchs du week-end)
+        const scrollDurationMs = (maxScroll / scrollSpeedPxPerSec) * 1000;
+        const totalEffectiveMs = Math.max(baseDurationMs, topPauseMs + scrollDurationMs + bottomPauseMs);
+
+        if (tvScrollPhase === "top_pause") {
+          container.scrollTop = 0;
+          tvCurrentScrollY = 0;
+          if (now - tvPhaseStartTime >= topPauseMs) {
+            tvScrollPhase = "scrolling_down";
+            tvPhaseStartTime = now;
+          }
+        } else if (tvScrollPhase === "scrolling_down") {
+          tvCurrentScrollY += scrollSpeedPxPerSec * dt;
+          if (tvCurrentScrollY >= maxScroll) {
+            tvCurrentScrollY = maxScroll;
+            container.scrollTop = maxScroll;
+            tvScrollPhase = "bottom_pause";
+            tvPhaseStartTime = now;
+          } else {
+            container.scrollTop = tvCurrentScrollY;
+          }
+        } else if (tvScrollPhase === "bottom_pause") {
+          container.scrollTop = maxScroll;
+          const elapsedTotal = now - tvSlideStartTime;
+          if (now - tvPhaseStartTime >= bottomPauseMs && elapsedTotal >= baseDurationMs) {
+            advanceToNextTvSlide();
+            requestAnimationFrame(stepTvKioskLoop);
+            return;
+          }
+        }
+        progressPct = Math.min(100, ((now - tvSlideStartTime) / totalEffectiveMs) * 100);
+      } else {
+        // Tout rentre à l'écran sans ascenseur : on attend simplement la durée configurée de la vue
+        const elapsed = now - tvSlideStartTime;
+        progressPct = Math.min(100, (elapsed / baseDurationMs) * 100);
+        if (elapsed >= baseDurationMs) {
+          advanceToNextTvSlide();
+          requestAnimationFrame(stepTvKioskLoop);
+          return;
+        }
+      }
+
+      const progEl = document.getElementById("tvSlideProgressBar");
+      if (progEl) progEl.style.width = `${progressPct.toFixed(1)}%`;
+    }
+  }
+
+  requestAnimationFrame(stepTvKioskLoop);
+}
+
+function advanceToNextTvSlide() {
+  const idx = TV_SLIDE_ORDER.indexOf(state.tvCurrentSlide);
+  const nextSlide = TV_SLIDE_ORDER[(idx + 1) % TV_SLIDE_ORDER.length];
+  window.setTvSlide(nextSlide, false);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderBuvetteAndInfosViews();
+  window.setTvSlide("matches", false);
+  lastFrameTime = performance.now();
+  requestAnimationFrame(stepTvKioskLoop);
+});

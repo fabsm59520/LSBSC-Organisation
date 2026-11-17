@@ -2250,3 +2250,543 @@ body.mode-mobile .filter-select-pill {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ==========================================================================
+   MODE KIOSQUE TV SANS SOURIS NI TACTILE :
+   1. CARROUSEL AUTOMATIQUE 3 VUES (MATCHS / TARIFS BUVETTE / INFOS CLUB)
+   2. DÉFILEMENT VERTICAL AUTOMATIQUE FLUIDE (SANS BARRE DE SCROLL VISIBLE)
+   3. ADAPTATION MULTI-RÉSOLUTIONS (TV 720p, 1080p, 1440p, 4K UHD)
+   ========================================================================== */
+
+/* En-tête du Carrousel dans la colonne de gauche (Mode TV) */
+.tv-carousel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #0F172A 0%, #1E3A8A 100%);
+  padding: clamp(6px, 0.9vh, 14px) clamp(10px, 1vw, 18px);
+  border-bottom: 2px solid #F59E0B;
+  position: relative;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+body.mode-mobile .tv-carousel-header {
+  display: none !important;
+}
+
+.tv-carousel-pills {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 0.7vw, 12px);
+  flex: 1;
+}
+
+.tv-slide-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 0.5vw, 10px);
+  padding: clamp(5px, 0.7vh, 11px) clamp(8px, 0.8vw, 16px);
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(15, 23, 42, 0.55);
+  color: #CBD5E1;
+  font-size: clamp(0.72rem, 0.9vw, 1.15rem);
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.tv-slide-pill.active {
+  background: linear-gradient(135deg, #EA580C 0%, #D97706 100%);
+  color: #FFFFFF;
+  border-color: #FDE68A;
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
+  transform: scale(1.02);
+}
+
+.tv-pill-icon {
+  font-size: clamp(0.85rem, 1.05vw, 1.35rem);
+}
+
+.btn-tv-pause {
+  background: #FEF3C7;
+  color: #9A3412;
+  border: 1px solid #F59E0B;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: clamp(0.68rem, 0.8vw, 0.95rem);
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tv-progress-bar-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.tv-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #FBBF24 0%, #22C55E 100%);
+  transition: width 0.12s linear;
+}
+
+/* En mode TV passif (sans Staff déverrouillé), masquer les listes déroulantes et boutons inutiles sans souris */
+body.mode-tv:not(.staff-unlocked) .week-nav-bar,
+body.mode-tv:not(.staff-unlocked) .filter-bar {
+  display: none !important;
+}
+
+/* Gestion des 3 vues du carrousel en colonne gauche */
+.tv-slide-view {
+  display: none !important;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  scroll-behavior: auto;
+}
+
+.tv-slide-view.active-slide {
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* En mode Mobile, l'onglet "Matchs Week-end" affiche toujours la liste des matchs */
+body.mode-mobile #matchesListContainer {
+  display: flex !important;
+}
+body.mode-mobile #tvBuvetteContainer,
+body.mode-mobile #tvInfosContainer {
+  display: none !important;
+}
+
+/* Masquer la barre de défilement sur l'écran TV pour un rendu broadcast propre */
+body.mode-tv:not(.staff-unlocked) .tv-slide-view::-webkit-scrollbar {
+  width: 0px;
+  display: none;
+}
+body.mode-tv:not(.staff-unlocked) .tv-slide-view {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* ================= VUE 2 : CARTE & TARIFS BUVETTE ================= */
+.tv-buvette-view {
+  padding: clamp(10px, 1.3vh, 22px) clamp(12px, 1.3vw, 24px);
+  gap: clamp(10px, 1.3vh, 20px);
+  background: linear-gradient(180deg, #FFFBEB 0%, #FFFFFF 45%, #F8FAFC 100%);
+}
+
+.buvette-hero-banner {
+  background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
+  color: #FFFFFF;
+  border-radius: 14px;
+  padding: clamp(10px, 1.4vh, 20px) clamp(14px, 1.5vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 2px solid #F59E0B;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+  flex-shrink: 0;
+}
+
+.buvette-hero-left {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1vw, 18px);
+}
+
+.buvette-hero-icon {
+  font-size: clamp(2rem, 2.8vw, 3.6rem);
+  line-height: 1;
+}
+
+.buvette-hero-titles h3 {
+  font-size: clamp(1.05rem, 1.45vw, 1.9rem);
+  font-weight: 900;
+  color: #FCD34D;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.buvette-hero-titles p {
+  font-size: clamp(0.75rem, 0.95vw, 1.2rem);
+  color: #E2E8F0;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.buvette-pay-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.buvette-pay-pill {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(253, 224, 71, 0.45);
+  color: #FEF08A;
+  font-size: clamp(0.68rem, 0.85vw, 1.05rem);
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.buvette-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(10px, 1.2vh, 18px);
+}
+
+.buvette-cat-card {
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  border-top: 5px solid #EA580C;
+  border-radius: 12px;
+  padding: clamp(10px, 1.2vh, 18px) clamp(12px, 1.2vw, 20px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.8vh, 12px);
+}
+
+.buvette-cat-card:nth-child(2n) {
+  border-top-color: #1E3A8A;
+}
+.buvette-cat-card:nth-child(3n) {
+  border-top-color: #16A34A;
+}
+.buvette-cat-card:nth-child(4n) {
+  border-top-color: #D97706;
+}
+
+.buvette-cat-title {
+  font-size: clamp(0.88rem, 1.15vw, 1.45rem);
+  font-weight: 900;
+  color: #0F172A;
+  text-transform: uppercase;
+  border-bottom: 2px dashed #E2E8F0;
+  padding-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.buvette-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(5px, 0.7vh, 10px);
+}
+
+.buvette-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: clamp(4px, 0.5vh, 8px) 6px;
+  border-radius: 8px;
+  background: #F8FAFC;
+}
+
+.buvette-item-name {
+  font-size: clamp(0.8rem, 1.02vw, 1.3rem);
+  font-weight: 800;
+  color: #1E293B;
+}
+
+.buvette-item-dots {
+  flex: 1;
+  border-bottom: 2px dotted #CBD5E1;
+  margin: 0 6px;
+  height: 10px;
+}
+
+.buvette-item-price {
+  background: #1E3A8A;
+  color: #FFFFFF;
+  font-size: clamp(0.82rem, 1.05vw, 1.35rem);
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.buvette-footer-note {
+  background: #FEF3C7;
+  border: 1.5px solid #F59E0B;
+  color: #92400E;
+  border-radius: 10px;
+  padding: clamp(8px, 1vh, 14px);
+  text-align: center;
+  font-size: clamp(0.76rem, 0.95vw, 1.2rem);
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* ================= VUE 3 : PAGE D'INFORMATIONS DU CLUB ================= */
+.tv-infos-view {
+  padding: clamp(10px, 1.3vh, 22px) clamp(12px, 1.3vw, 24px);
+  gap: clamp(10px, 1.3vh, 20px);
+  background: linear-gradient(180deg, #EFF6FF 0%, #FFFFFF 50%, #F8FAFC 100%);
+}
+
+.infos-hero-banner {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+  color: #FFFFFF;
+  border-radius: 14px;
+  padding: clamp(10px, 1.4vh, 20px) clamp(14px, 1.5vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 2px solid #60A5FA;
+  flex-shrink: 0;
+}
+
+.infos-hero-left {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1vw, 18px);
+}
+
+.infos-hero-left img {
+  width: clamp(48px, 4.2vw, 76px);
+  height: clamp(48px, 4.2vw, 76px);
+  object-fit: contain;
+}
+
+.infos-hero-titles h3 {
+  font-size: clamp(1.05rem, 1.45vw, 1.9rem);
+  font-weight: 900;
+  color: #FCD34D;
+  text-transform: uppercase;
+}
+
+.infos-hero-titles p {
+  font-size: clamp(0.75rem, 0.95vw, 1.2rem);
+  color: #E2E8F0;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.infos-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(10px, 1.2vh, 18px);
+}
+
+.info-topic-card {
+  background: #FFFFFF;
+  border: 2px solid #DBEAFE;
+  border-left: 6px solid #1E3A8A;
+  border-radius: 12px;
+  padding: clamp(12px, 1.4vh, 22px) clamp(14px, 1.3vw, 22px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.8vh, 12px);
+}
+
+.info-topic-card:nth-child(2n) {
+  border-left-color: #EA580C;
+}
+.info-topic-card:nth-child(3n) {
+  border-left-color: #16A34A;
+}
+.info-topic-card:nth-child(4n) {
+  border-left-color: #D97706;
+}
+
+.info-topic-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-topic-icon {
+  font-size: clamp(1.4rem, 1.8vw, 2.4rem);
+  line-height: 1;
+}
+
+.info-topic-title {
+  font-size: clamp(0.9rem, 1.15vw, 1.5rem);
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.info-topic-body {
+  font-size: clamp(0.78rem, 0.98vw, 1.25rem);
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.45;
+}
+
+/* ================= ADAPTATION MULTI-RÉSOLUTIONS POUR ÉCRANS TV ================= */
+/* S'adapte automatiquement du 720p (1280x720 / 1366x768) au 1080p (1920x1080) et 4K (3840x2160) */
+body.mode-tv .top-header {
+  height: clamp(56px, 7.2vh, 110px);
+  padding: 0 clamp(12px, 1.4vw, 32px);
+}
+
+body.mode-tv .club-logo-top,
+body.mode-tv .club-mascot-top {
+  width: clamp(42px, 5.2vh, 84px);
+  height: clamp(42px, 5.2vh, 84px);
+}
+
+body.mode-tv .brand-titles h1 {
+  font-size: clamp(0.95rem, 1.35vw, 2rem);
+}
+
+body.mode-tv .brand-titles .subtitle {
+  font-size: clamp(0.65rem, 0.85vw, 1.25rem);
+}
+
+body.mode-tv .kpi-item {
+  font-size: clamp(0.72rem, 0.92vw, 1.35rem);
+  padding: clamp(3px, 0.4vh, 8px) clamp(7px, 0.7vw, 14px);
+}
+
+body.mode-tv .clock-time {
+  font-size: clamp(0.88rem, 1.15vw, 1.65rem);
+}
+
+body.mode-tv .main-workspace {
+  gap: clamp(10px, 1.1vw, 24px);
+  padding: clamp(8px, 1.1vh, 22px) clamp(10px, 1.2vw, 28px);
+}
+
+body.mode-tv .match-row {
+  grid-template-columns: clamp(80px, 6.5vw, 140px) 1fr clamp(96px, 8vw, 165px) 1fr auto;
+  padding: clamp(6px, 0.9vh, 14px) clamp(8px, 0.9vw, 18px);
+  gap: clamp(6px, 0.7vw, 14px);
+}
+
+body.mode-tv .m-date {
+  font-size: clamp(0.64rem, 0.78vw, 1.1rem);
+}
+
+body.mode-tv .m-time {
+  font-size: clamp(0.78rem, 0.98vw, 1.4rem);
+}
+
+body.mode-tv .m-cat-badge {
+  font-size: clamp(0.6rem, 0.74vw, 1.05rem);
+}
+
+body.mode-tv .team-name-txt {
+  font-size: clamp(0.76rem, 0.96vw, 1.4rem);
+}
+
+body.mode-tv .club-badge-sm {
+  width: clamp(28px, 2.5vw, 52px);
+  height: clamp(28px, 2.5vw, 52px);
+}
+
+body.mode-tv .score-pill {
+  font-size: clamp(0.86rem, 1.12vw, 1.65rem);
+  min-width: clamp(78px, 6.5vw, 136px);
+  padding: clamp(3px, 0.45vh, 8px) clamp(8px, 0.7vw, 14px);
+}
+
+body.mode-tv .sb-logo-lg {
+  width: clamp(72px, 10.5vh, 160px);
+  height: clamp(72px, 10.5vh, 160px);
+}
+
+body.mode-tv .sb-team-title {
+  font-size: clamp(0.95rem, 1.35vw, 2rem);
+  max-width: clamp(180px, 16vw, 380px);
+}
+
+body.mode-tv .big-digits-wrap {
+  padding: clamp(10px, 1.6vh, 26px) clamp(18px, 2vw, 42px);
+}
+
+body.mode-tv .big-digit {
+  font-size: clamp(2.2rem, 3.8vw, 5.5rem);
+}
+
+body.mode-tv .big-sep {
+  font-size: clamp(1.6rem, 2.6vw, 3.8rem);
+}
+
+body.mode-tv .sb-period-pill {
+  font-size: clamp(0.76rem, 0.98vw, 1.4rem);
+}
+
+body.mode-tv .next-match-card {
+  padding: clamp(8px, 1.2vh, 20px) clamp(12px, 1.3vw, 24px);
+}
+
+body.mode-tv .next-team {
+  font-size: clamp(0.82rem, 1.05vw, 1.5rem);
+}
+
+body.mode-tv .club-overview-card {
+  padding: clamp(8px, 1.1vh, 18px) clamp(12px, 1.3vw, 24px);
+}
+
+body.mode-tv .overview-texts h4 {
+  font-size: clamp(0.78rem, 1vw, 1.45rem);
+}
+
+body.mode-tv .overview-texts p {
+  font-size: clamp(0.68rem, 0.86vw, 1.25rem);
+}
+
+body.mode-tv .ov-stat-val {
+  font-size: clamp(0.86rem, 1.1vw, 1.6rem);
+}
+
+body.mode-tv .bottom-ticker {
+  height: clamp(32px, 4.2vh, 60px);
+}
+
+body.mode-tv .ticker-label {
+  font-size: clamp(0.72rem, 0.92vw, 1.35rem);
+}
+
+body.mode-tv .ticker-track {
+  font-size: clamp(0.78rem, 1vw, 1.45rem);
+}
+
+/* Écrans compacts en hauteur (ex: TV HD 1366x768 ou 1280x720) */
+@media (max-height: 800px) {
+  body.mode-tv .live-scoreboard-card {
+    padding: 10px 14px;
+    gap: 6px;
+  }
+  body.mode-tv .sb-arena-wrap {
+    gap: 8px;
+  }
+  body.mode-tv .sb-summary-bar {
+    padding: 4px 10px;
+  }
+  body.mode-tv .matches-list {
+    gap: 5px;
+    padding: 6px 8px;
+  }
+}
+
+/* Adaptation de la grille Buvette/Infos sur Mobile */
+body.mode-mobile .buvette-categories-grid,
+body.mode-mobile .infos-cards-grid {
+  grid-template-columns: 1fr;
+}
