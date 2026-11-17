@@ -3701,3 +3701,293 @@ body.mode-mobile .header-controls .btn-top {
   border-left-color: #16A34A;
   background: #1E293B;
 }
+
+
+/* ==========================================================================
+   ONGLET PARTAGE SUR LE MATCH SÉLECTIONNÉ (RÉSEAUX SOCIAUX, SMS, MAIL, COPIE)
+   ========================================================================== */
+
+.sb-view-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.sb-view-tab {
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1.5px solid #CBD5E1;
+  background: #F1F5F9;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.sb-view-tab:hover {
+  background: #E2E8F0;
+}
+
+.sb-view-tab.active {
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%);
+  color: #FFFFFF;
+  border-color: #93C5FD;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.28);
+}
+
+/* En mode TV passif (sans Staff déverrouillé), garder l'écran TV épuré ou afficher les onglets proprement */
+.sb-share-tab-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.share-preview-card {
+  background: #F8FAFC;
+  border: 2px solid #93C5FD;
+  border-left: 6px solid #1E3A8A;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.share-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px dashed #CBD5E1;
+  padding-bottom: 6px;
+}
+
+.share-preview-header strong {
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #1E3A8A;
+  text-transform: uppercase;
+}
+
+.share-preview-text {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.share-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+body.mode-mobile .share-tiles-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.share-tile-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: none;
+  color: #FFFFFF;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  min-height: 64px;
+}
+
+.share-tile-btn:hover,
+.share-tile-btn:active {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.share-tile-ico {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.share-tile-btn.sh-native {
+  background: linear-gradient(135deg, #EA580C 0%, #D97706 100%);
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 10px;
+  font-size: 0.94rem;
+  min-height: 52px;
+}
+
+.share-tile-btn.sh-whatsapp {
+  background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+}
+
+.share-tile-btn.sh-sms {
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+}
+
+.share-tile-btn.sh-mail {
+  background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%);
+}
+
+.share-tile-btn.sh-facebook {
+  background: linear-gradient(135deg, #1877F2 0%, #1D4ED8 100%);
+}
+
+.share-tile-btn.sh-copy {
+  background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+  border: 1.5px solid #F59E0B;
+}
+
+body.mode-mobile .sb-view-tab {
+  min-height: 46px;
+  font-size: 0.9rem;
+  border-radius: 12px;
+}
+
+
+/* ==========================================================================
+   V25 : BOUTON PAUSE / LECTURE CARROUSEL TOUJOURS VISIBLE + LIENS PARTAGE PROPRES
+   ========================================================================== */
+
+.btn-tv-pause-top {
+  background: #FEF3C7;
+  color: #9A3412;
+  border: 1.5px solid #F59E0B;
+}
+
+.btn-tv-pause-top.paused,
+.btn-tv-pause.paused {
+  background: #DCFCE7 !important;
+  color: #166534 !important;
+  border-color: #22C55E !important;
+}
+
+body.mode-mobile #btnToggleTvPauseTop {
+  display: none !important;
+}
+
+.tv-carousel-controls {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-tv-pause {
+  background: #FEF3C7;
+  color: #9A3412;
+  border: 1.5px solid #F59E0B;
+  border-radius: 999px;
+  padding: clamp(5px, 0.7vh, 10px) clamp(12px, 1vw, 18px);
+  font-size: clamp(0.75rem, 0.9vw, 1.1rem);
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: all 0.15s ease;
+}
+
+.btn-tv-pause:hover {
+  transform: scale(1.03);
+}
+
+/* Carte d'aperçu de partage propre avec liens cliquables masquant l'URL brute */
+.share-clean-box {
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #0F172A;
+}
+
+.share-clean-club {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #EA580C;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.share-clean-matchup {
+  font-size: 1.02rem;
+  font-weight: 900;
+  color: #1E3A8A;
+  padding: 6px 10px;
+  background: #EFF6FF;
+  border-radius: 8px;
+  border-left: 4px solid #2563EB;
+}
+
+.share-clean-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.share-clean-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #CBD5E1;
+}
+
+.share-clean-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-decoration: none;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1.5px solid #93C5FD;
+  transition: all 0.15s ease;
+}
+
+.share-clean-link:hover {
+  background: #DBEAFE;
+}
+
+.share-clean-link.app-link {
+  background: #FFF7ED;
+  color: #C2410C;
+  border-color: #FDBA74;
+}
+
+.share-clean-link.app-link:hover {
+  background: #FFEDD5;
+}

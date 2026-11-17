@@ -79,6 +79,7 @@
         <div id="liveClock" class="clock-time">15:30:00</div>
         <span id="syncStatusBadge" class="clock-sync">● Direct Synchronisé</span>
       </div>
+      <button id="btnToggleTvPauseTop" class="btn-top btn-tv-pause-top" onclick="toggleTvCarouselPause()" title="Arrêter ou relancer la rotation automatique du carrousel TV">⏸️ Pause Carrousel</button>
       <button id="btnFullscreen" class="btn-top btn-fullscreen" onclick="toggleFullScreen()" title="Afficher en plein écran (F11)">⛶ Plein Écran</button>
       <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
@@ -135,8 +136,8 @@
             <span>Infos Club</span>
           </button>
         </div>
-        <div class="tv-carousel-controls staff-only-tool">
-          <button id="btnToggleTvPause" class="btn-tv-pause" onclick="toggleTvCarouselPause()" title="Mettre en pause / reprendre la rotation TV">⏸️ Pause rotation</button>
+        <div class="tv-carousel-controls">
+          <button id="btnToggleTvPause" class="btn-tv-pause" onclick="toggleTvCarouselPause()" title="Arrêter ou relancer la rotation automatique du carrousel">⏸️ Pause</button>
         </div>
         <div class="tv-progress-bar-wrap">
           <div id="tvSlideProgressBar" class="tv-progress-bar"></div>
@@ -197,13 +198,26 @@
 
         <div class="sb-top-bar">
           <span id="sbStatusBadge" class="sb-status-badge live">🔴 MATCH EN COURS</span>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span id="sbMetaInfo" class="sb-meta-info">DIM. 15 NOV. à 15H30 • U13F</span>
             <button class="btn-action-sm staff-only-tool" style="background:#1E3A8A;color:#FFF;" onclick="openMatchSheetModal(state.selectedMatchId)">✏️ Fiche / Adresse</button>
           </div>
         </div>
 
-        <div class="sb-arena-wrap">
+        <!-- ONGLETS DU MATCH SÉLECTIONNÉ : [ 🏀 Match & Direct ] | [ 📤 Partager (Réseaux / SMS / Mail) ] -->
+        <div class="sb-view-tabs">
+          <button type="button" id="btnSbTabMatch" class="sb-view-tab active" onclick="switchSelectedMatchTab('match')">
+            🏀 Match & Infos
+          </button>
+          <button type="button" id="btnSbTabShare" class="sb-view-tab" onclick="switchSelectedMatchTab('share')">
+            📤 Partager (Réseaux / SMS / Mail)
+          </button>
+        </div>
+
+        <!-- VUE ONGLET PARTAGE DU MATCH SÉLECTIONNÉ -->
+        <div id="sbShareTabWrap" class="sb-share-tab-wrap" style="display:none;"></div>
+
+        <div id="sbArenaMainWrap" class="sb-arena-wrap">
           <div class="sb-arena">
             <div class="sb-team-box">
               <img id="sbHomeLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Domicile">

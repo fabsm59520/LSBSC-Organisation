@@ -3069,3 +3069,361 @@ renderAll = function() {
 document.addEventListener("DOMContentLoaded", () => {
   renderMobileTeamsSection();
 });
+
+
+
+
+/* ================= EXTENSION V25 : PARTAGE PROPRE (LIENS CLIQUABLES MASQUÉS, ZÉRO '', URL OFFICIELLE GITHUB) & BOUTON PAUSE/LECTURE CARROUSEL ================= */
+
+const OFFICIAL_LSBSC_APP_URL = "https://fabsm59520.github.io/LSBSC-Organisation/";
+state.selectedMatchViewTab = "match"; // 'match' | 'share'
+state.publicAppUrl = OFFICIAL_LSBSC_APP_URL;
+
+function getAppShareUrl(matchId) {
+  const base = OFFICIAL_LSBSC_APP_URL;
+  return matchId ? `${base}?match=${encodeURIComponent(matchId)}` : base;
+}
+
+// Synchroniser l'état des boutons Pause / Lecture du carrousel (en-tête principal + barre du carrousel)
+window.toggleTvCarouselPause = function() {
+  state.tvCarouselPaused = !state.tvCarouselPaused;
+  updateTvCarouselPauseButtons();
+  tvSlideStartTime = performance.now();
+  tvPhaseStartTime = performance.now();
+};
+
+function updateTvCarouselPauseButtons() {
+  const btn1 = document.getElementById("btnToggleTvPause");
+  const btn2 = document.getElementById("btnToggleTvPauseTop");
+  if (btn1) {
+    btn1.innerHTML = state.tvCarouselPaused ? "▶️ Lecture" : "⏸️ Pause";
+    btn1.classList.toggle("paused", Boolean(state.tvCarouselPaused));
+  }
+  if (btn2) {
+    btn2.innerHTML = state.tvCarouselPaused ? "▶️ Lecture Carrousel" : "⏸️ Pause Carrousel";
+    btn2.classList.toggle("paused", Boolean(state.tvCarouselPaused));
+  }
+}
+
+// Génère les informations propres du match sans aucun caractère corrompu '' ni URL brute à rallonge
+function buildMatchSharePayload(m) {
+  if (!m) return { subject: "Match LSBSC", plainText: "", htmlText: "", appUrl: OFFICIAL_LSBSC_APP_URL, gpsUrl: "" };
+  const info = getMatchVenueInfo(m);
+  const homeUs = isLSBSC(m.home);
+  const locType = homeUs ? "Match à Domicile (Lille Sud)" : "Match à l'Extérieur";
+  const outcome = computeMatchOutcome(m);
+  const appUrl = getAppShareUrl(m.id);
+
+  let statusLine = "";
+  let subjectPrefix = `[LSBSC ${m.cat}]`;
+
+  if (m.status === "live") {
+    statusLine = `EN DIRECT (${m.period || "En cours"}) : ${m.home} ${m.sh} - ${m.sa} ${m.away}`;
+    subjectPrefix = `DIRECT [LSBSC ${m.cat}] ${m.home} ${m.sh}-${m.sa} ${m.away}`;
+  } else if (m.status === "finished") {
+    const resLbl = outcome === "win" ? "VICTOIRE LSBSC" : (outcome === "loss" ? "DÉFAITE" : "MATCH NUL");
+    statusLine = `RÉSULTAT FINAL (${resLbl}) : ${m.home} ${m.sh} - ${m.sa} ${m.away}`;
+    subjectPrefix = `RÉSULTAT [LSBSC ${m.cat}] ${m.home} ${m.sh}-${m.sa} ${m.away}`;
+  } else if (m.status === "postponed") {
+    statusLine = `MATCH REPORTÉ (${m.statusNote || "Nouvelle date à fixer"})`;
+    subjectPrefix = `REPORTÉ [LSBSC ${m.cat}] ${m.home} vs ${m.away}`;
+  } else if (m.status === "forfeit") {
+    statusLine = `MATCH FORFAIT (${m.statusNote || "Forfait officiel"})`;
+    subjectPrefix = `FORFAIT [LSBSC ${m.cat}] ${m.home} vs ${m.away}`;
+  } else {
+    statusLine = `RENCONTRE À VENIR — Coup d'envoi à ${m.time}`;
+    subjectPrefix = `MATCH [LSBSC ${m.cat}] ${m.date} à ${m.time}`;
+  }
+
+  // Version HTML riche (pour Copier-Coller dans Mail, Word, Facebook, Messageries riches) :
+  // Le lien Google Maps et le lien "Application LSBSC" sont des hyperliens cliquables qui cachent l'URL brute !
+  const htmlParts = [
+    `<div style="font-family:Arial,sans-serif;line-height:1.5;color:#0F172A;">`,
+    `<strong>LILLE SUD BASKETBALL SPORTING CLUB (LSBSC)</strong><br>`,
+    `<strong>Catégorie :</strong> ${m.cat} (${m.comp || "Champ."}) — ${locType}<br><br>`,
+    `<strong style="font-size:1.05em;color:#1E3A8A;">${m.home} vs ${m.away}</strong><br>`,
+    `<strong>Date :</strong> ${m.date} à ${m.time} (${m.wkLabel || ""})<br>`,
+    `<strong>Statut :</strong> ${statusLine}<br><br>`,
+    `<strong>Lieu :</strong> <a href="${info.gpsUrl}" target="_blank" rel="noopener" style="color:#1D4ED8;font-weight:bold;text-decoration:underline;">${info.salle} — ${info.address} (Itinéraire Google Maps)</a><br>`,
+    info.precision ? `<strong>Précisions :</strong> ${info.precision}<br>` : ``,
+    `<br><strong>Direct, Programme & GPS :</strong> <a href="${appUrl}" target="_blank" rel="noopener" style="color:#EA580C;font-weight:bold;text-decoration:underline;">Application LSBSC</a>`,
+    `</div>`
+  ];
+
+  // Version Texte universelle (sans emojis 4-octets qui produisent des '' sur WhatsApp Desktop, et sans l'URL Google Maps brute à rallonge)
+  const plainLines = [
+    `*LILLE SUD BASKETBALL SPORTING CLUB (LSBSC)*`,
+    `• Catégorie : ${m.cat} (${m.comp || "Champ."}) — ${locType}`,
+    ``,
+    `*${m.home}  VS  ${m.away}*`,
+    `• Date : ${m.date} à ${m.time} (${m.wkLabel || ""})`,
+    `• ${statusLine}`,
+    ``,
+    `• Salle : ${info.salle}`,
+    `• Adresse : ${info.address}`
+  ];
+
+  if (info.precision) {
+    plainLines.push(`• Précisions : ${info.precision}`);
+  }
+
+  plainLines.push(
+    ``,
+    `• Direct, Programme & Itinéraire GPS sur Application LSBSC :`,
+    `${appUrl}`
+  );
+
+  return {
+    subject: subjectPrefix,
+    plainText: plainLines.join("\n"),
+    htmlText: htmlParts.join(""),
+    appUrl: appUrl,
+    gpsUrl: info.gpsUrl,
+    info: info
+  };
+}
+
+window.switchSelectedMatchTab = function(tabName) {
+  state.selectedMatchViewTab = tabName === "share" ? "share" : "match";
+  const btnMatch = document.getElementById("btnSbTabMatch");
+  const btnShare = document.getElementById("btnSbTabShare");
+  const arenaWrap = document.getElementById("sbArenaMainWrap");
+  const shareWrap = document.getElementById("sbShareTabWrap");
+
+  if (btnMatch) btnMatch.classList.toggle("active", state.selectedMatchViewTab === "match");
+  if (btnShare) btnShare.classList.toggle("active", state.selectedMatchViewTab === "share");
+
+  if (arenaWrap) arenaWrap.style.display = state.selectedMatchViewTab === "match" ? "flex" : "none";
+  if (shareWrap) {
+    shareWrap.style.display = state.selectedMatchViewTab === "share" ? "flex" : "none";
+    if (state.selectedMatchViewTab === "share") {
+      renderSelectedMatchShareTab();
+    }
+  }
+};
+
+window.openShareTabForMatch = function(matchId) {
+  state.selectedMatchId = matchId;
+  state.selectedMatchViewTab = "share";
+  renderAll();
+  if (state.displayMode === "mobile") {
+    switchMobileTab("live");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  window.switchSelectedMatchTab("share");
+};
+
+function renderSelectedMatchShareTab() {
+  const shareWrap = document.getElementById("sbShareTabWrap");
+  if (!shareWrap) return;
+  const current = state.matches.find(m => m.id === state.selectedMatchId) || state.matches[0];
+  if (!current) return;
+
+  const payload = buildMatchSharePayload(current);
+  const info = payload.info;
+  const homeUs = isLSBSC(current.home);
+  const locBadge = homeUs ? "🏠 Match à Domicile (Lille Sud)" : "🚌 Match à l'Extérieur";
+  const outcome = computeMatchOutcome(current);
+
+  let statusBadgeHtml = "";
+  if (current.status === "live") {
+    statusBadgeHtml = `<span style="color:#EA580C;font-weight:900;">🔴 EN DIRECT (${current.period || "QT1"}) : ${current.sh} - ${current.sa}</span>`;
+  } else if (current.status === "finished") {
+    const resTxt = outcome === "win" ? "✅ VICTOIRE LSBSC" : (outcome === "loss" ? "❌ DÉFAITE" : "🤝 ÉGALITÉ");
+    statusBadgeHtml = `<span style="color:#15803D;font-weight:900;">${resTxt} — Score final : ${current.sh} - ${current.sa}</span>`;
+  } else {
+    statusBadgeHtml = `<span style="color:#1E3A8A;font-weight:900;">🕒 Coup d'envoi à ${current.time}</span>`;
+  }
+
+  const encodedText = encodeURIComponent(payload.plainText);
+  const encodedSubject = encodeURIComponent(payload.subject);
+  const encodedUrl = encodeURIComponent(payload.appUrl);
+
+  // Utiliser api.whatsapp.com/send au lieu de wa.me pour éviter la corruption d'encodage UTF-8 sur Windows/Desktop
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || "");
+  const smsUrl = isIOS ? `sms:&body=${encodedText}` : `sms:?body=${encodedText}`;
+  const mailtoUrl = `mailto:?subject=${encodedSubject}&body=${encodedText}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
+
+  shareWrap.innerHTML = `
+    <div class="share-preview-card">
+      <div class="share-preview-header">
+        <strong>📋 Fiche de Partage — ${current.cat} (${locBadge})</strong>
+        <button type="button" id="btnCopyShareInline" class="btn-action-sm" style="background:#1E3A8A;color:#FFF;" onclick="copyMatchShareText(${current.id})">
+          📋 Copier Fiche & Liens
+        </button>
+      </div>
+
+      <div class="share-clean-box">
+        <div class="share-clean-club">🦁 Lille Sud Basketball Sporting Club (LSBSC) • ${current.cat} (${current.comp || "Champ."})</div>
+        <div class="share-clean-matchup">${current.home} &nbsp;VS&nbsp; ${current.away}</div>
+        <div class="share-clean-meta">
+          <div>📅 <strong>Date :</strong> ${current.date} à ${current.time} (${current.wkLabel || ""})</div>
+          <div>📊 <strong>Statut :</strong> ${statusBadgeHtml}</div>
+          <div>🏟️ <strong>Salle :</strong> ${info.salle} — ${info.address}</div>
+          ${info.precision ? `<div>📌 <strong>Précisions :</strong> ${info.precision}</div>` : ""}
+        </div>
+        <div class="share-clean-links-row">
+          <a class="share-clean-link" href="${info.gpsUrl}" target="_blank" rel="noopener">
+            📍 Itinéraire Google Maps (${info.salle}) ↗
+          </a>
+          <a class="share-clean-link app-link" href="${payload.appUrl}" target="_blank" rel="noopener">
+            📲 Application LSBSC ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="share-tiles-grid">
+      <button type="button" class="share-tile-btn sh-native" onclick="triggerNativeMatchShare(${current.id})">
+        <span class="share-tile-ico">📲</span>
+        <span>Partager (Réseaux / Menu Téléphone)</span>
+      </button>
+
+      <a class="share-tile-btn sh-whatsapp" href="${whatsappUrl}" target="_blank" rel="noopener">
+        <span class="share-tile-ico">💬</span>
+        <span>WhatsApp</span>
+      </a>
+
+      <a class="share-tile-btn sh-sms" href="${smsUrl}">
+        <span class="share-tile-ico">✉️</span>
+        <span>SMS / Message</span>
+      </a>
+
+      <a class="share-tile-btn sh-mail" href="${mailtoUrl}">
+        <span class="share-tile-ico">📧</span>
+        <span>E-mail</span>
+      </a>
+
+      <a class="share-tile-btn sh-facebook" href="${facebookUrl}" target="_blank" rel="noopener">
+        <span class="share-tile-ico">📘</span>
+        <span>Facebook</span>
+      </a>
+
+      <button type="button" id="btnCopyShareTile" class="share-tile-btn sh-copy" onclick="copyMatchShareText(${current.id})">
+        <span class="share-tile-ico">📋</span>
+        <span>Copier avec Liens Cachés</span>
+      </button>
+    </div>
+  `;
+}
+
+window.triggerNativeMatchShare = async function(matchId) {
+  const m = state.matches.find(x => x.id === matchId) || state.matches.find(x => x.id === state.selectedMatchId);
+  if (!m) return;
+  const payload = buildMatchSharePayload(m);
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: payload.subject,
+        text: payload.plainText,
+        url: payload.appUrl
+      });
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+  }
+  window.copyMatchShareText(m.id);
+};
+
+// Copie simultanément en HTML Riche (avec les liens cachés "Itinéraire Google Maps" et "Application LSBSC") et en Texte propre
+window.copyMatchShareText = function(matchId) {
+  const m = state.matches.find(x => x.id === matchId) || state.matches.find(x => x.id === state.selectedMatchId);
+  if (!m) return;
+  const payload = buildMatchSharePayload(m);
+
+  const confirmCopied = () => {
+    const b1 = document.getElementById("btnCopyShareInline");
+    const b2 = document.getElementById("btnCopyShareTile");
+    if (b1) {
+      b1.textContent = "✅ Copié !";
+      b1.style.background = "#16A34A";
+    }
+    if (b2) {
+      b2.innerHTML = `<span class="share-tile-ico">✅</span><span>Copié !</span>`;
+      b2.style.background = "#16A34A";
+    }
+    setTimeout(() => {
+      renderSelectedMatchShareTab();
+    }, 1800);
+  };
+
+  if (navigator.clipboard && window.ClipboardItem) {
+    try {
+      const htmlBlob = new Blob([payload.htmlText], { type: "text/html" });
+      const textBlob = new Blob([payload.plainText], { type: "text/plain" });
+      const item = new ClipboardItem({ "text/html": htmlBlob, "text/plain": textBlob });
+      navigator.clipboard.write([item]).then(confirmCopied).catch(() => {
+        navigator.clipboard.writeText(payload.plainText).then(confirmCopied).catch(() => {
+          fallbackCopyText(payload.plainText, confirmCopied);
+        });
+      });
+      return;
+    } catch (e) {}
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(payload.plainText).then(confirmCopied).catch(() => {
+      fallbackCopyText(payload.plainText, confirmCopied);
+    });
+  } else {
+    fallbackCopyText(payload.plainText, confirmCopied);
+  }
+};
+
+function fallbackCopyText(txt, cb) {
+  const ta = document.createElement("textarea");
+  ta.value = txt;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  document.body.removeChild(ta);
+  if (cb) cb();
+}
+
+// Mettre à jour automatiquement l'onglet Partage quand on change de match ou quand le score évolue
+const _prevRenderRightColumnV24 = renderRightColumn;
+renderRightColumn = function() {
+  _prevRenderRightColumnV24();
+  if (state.selectedMatchViewTab === "share") {
+    renderSelectedMatchShareTab();
+  }
+};
+
+// Ajouter aussi un bouton rapide "📤 Partager" sur chaque tuile de match dans l'onglet Sélection Équipe sur Mobile
+const _prevRenderSingleMobileMatchTileV24 = renderSingleMobileMatchTile;
+renderSingleMobileMatchTile = function(m) {
+  const baseHtml = _prevRenderSingleMobileMatchTileV24(m);
+  if (baseHtml.includes("openShareTabForMatch")) return baseHtml;
+  const shareBtnHtml = `<button type="button" class="m-address-sub" style="background:#FFF7ED;color:#EA580C;border-color:#FDBA74;cursor:pointer;" onclick="event.stopPropagation();openShareTabForMatch(${m.id})">📤 Partager ce match</button>`;
+  return baseHtml.replace(`</div>
+      <div class="m-team away">`, `${shareBtnHtml}</div>
+      <div class="m-team away">`);
+};
+
+// Lecture du lien direct (?match=ID) à l'ouverture de l'application pour sélectionner automatiquement le match partagé
+function checkUrlSharedMatchParam() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const sharedId = parseInt(params.get("match"), 10);
+    if (sharedId) {
+      const target = state.matches.find(m => m.id === sharedId);
+      if (target) {
+        state.autoWeek = false;
+        state.currentWeek = target.wk;
+        state.selectedMatchId = target.id;
+        state.selectedMatchViewTab = "match";
+        renderAll();
+      }
+    }
+  } catch (e) {}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  updateTvCarouselPauseButtons();
+  setTimeout(checkUrlSharedMatchParam, 150);
+});
