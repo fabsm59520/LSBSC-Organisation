@@ -14,9 +14,8 @@
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- Styles complets : Visibilité Staff, Menus déroulants, Mobile, QR Code TV, Rotation TV, Partage & Table de marque -->
   <style>
-    /* 1. Visibilité stricte en mode Direct / Scores (Staff) */
+    /* 1. Visibilité stricte en mode Direct / Scores (Staff PIN 9694) */
     .staff-only-tool {
       display: none !important;
     }
@@ -26,67 +25,11 @@
       justify-content: center;
     }
 
-    /* 2. Masquer l'ancien ruban de semaines */
     #weekTabsStrip {
       display: none !important;
     }
 
-    /* 3. Menus déroulants (Week-ends, Lieu, Catégories) */
-    .week-nav-bar {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      width: 100%;
-    }
-    .week-select,
-    .custom-dropdown {
-      appearance: none;
-      -webkit-appearance: none;
-      background-color: #1E293B;
-      color: #F8FAFC;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 8px 30px 8px 12px;
-      font-size: 0.88rem;
-      font-weight: 700;
-      cursor: pointer;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 8px center;
-      background-size: 16px;
-      min-height: 38px;
-    }
-    .week-select {
-      flex: 1;
-      min-width: 0;
-    }
-    .week-select:focus,
-    .custom-dropdown:focus {
-      outline: 2px solid #F97316;
-      border-color: #F97316;
-    }
-    .filter-bar-dropdowns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      width: 100%;
-      margin-top: 6px;
-      margin-bottom: 8px;
-    }
-    .filter-field {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-    .filter-field label {
-      font-size: 0.7rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: #94A3B8;
-      letter-spacing: 0.04em;
-    }
-
-    /* 4. Barre d'actions rapides sous le Scoreboard (Partage WhatsApp, GPS, Période & Fautes) */
+    /* 2. Barre d'actions rapides sous le Scoreboard (Partage WhatsApp, GPS, Édition Fiche Match, Période & Fautes) */
     .sb-extra-bar {
       display: flex;
       flex-wrap: wrap;
@@ -144,24 +87,10 @@
       border-color: rgba(59, 130, 246, 0.5);
       color: #93C5FD;
     }
-
-    /* Bouton GPS directement sur les cartes de matchs à l'extérieur */
-    .match-gps-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 4px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      font-weight: 800;
-      background: rgba(37, 99, 235, 0.18);
-      color: #93C5FD;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      text-decoration: none;
-    }
-    .match-gps-link:hover {
-      background: rgba(37, 99, 235, 0.35);
+    .btn-quick-act.btn-edit-sheet {
+      background: rgba(249, 115, 22, 0.22);
+      border-color: rgba(249, 115, 22, 0.6);
+      color: #FDBA74;
     }
 
     /* Alerte 5 fautes d'équipe (Bonus / Pénalité) */
@@ -181,7 +110,7 @@
       50% { transform: scale(1.06); opacity: 0.85; }
     }
 
-    /* 5. Console Table de Marque Rapide (Mode Staff : +1, +2, +3, Annuler, Quart-Temps, Fautes) */
+    /* 3. Console Table de Marque Rapide (Mode Staff : +1, +2, +3, Annuler, Quart-Temps, Fautes) */
     .pro-staff-console {
       margin-top: 10px;
       padding: 10px;
@@ -262,7 +191,7 @@
       border-color: #FB923C;
     }
 
-    /* 6. Widget QR Code fixe pour l'Écran TV Salle (masqué sur mobile) */
+    /* 4. Widget QR Code fixe pour l'Écran TV Salle (masqué sur mobile) */
     .tv-qr-floating {
       position: fixed;
       right: 16px;
@@ -311,7 +240,6 @@
       display: none !important;
     }
 
-    /* Carte QR Code dans l'onglet Infos Mobile */
     .mobile-qr-share-box {
       display: flex;
       align-items: center;
@@ -331,7 +259,6 @@
       cursor: pointer;
     }
 
-    /* Encart Rotation Automatique Buvette / QR sur TV quand aucun match n'est en direct */
     .tv-promo-slide {
       display: none;
       align-items: center;
@@ -355,7 +282,6 @@
       border-radius: 10px;
     }
 
-    /* Bannière de mise à jour PWA */
     .pwa-update-toast {
       position: fixed;
       top: 12px;
@@ -374,7 +300,6 @@
       gap: 10px;
     }
 
-    /* 7. Adaptation complète Mobile (mode-mobile & petits écrans) */
     @media (max-width: 900px) {
       .tv-qr-floating {
         display: none !important;
@@ -436,24 +361,6 @@
         text-align: center;
         justify-content: center;
       }
-
-      /* Navigation par onglets mobile */
-      .mobile-nav-tabs {
-        display: flex !important;
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        width: 100%;
-        overflow-x: auto;
-      }
-      .mob-tab {
-        flex: 1;
-        white-space: nowrap;
-        font-size: 0.8rem !important;
-        padding: 10px 6px !important;
-      }
-
-      /* Barre de semaines et filtres sur mobile */
       .week-nav-bar {
         flex-wrap: wrap;
       }
@@ -469,45 +376,9 @@
         min-height: 36px;
         font-size: 0.8rem !important;
       }
-      .filter-bar-dropdowns {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      /* Scoreboard responsive sur téléphone */
-      .sb-arena {
-        grid-template-columns: 1fr auto 1fr !important;
-        gap: 6px !important;
-        padding: 8px 4px !important;
-      }
-      .sb-logo-lg {
-        width: 48px !important;
-        height: 48px !important;
-      }
-      .sb-team-title {
-        font-size: 0.78rem !important;
-        word-break: break-word;
-      }
-      .sb-loc-pill {
-        font-size: 0.62rem !important;
-        padding: 2px 5px !important;
-      }
       .pro-staff-grid {
         grid-template-columns: 1fr;
       }
-    }
-
-    body.mode-mobile .week-nav-bar {
-      flex-wrap: wrap;
-    }
-    body.mode-mobile .week-select {
-      order: -1;
-      flex: 1 1 100%;
-      width: 100%;
-      margin-bottom: 4px;
-    }
-    body.mode-mobile .btn-week {
-      flex: 1;
-      min-height: 38px;
     }
   </style>
 </head>
@@ -566,7 +437,7 @@
       <img id="headerMascotImg" class="club-mascot-top" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC" onclick="handleHeaderLogoClick()" title="Mascotte LSBSC">
       <div class="brand-titles">
         <h1>LILLE SUD BASKETBALL SPORTING CLUB</h1>
-        <div class="subtitle">SOUTH LILLE • PROGRAMMATION & RÉSULTATS</div>
+        <div class="subtitle">SOUTH LILLE • PROGRAMMATION & RÉSULTATS 2026-2027</div>
       </div>
     </div>
 
@@ -585,12 +456,14 @@
       <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application sur l'écran d'accueil">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
 
-      <!-- Boutons visibles uniquement quand le mode Direct / Scores est activé -->
+      <!-- Boutons visibles uniquement quand le mode Direct / Scores (Staff PIN 9694) est activé -->
+      <button id="btnAddMatchTop" class="btn-top staff-only-tool" onclick="openEditMatchModal('NEW')" title="Ajouter une nouvelle fiche match">➕ Nouveau Match</button>
+      <button id="btnClubAddressesTop" class="btn-top staff-only-tool" onclick="requestPinAccess('addresses')" title="Modifier les adresses des salles et clubs">📍 Adresses Clubs</button>
       <button id="btnVideoLive" class="btn-top btn-youtube staff-only-tool" onclick="openVideoGalleryModal()" title="Regarder les matchs en direct et replays YouTube du club">📺 Vidéos & Live</button>
       <button id="btnLogosAdmin" class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')" title="Gestion des logos">🛡️ Logos</button>
       <button id="btnSettingsAdmin" class="btn-top btn-cloud staff-only-tool" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
 
-      <!-- Bouton principal d'activation du mode Direct / Scores -->
+      <!-- Bouton principal d'activation du mode Direct / Scores (PIN 9694) -->
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
     </div>
   </header>
@@ -616,14 +489,13 @@
         <button class="btn-week" onclick="shiftWeek(1)">Suiv. ▶</button>
       </div>
 
-      <!-- Conservé masqué pour compatibilité avec app.js -->
       <div id="weekTabsStrip" class="week-tabs-strip" style="display:none;"></div>
 
-      <!-- Filtres Lieu & Catégorie en menus déroulants (alimenté dynamiquement + mémorisé) -->
+      <!-- Filtres Lieu & Catégorie en menus déroulants -->
       <div class="filter-bar filter-bar-dropdowns">
         <div class="filter-field">
           <label for="locSelect">📍 Lieu des matchs</label>
-          <select id="locSelect" class="custom-dropdown" onchange="handleLocSelectChange(this.value)">
+          <select id="locSelect" class="custom-dropdown" onchange="setLocFilter(this.value)">
             <option value="ALL">🏠/🚌 Tous les matchs</option>
             <option value="HOME">🏠 Domicile uniquement</option>
             <option value="AWAY">🚌 Extérieur uniquement</option>
@@ -632,7 +504,7 @@
 
         <div class="filter-field">
           <label for="catSelect">🏀 Catégorie (Mémorisée)</label>
-          <select id="catSelect" class="custom-dropdown" onchange="handleCatSelectChange(this.value)">
+          <select id="catSelect" class="custom-dropdown" onchange="setCatFilter(this.value)">
             <option value="ALL">Toutes les catégories</option>
             <option value="U9">U9</option>
             <option value="U11F">U11F</option>
@@ -645,12 +517,14 @@
             <option value="SM2">SM2</option>
           </select>
         </div>
+      </div>
 
-        <!-- Boutons cachés conservés pour la compatibilité interne avec les fonctions existantes de app.js -->
-        <div style="display:none;">
-          <button id="hiddenLocTrigger" class="filter-pill loc-pill active"></button>
-          <button id="hiddenCatTrigger" class="filter-pill cat-pill active"></button>
-        </div>
+      <!-- Barre d'outils Staff (visible uniquement en mode Direct/Scores PIN 9694) -->
+      <div class="staff-schedule-toolbar">
+        <button type="button" class="btn-action-sm btn-save-score" onclick="openEditMatchModal('NEW')">➕ Ajouter un match</button>
+        <button type="button" class="btn-action-sm" onclick="openClubAddressesModal()">📍 Carnet d'adresses des clubs</button>
+        <button type="button" class="btn-action-sm" onclick="exportMatchesJsonFile()">💾 Exporter matches.json</button>
+        <button type="button" class="btn-action-sm" onclick="resetMatchesToPdfDefault()">🔄 Recharger PDF officiel</button>
       </div>
 
       <div id="matchesListContainer" class="matches-list"></div>
@@ -681,8 +555,7 @@
             <div id="sbCenterWrap" class="sb-center-score"></div>
 
             <div class="sb-team-box">
-              <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
-              <img id="sbAwayLogoFallback" style="display:none;" alt="">
+              <img id="sbAwayLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Visiteurs">
               <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
               <span id="sbAwayLocPill" class="sb-loc-pill">VISITEURS</span>
               <div id="sbAwayFouls"></div>
@@ -692,11 +565,14 @@
 
           <div id="sbMatchSummaryBar" class="sb-summary-bar"></div>
 
-          <!-- Barre d'actions enrichie : Période en cours, Itinéraire GPS & Partage WhatsApp -->
+          <!-- Barre d'actions enrichie : Période en cours, Édition Fiche Match (Staff), Itinéraire GPS & Partage WhatsApp -->
           <div class="sb-extra-bar">
             <span id="sbPeriodDisplay" class="sb-period-pill">⏱️ Période : Q1</span>
             <div class="sb-quick-actions">
-              <a id="btnSbGps" class="btn-quick-act btn-gps-map" href="https://www.google.com/maps/search/?api=1&query=Lille+Sud+Basketball" target="_blank" rel="noopener">
+              <button id="btnEditSelectedMatch" type="button" class="btn-quick-act btn-edit-sheet staff-only-tool">
+                ✏️ Modifier Fiche / Adresse
+              </button>
+              <a id="btnSbGps" class="btn-quick-act btn-gps-map" href="https://www.google.com/maps/search/?api=1&query=3+Rue+Francois+Coppee+59000+Lille" target="_blank" rel="noopener">
                 📍 Itinéraire GPS
               </a>
               <button type="button" class="btn-quick-act btn-share-wa" onclick="shareCurrentMatchResult()">
@@ -706,14 +582,16 @@
           </div>
         </div>
 
-        <!-- Panneau de score existant géré par app.js -->
         <div id="staffScorePanel" class="staff-score-panel" style="display:none;"></div>
 
         <!-- Console Rapide Table de Marque (+1, +2, +3, Annuler, Quart-temps & Fautes) visible en Mode Direct/Scores -->
         <div id="proStaffConsole" class="pro-staff-console">
           <div class="pro-staff-header">
-            <span>⚡ Aide Table de Marque Rapide (Quart-temps, Points & Fautes)</span>
-            <button type="button" class="btn-quick-act" onclick="undoLastQuickScore()">↩️ Annuler dernière action</button>
+            <span>⚡ Table de Marque Rapide (Points, Quart-temps & Fautes)</span>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="btn-quick-act" onclick="toggleSelectedMatchLiveStatus()">🔴 Basculer En Direct / Terminé</button>
+              <button type="button" class="btn-quick-act" onclick="undoLastQuickScore()">↩️ Annuler action</button>
+            </div>
           </div>
           <div class="pro-period-bar">
             <button type="button" class="btn-period-chip active" onclick="setQuickPeriod('Q1', this)">Q1</button>
@@ -751,7 +629,7 @@
         <div>
           <div style="font-size:0.75rem;font-weight:900;color:#F97316;text-transform:uppercase;letter-spacing:0.05em;">🍔 Buvette LSBSC & Suivi Mobile en Direct</div>
           <h4 style="margin:4px 0;font-size:1.05rem;">Scannez le QR Code pour suivre les scores sur votre téléphone !</h4>
-          <p id="tvPromoTickerMirror" style="margin:0;font-size:0.84rem;color:#CBD5E1;">Retrouvez le programme du week-end, les scores en direct et les infos buvette sur votre smartphone.</p>
+          <p id="tvPromoTickerMirror" style="margin:0;font-size:0.84rem;color:#CBD5E1;">Retrouvez le programme du week-end, les adresses GPS des salles et les infos buvette sur votre smartphone.</p>
         </div>
         <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC Direct" onclick="openQrZoomModal()">
       </div>
@@ -772,7 +650,6 @@
       <h3>🍔 Buvette & Actualités du Club LSBSC</h3>
       <p id="mobileTickerStaticText" class="mobile-info-body"></p>
 
-      <!-- Encart de partage QR Code sur Mobile -->
       <div class="mobile-qr-share-box">
         <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" onclick="openQrZoomModal()">
         <div>
@@ -781,7 +658,9 @@
         </div>
       </div>
 
-      <div class="mobile-info-actions" style="margin-top:12px;">
+      <div class="mobile-info-actions" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="openEditMatchModal('NEW')">➕ Ajouter un match</button>
+        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="openClubAddressesModal()">📍 Gérer les adresses des clubs</button>
         <button class="btn-action-sm btn-youtube-full staff-only-tool" onclick="openVideoGalleryModal()">📺 Regarder les Directs & Vidéos YouTube</button>
         <button class="btn-action-sm btn-save-score staff-only-tool" onclick="requestPinAccess('settings')">✏️ Modifier l'annonce Buvette / Sync</button>
         <button class="btn-action-sm btn-set-live" onclick="openFormatOverlay()">🖥️ Changer le format d'affichage (TV / Mobile)</button>
@@ -817,13 +696,13 @@
       <div style="padding:14px;background:#FFFFFF;border-radius:14px;display:inline-block;margin:10px auto;">
         <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" style="width:240px;height:240px;display:block;">
       </div>
-      <p style="font-size:0.85rem;font-weight:700;color:#475569;margin-top:6px;">
-        Scannez ce QR Code avec l'appareil photo de votre téléphone pour ouvrir les résultats et le direct du LSBSC.
+      <p style="font-size:0.85rem;font-weight:700;color:#CBD5E1;margin-top:6px;">
+        Scannez ce QR Code avec l'appareil photo de votre téléphone pour ouvrir les résultats, les adresses GPS et le direct du LSBSC.
       </p>
     </div>
   </div>
 
-  <!-- ================= MODAL CLAVIER CODE PIN ================= -->
+  <!-- ================= MODAL CLAVIER CODE PIN (9694) ================= -->
   <div id="pinModal" class="modal-backdrop">
     <div class="modal-card" style="max-width:360px;">
       <div class="modal-header">
@@ -845,6 +724,161 @@
         <button class="pin-btn" onclick="pressPinDigit(0)">0</button>
         <button class="pin-btn" style="background:#DCFCE7;color:#166534;" onclick="pressPinDigit('OK')">OK</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL ÉDITION COMPLÈTE D'UNE FICHE MATCH (PROTÉGÉ PIN 9694) ================= -->
+  <div id="editMatchModal" class="modal-backdrop">
+    <div class="modal-card" style="max-width:680px;">
+      <div class="modal-header">
+        <h3 id="editMatchModalTitle">✏️ Modifier la Fiche Match</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖ Fermer</button>
+      </div>
+
+      <form onsubmit="saveMatchFromModal(event)">
+        <input type="hidden" id="emOriginalId">
+
+        <div class="form-grid-2">
+          <div class="form-field">
+            <label for="emDate">📅 Date (Format calendrier)</label>
+            <input type="date" id="emDate" onchange="autoFormatDateLabelFromIso(this.value)" required>
+          </div>
+          <div class="form-field">
+            <label for="emDateLabel">🗓️ Libellé Date affiché (ex: SAM. 21 NOV.)</label>
+            <input type="text" id="emDateLabel" placeholder="SAM. 21 NOV." required>
+          </div>
+
+          <div class="form-field">
+            <label for="emTime">⏰ Heure du match (ex: 18H30)</label>
+            <input type="text" id="emTime" placeholder="18H30" required>
+          </div>
+          <div class="form-field">
+            <label for="emWeek">📆 Groupe Week-end (Menu déroulant)</label>
+            <input type="text" id="emWeek" placeholder="WE 21-22 NOV." required>
+          </div>
+
+          <div class="form-field">
+            <label for="emCat">🏀 Catégorie LSBSC</label>
+            <select id="emCat">
+              <option value="U9">U9</option>
+              <option value="U11F">U11F</option>
+              <option value="U13F">U13F</option>
+              <option value="U15F">U15F</option>
+              <option value="U15M">U15M</option>
+              <option value="U18F">U18F</option>
+              <option value="U18M">U18M</option>
+              <option value="SM1">SM1</option>
+              <option value="SM2">SM2</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="emLocation">🏠/🚌 Lieu pour le LSBSC</label>
+            <select id="emLocation">
+              <option value="HOME">🏠 Domicile (Salle Antoine Blondin)</option>
+              <option value="AWAY">🚌 Extérieur (En déplacement)</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="emHome"> Équipe Locaux (Domicile)</label>
+            <input type="text" id="emHome" required>
+          </div>
+          <div class="form-field">
+            <label for="emAway">🎽 Équipe Visiteurs (Extérieur)</label>
+            <input type="text" id="emAway" required>
+          </div>
+
+          <div class="form-field">
+            <label for="emScoreHome">🔢 Score Locaux (laisser vide si à venir)</label>
+            <input type="number" id="emScoreHome" min="0" placeholder="-">
+          </div>
+          <div class="form-field">
+            <label for="emScoreAway">🔢 Score Visiteurs (laisser vide si à venir)</label>
+            <input type="number" id="emScoreAway" min="0" placeholder="-">
+          </div>
+
+          <div class="form-field">
+            <label for="emStatus">🚦 Statut de la rencontre</label>
+            <select id="emStatus">
+              <option value="UPCOMING">⏳ À venir</option>
+              <option value="LIVE">🔴 En Direct (LIVE)</option>
+              <option value="FINISHED">✅ Terminé</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="emId">🔢 N° Rencontre / Journée</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+              <input type="text" id="emId" placeholder="N° Renc." title="Numéro de rencontre">
+              <input type="text" id="emJournee" placeholder="Journée" title="Numéro de journée">
+              <input type="text" id="emComp" placeholder="Champ." title="Compétition">
+            </div>
+          </div>
+
+          <!-- Sélection rapide d'une adresse de club pré-enregistrée -->
+          <div class="form-field full">
+            <label for="emClubPresetSelect">⚡ Choisir automatiquement la salle & l'adresse d'un club du carnet :</label>
+            <select id="emClubPresetSelect" onchange="applyClubAddressPreset(this.value)"></select>
+          </div>
+
+          <div class="form-field">
+            <label for="emSalle">🏟️ Nom de la Salle / Complexe sportif</label>
+            <input type="text" id="emSalle" placeholder="Ex: ANTOINE BLONDIN A 790M2">
+          </div>
+          <div class="form-field">
+            <label for="emAddress">📍 Adresse postale complète (pour le GPS)</label>
+            <input type="text" id="emAddress" placeholder="Ex: 3 RUE FRANCOIS COPPÉE, 59000 LILLE">
+          </div>
+
+          <div class="form-field full">
+            <label for="emPrecision">📌 Apporter une précision sur le match ou l'adresse (Salle annexe, heure RDV, parking, arbitrage...)</label>
+            <textarea id="emPrecision" rows="2" placeholder="Ex: RDV 13h15 devant la salle, entrée parking par la rue Saint-Gabriel..."></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid #334155;">
+          <button type="button" id="btnDeleteMatchModal" class="btn-action-sm" style="background:#7F1D1D;border-color:#DC2626;color:#FCA5A5;" onclick="deleteMatchFromModal()">🗑️ Supprimer ce match</button>
+          <div style="display:flex;gap:8px;margin-left:auto;">
+            <button type="button" class="btn-action-sm btn-reset-up" onclick="closeModals()">Annuler</button>
+            <button type="submit" class="btn-action-sm btn-save-score">💾 Enregistrer la fiche match</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL CARNET D'ADRESSES DES CLUBS (PROTÉGÉ PIN 9694) ================= -->
+  <div id="clubAddressesModal" class="modal-backdrop">
+    <div class="modal-card" style="max-width:740px;">
+      <div class="modal-header">
+        <h3>📍 Carnet d'Adresses des Clubs & Précisions Salles</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖ Fermer</button>
+      </div>
+
+      <p style="font-size:0.8rem;color:#CBD5E1;margin-bottom:10px;">
+        Modifiez ici le nom de la salle, l'adresse postale ou ajoutez une précision (parking, accès, salle bis) pour n'importe quel club. Cliquez sur <strong>💾 Appliquer aux matchs</strong> pour mettre à jour toutes les rencontres concernées.
+      </p>
+
+      <!-- Ajout d'un nouveau club au carnet -->
+      <div class="club-addr-card" style="margin-bottom:12px;border-color:#F97316;">
+        <strong style="font-size:0.82rem;color:#FDBA74;">➕ Ajouter un nouveau club au carnet d'adresses :</strong>
+        <div class="form-grid-2">
+          <div class="form-field">
+            <input type="text" id="newClubNameInp" placeholder="Nom du club (ex: WATTIGNIES BC)">
+          </div>
+          <div class="form-field">
+            <input type="text" id="newClubSalleInp" placeholder="Nom de la salle">
+          </div>
+          <div class="form-field">
+            <input type="text" id="newClubAddrInp" placeholder="Adresse complète (Rue, CP, Ville)">
+          </div>
+          <div class="form-field" style="display:flex;flex-direction:row;gap:6px;">
+            <input type="text" id="newClubPrecInp" placeholder="Précision accès / parking" style="flex:1;">
+            <button type="button" class="btn-action-sm btn-save-score" onclick="addNewClubToDirectory()">Ajouter</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="clubAddressesListContainer" class="clubs-address-list"></div>
     </div>
   </div>
 
@@ -871,7 +905,7 @@
           </label>
         </div>
       </div>
-      <h4 style="font-size:0.88rem;color:#1E3A8A;">Blasons des Clubs Adverses (Kalisport) :</h4>
+      <h4 style="font-size:0.88rem;color:#93C5FD;">Blasons des Clubs Adverses (Kalisport) :</h4>
       <div id="clubsLogoGrid" class="clubs-logo-grid"></div>
     </div>
   </div>
@@ -910,152 +944,29 @@
 
   <script src="js/app.js"></script>
 
-  <!-- ================= MODULE COMPLET D'AMÉLIORATIONS LSBSC ================= -->
+  <!-- ================= FONCTIONS COMPLÉMENTAIRES TABLE DE MARQUE, PARTAGE & WAKE LOCK ================= -->
   <script>
-    // --- État local pour la table de marque rapide & historique d'annulation ---
     const lsbscHistoryStack = [];
     let currentPeriodLabel = localStorage.getItem('lsbsc_current_period') || 'Q1';
     let quickFouls = JSON.parse(localStorage.getItem('lsbsc_quick_fouls') || '{"home":0,"away":0}');
     let wakeLockSentinel = null;
 
-    // 1. GESTION DES MENUS DÉROULANTS & MÉMORISATION DE LA CATÉGORIE FAVORITE
-    function handleLocSelectChange(val) {
-      localStorage.setItem('lsbsc_fav_loc', val);
-      const dummyBtn = document.getElementById('hiddenLocTrigger');
-      if (typeof setLocFilter === 'function') {
-        setLocFilter(val, dummyBtn);
-      }
-      setTimeout(enhanceMatchCardsWithGps, 120);
-    }
-
-    function handleCatSelectChange(val) {
-      localStorage.setItem('lsbsc_fav_cat', val);
-      const dummyBtn = document.getElementById('hiddenCatTrigger');
-      if (typeof setCatFilter === 'function') {
-        setCatFilter(val, dummyBtn);
-      }
-      setTimeout(enhanceMatchCardsWithGps, 120);
-    }
-
-    // Alimentation dynamique du menu déroulant des catégories depuis data/matches.json
-    async function populateDynamicCategories() {
-      const catSelect = document.getElementById('catSelect');
-      if (!catSelect) return;
-      try {
-        const res = await fetch('data/matches.json');
-        if (res.ok) {
-          const data = await res.json();
-          const matchesArray = Array.isArray(data) ? data : (data.matches || []);
-          const categories = new Set();
-          matchesArray.forEach(m => {
-            const c = m.category || m.cat || m.categorie || m.equipeCode;
-            if (c) categories.add(String(c).trim());
-          });
-          if (categories.size > 0) {
-            const existing = new Set(Array.from(catSelect.options).map(o => o.value));
-            categories.forEach(cat => {
-              if (!existing.has(cat)) {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                catSelect.appendChild(opt);
-              }
-            });
-          }
-        }
-      } catch (e) {
-        // Garde la liste par défaut si matches.json n'est pas encore chargé
-      }
-
-      // Restaurer la catégorie et le lieu favoris mémorisés
-      const savedCat = localStorage.getItem('lsbsc_fav_cat');
-      if (savedCat && Array.from(catSelect.options).some(o => o.value === savedCat)) {
-        catSelect.value = savedCat;
-        handleCatSelectChange(savedCat);
-      }
-      const locSelect = document.getElementById('locSelect');
-      const savedLoc = localStorage.getItem('lsbsc_fav_loc');
-      if (locSelect && savedLoc) {
-        locSelect.value = savedLoc;
-        handleLocSelectChange(savedLoc);
-      }
-    }
-
-    // 2. VISIBILITÉ STRICTE DU MODE DIRECT / SCORES (STAFF)
     function handleHeaderLogoClick() {
       if (document.body.classList.contains('staff-unlocked') && typeof requestPinAccess === 'function') {
         requestPinAccess('logos');
       }
     }
 
-    function syncStaffToolsVisibility() {
-      const staffPanel = document.getElementById('staffScorePanel');
-      const staffBtn = document.getElementById('btnStaffToggle');
-
-      const isUnlocked =
-        (typeof staffMode !== 'undefined' && staffMode === true) ||
-        (typeof isStaffMode !== 'undefined' && isStaffMode === true) ||
-        (staffPanel && staffPanel.style.display !== 'none') ||
-        (staffBtn && (staffBtn.classList.contains('active') || staffBtn.textContent.includes('🔓') || staffBtn.textContent.toLowerCase().includes('quitter')));
-
-      document.body.classList.toggle('staff-unlocked', Boolean(isUnlocked));
-      if (isUnlocked) {
-        requestScreenWakeLock();
-      }
-    }
-
-    // 3. BOUTONS ITINÉRAIRE GPS (GOOGLE MAPS / WAZE) SUR LES MATCHS & LE SCOREBOARD
-    function updateScoreboardGpsLink() {
-      const homeName = (document.getElementById('sbHomeName')?.textContent || '').trim();
-      const awayName = (document.getElementById('sbAwayName')?.textContent || '').trim();
-      const homeLoc = (document.getElementById('sbHomeLocPill')?.textContent || '').toUpperCase();
-      const btnGps = document.getElementById('btnSbGps');
-      if (!btnGps) return;
-
-      let destinationQuery = 'Salle de basket Lille Sud';
-      if (homeName && !homeName.toUpperCase().includes('LILLE SUD') && !homeName.toUpperCase().includes('LSBSC') && !homeLoc.includes('LOCAUX')) {
-        destinationQuery = 'Salle basket ' + homeName;
-      } else if (awayName && !awayName.toUpperCase().includes('LILLE SUD') && !awayName.toUpperCase().includes('LSBSC') && homeLoc.includes('EXT')) {
-        destinationQuery = 'Salle basket ' + awayName;
-      } else if (homeName && !homeName.toUpperCase().includes('U') && !homeName.toUpperCase().includes('SM')) {
-        destinationQuery = 'Salle basket ' + homeName;
-      }
-      btnGps.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(destinationQuery);
-    }
-
-    function enhanceMatchCardsWithGps() {
-      const container = document.getElementById('matchesListContainer');
-      if (!container) return;
-      const cards = container.children;
-      Array.from(cards).forEach(card => {
-        if (card.querySelector('.match-gps-link')) return;
-        const text = card.textContent || '';
-        const isAway = text.toUpperCase().includes('EXT') || text.includes('🚌') || card.innerHTML.includes('AWAY');
-        if (isAway) {
-          const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
-          const clubQuery = lines.find(l => l.length > 4 && !l.includes(':') && !l.toUpperCase().includes('LILLE SUD')) || 'Basket Nord';
-          const gpsLink = document.createElement('a');
-          gpsLink.className = 'match-gps-link';
-          gpsLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Salle basket ' + clubQuery);
-          gpsLink.target = '_blank';
-          gpsLink.rel = 'noopener';
-          gpsLink.innerHTML = '📍 Itinéraire Salle';
-          gpsLink.onclick = (e) => e.stopPropagation();
-          card.appendChild(gpsLink);
-        }
-      });
-    }
-
-    // 4. PARTAGE RAPIDE WHATSAPP / RÉSEAUX DU RÉSULTAT OU SCORE EN DIRECT
     async function shareCurrentMatchResult() {
       const status = (document.getElementById('sbStatusBadge')?.textContent || 'Match LSBSC').trim();
       const meta = (document.getElementById('sbMetaInfo')?.textContent || '').trim();
       const home = (document.getElementById('sbHomeName')?.textContent || 'Domicile').trim();
       const away = (document.getElementById('sbAwayName')?.textContent || 'Visiteurs').trim();
-      const centerScore = (document.getElementById('sbCenterWrap')?.textContent || '').replace(/\s+/g, ' ').trim();
+      const centerScore = (document.getElementById('sbCenterWrap')?.querySelector('.sb-score-digits')?.textContent || '').trim();
+      const venue = (document.getElementById('sbMatchSummaryBar')?.textContent || '').replace(/\s+/g, ' ').trim();
       const period = currentPeriodLabel ? ` (${currentPeriodLabel})` : '';
 
-      const shareText = `🏀 *LSBSC South Lille — ${status}${period}*\n📅 ${meta}\n🔥 *${home}*  ${centerScore}  *${away}*\n📲 Suivez tous les matchs en direct : ${window.location.href}`;
+      const shareText = `🏀 *LSBSC South Lille — ${status}${period}*\n📅 ${meta}\n🔥 *${home}*  ${centerScore}  *${away}*\n${venue}\n📲 Suivez tous les matchs en direct : ${window.location.href}`;
 
       if (navigator.share) {
         try {
@@ -1065,15 +976,12 @@
             url: window.location.href
           });
           return;
-        } catch (err) {
-          // L'utilisateur a fermé la fenêtre ou partage natif indisponible
-        }
+        } catch (err) {}
       }
       const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
       window.open(waUrl, '_blank', 'noopener');
     }
 
-    // 5. CONSOLE TABLE DE MARQUE RAPIDE (+1, +2, +3, ANNULER, QUART-TEMPS & FAUTES BONUS)
     function setQuickPeriod(period, btnEl) {
       currentPeriodLabel = period;
       localStorage.setItem('lsbsc_current_period', period);
@@ -1089,12 +997,8 @@
       const homeBonusEl = document.getElementById('sbHomeBonusBadge');
       const awayBonusEl = document.getElementById('sbAwayBonusBadge');
 
-      if (homeFoulsEl && !homeFoulsEl.innerHTML.trim()) {
-        homeFoulsEl.textContent = `Fautes : ${quickFouls.home}`;
-      }
-      if (awayFoulsEl && !awayFoulsEl.innerHTML.trim()) {
-        awayFoulsEl.textContent = `Fautes : ${quickFouls.away}`;
-      }
+      if (homeFoulsEl) homeFoulsEl.textContent = `Fautes d'équipe : ${quickFouls.home}`;
+      if (awayFoulsEl) awayFoulsEl.textContent = `Fautes d'équipe : ${quickFouls.away}`;
       if (homeBonusEl) {
         homeBonusEl.innerHTML = quickFouls.home >= 5 ? '<span class="foul-bonus-alert">🚨 5 FAUTES (BONUS)</span>' : '';
       }
@@ -1107,40 +1011,35 @@
       lsbscHistoryStack.push({ type: 'foul', side, delta });
       quickFouls[side] = Math.max(0, (quickFouls[side] || 0) + delta);
       localStorage.setItem('lsbsc_quick_fouls', JSON.stringify(quickFouls));
-      const targetEl = document.getElementById(side === 'home' ? 'sbHomeFouls' : 'sbAwayFouls');
-      if (targetEl) targetEl.textContent = `Fautes d'équipe : ${quickFouls[side]}`;
       renderQuickFouls();
     }
 
     function quickAdjustScore(side, delta) {
+      const m = matchesList.find(x => String(x.id) === String(selectedMatchId));
+      if (!m) return;
       lsbscHistoryStack.push({ type: 'score', side, delta });
-      // Cherche d'abord les champs input du panneau staffScorePanel générés par app.js
-      const staffPanel = document.getElementById('staffScorePanel');
-      if (staffPanel) {
-        const numInputs = staffPanel.querySelectorAll('input[type="number"]');
-        if (numInputs.length >= 2) {
-          const idx = side === 'home' ? 0 : 1;
-          const currentVal = parseInt(numInputs[idx].value || '0', 10);
-          numInputs[idx].value = Math.max(0, currentVal + delta);
-          numInputs[idx].dispatchEvent(new Event('input', { bubbles: true }));
-          numInputs[idx].dispatchEvent(new Event('change', { bubbles: true }));
-          const saveBtn = staffPanel.querySelector('.btn-save-score, button');
-          if (saveBtn) saveBtn.click();
-          return;
-        }
+      if (side === 'home') {
+        m.scoreHome = Math.max(0, Number(m.scoreHome || 0) + delta);
+      } else {
+        m.scoreAway = Math.max(0, Number(m.scoreAway || 0) + delta);
       }
-      // Sinon met à jour directement les chiffres affichés au centre du scoreboard
-      const centerWrap = document.getElementById('sbCenterWrap');
-      if (centerWrap) {
-        const nums = centerWrap.textContent.match(/\d+/g);
-        if (nums && nums.length >= 2) {
-          let h = parseInt(nums[0], 10);
-          let a = parseInt(nums[1], 10);
-          if (side === 'home') h = Math.max(0, h + delta);
-          else a = Math.max(0, a + delta);
-          centerWrap.innerHTML = `<span style="font-size:2.2rem;font-weight:900;">${h} - ${a}</span>`;
-        }
+      if (m.status === 'UPCOMING') m.status = 'LIVE';
+      persistDataLocally();
+      renderAll();
+    }
+
+    function toggleSelectedMatchLiveStatus() {
+      const m = matchesList.find(x => String(x.id) === String(selectedMatchId));
+      if (!m) return;
+      if (m.status === 'LIVE') {
+        m.status = 'FINISHED';
+      } else {
+        m.status = 'LIVE';
+        if (m.scoreHome === null || m.scoreHome === undefined) m.scoreHome = 0;
+        if (m.scoreAway === null || m.scoreAway === undefined) m.scoreAway = 0;
       }
+      persistDataLocally();
+      renderAll();
     }
 
     function undoLastQuickScore() {
@@ -1155,26 +1054,24 @@
       }
     }
 
-    // 6. MODE ÉCRAN TOUJOURS ALLUMÉ (WAKE LOCK API) POUR TV & TABLE DE MARQUE
     async function requestScreenWakeLock() {
       if ('wakeLock' in navigator && !wakeLockSentinel) {
         try {
           wakeLockSentinel = await navigator.wakeLock.request('screen');
-          wakeLockSentinel.addEventListener('release', () => {
-            wakeLockSentinel = null;
-          });
-        } catch (e) {
-          // WakeLock non autorisé ou batterie faible
-        }
+          wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
+        } catch (e) {}
       }
     }
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && (document.body.classList.contains('mode-tv') || document.body.classList.contains('staff-unlocked'))) {
-        requestScreenWakeLock();
-      }
-    });
 
-    // 7. ROTATION AUTOMATIQUE EN MODE TV (SCOREBOARD / BUVETTE & QR CODE)
+    function openQrZoomModal() {
+      const modal = document.getElementById('qrZoomModal');
+      if (modal) modal.classList.add('open');
+    }
+    function closeQrZoomModal() {
+      const modal = document.getElementById('qrZoomModal');
+      if (modal) modal.classList.remove('open');
+    }
+
     let tvSlideState = false;
     function initTvAutoRotation() {
       setInterval(() => {
@@ -1184,16 +1081,8 @@
           return;
         }
         const statusBadge = document.getElementById('sbStatusBadge');
-        const isLiveMatch = statusBadge && statusBadge.classList.contains('live') && statusBadge.textContent.toUpperCase().includes('EN COURS');
+        const isLiveMatch = statusBadge && statusBadge.classList.contains('live');
         const promoSlide = document.getElementById('tvPromoSlide');
-        const tickerSource = document.getElementById('mobileTickerStaticText') || document.getElementById('tickerTextDisplay');
-        const tickerMirror = document.getElementById('tvPromoTickerMirror');
-
-        if (tickerSource && tickerMirror && tickerSource.textContent.trim()) {
-          tickerMirror.textContent = tickerSource.textContent.trim();
-        }
-
-        // Si aucun match n'est en direct, alterne l'affichage de la bannière Buvette/QR toutes les 15s
         if (!isLiveMatch && promoSlide) {
           tvSlideState = !tvSlideState;
           promoSlide.classList.toggle('visible', tvSlideState);
@@ -1203,66 +1092,12 @@
       }, 15000);
     }
 
-    // 8. MODAL ZOOM QR CODE
-    function openQrZoomModal() {
-      const modal = document.getElementById('qrZoomModal');
-      if (modal) modal.classList.add('open');
-      if (modal) modal.style.display = 'flex';
-    }
-    function closeQrZoomModal() {
-      const modal = document.getElementById('qrZoomModal');
-      if (modal) modal.classList.remove('open');
-      if (modal) modal.style.display = '';
-    }
-
-    // 9. DÉTECTION DE MISE À JOUR DU SERVICE WORKER
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              const toast = document.getElementById('pwaUpdateToast');
-              if (toast) toast.style.display = 'inline-flex';
-            }
-          });
-        });
-      });
-    }
-
-    // INITIALISATION GLOBALE AU CHARGEMENT
     document.addEventListener('DOMContentLoaded', () => {
-      syncStaffToolsVisibility();
-      populateDynamicCategories();
       renderQuickFouls();
-      updateScoreboardGpsLink();
       initTvAutoRotation();
       requestScreenWakeLock();
-
       const pill = document.getElementById('sbPeriodDisplay');
       if (pill) pill.textContent = '⏱️ Période : ' + currentPeriodLabel;
-
-      const observer = new MutationObserver(() => {
-        syncStaffToolsVisibility();
-        updateScoreboardGpsLink();
-        enhanceMatchCardsWithGps();
-      });
-
-      const staffPanel = document.getElementById('staffScorePanel');
-      const staffBtn = document.getElementById('btnStaffToggle');
-      const matchesList = document.getElementById('matchesListContainer');
-      const sbHome = document.getElementById('sbHomeName');
-
-      if (staffPanel) observer.observe(staffPanel, { attributes: true, attributeFilter: ['style', 'class'] });
-      if (staffBtn) observer.observe(staffBtn, { attributes: true, childList: true, characterData: true, subtree: true });
-      if (matchesList) observer.observe(matchesList, { childList: true });
-      if (sbHome) observer.observe(sbHome, { childList: true, characterData: true, subtree: true });
-
-      if (window.innerWidth <= 768 && !localStorage.getItem('lsbsc_display_mode')) {
-        document.body.classList.remove('mode-tv');
-        document.body.classList.add('mode-mobile');
-      }
     });
   </script>
 </body>

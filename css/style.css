@@ -1,2124 +1,813 @@
 /* ==========================================================================
-   LILLE SUD BASKETBALL SPORTING CLUB (LSBSC - SOUTH LILLE)
-   Écran Interactif — Mode TV Paysage 16:9 & Version Allégée Téléphone
+   LSBSC SOUTH LILLE — STYLE COMPLET (TV SALLE 16:9 & MOBILE TACTILE)
    ========================================================================== */
-
 :root {
-  --bg-main: #F1F5F9;
-  --bg-card: #FFFFFF;
-  --bg-subtle: #F8FAFC;
-  --navy: #0F172A;
-  --blue-club: #1E3A8A;
-  --blue-accent: #2563EB;
-  --gold-club: #D97706;
-  --gold-light: #FEF3C7;
-  --orange-live: #EA580C;
-  --green-win: #16A34A;
-  --red-loss: #DC2626;
-  --border-col: #CBD5E1;
-  --text-main: #0F172A;
-  --text-muted: #475569;
+  --bg-dark: #0F172A;
+  --bg-card: #1E293B;
+  --bg-card-alt: #0B1120;
+  --border-col: #334155;
+  --accent-orange: #F97316;
+  --accent-orange-dark: #EA580C;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --win-green: #16A34A;
+  --loss-red: #DC2626;
+  --live-red: #EF4444;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background-color: var(--bg-main);
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-dark);
   color: var(--text-main);
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
-/* ================= ÉCRAN DE SÉLECTION DU FORMAT AU CHARGEMENT ================= */
+/* 1. VISIBILITÉ STRICTE MODE DIRECT / SCORES (STAFF PIN 9694) */
+.staff-only-tool {
+  display: none !important;
+}
+body.staff-unlocked .staff-only-tool {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 2. OVERLAY DE SÉLECTION DU FORMAT (TV / MOBILE) */
 .format-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.96);
+  z-index: 2000;
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 999;
   padding: 16px;
 }
 .format-overlay.open {
   display: flex;
 }
-
 .format-box {
-  background: #FFFFFF;
-  border-radius: 20px;
-  max-width: 520px;
+  background: var(--bg-card);
+  border: 2px solid var(--accent-orange);
+  border-radius: 18px;
+  max-width: 580px;
   width: 100%;
-  padding: 24px 20px;
+  padding: 24px;
   text-align: center;
-  border: 3px solid #F59E0B;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
 }
-
 .format-logos {
   display: flex;
   justify-content: center;
-  align-items: center;
   gap: 16px;
   margin-bottom: 12px;
 }
 .format-logos img {
-  width: 68px;
-  height: 68px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
-
-.format-box h2 {
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: #0F172A;
-  margin-bottom: 4px;
-}
-
 .format-sub {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #475569;
-  margin-bottom: 16px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 6px 0 18px;
 }
-
 .format-choices {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
 }
-
 .format-card-btn {
   display: flex;
   align-items: center;
   gap: 14px;
-  text-align: left;
-  background: #F8FAFC;
-  border: 2px solid #CBD5E1;
-  border-radius: 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-col);
+  border-radius: 12px;
   padding: 14px 16px;
+  color: var(--text-main);
+  text-align: left;
   cursor: pointer;
-  position: relative;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
-.format-card-btn:hover, .format-card-btn:active {
-  border-color: #1E3A8A;
-  background: #EFF6FF;
-  transform: translateY(-1px);
+.format-card-btn:hover {
+  border-color: var(--accent-orange);
+  transform: translateY(-2px);
 }
-.format-card-btn.mobile-choice:hover, .format-card-btn.mobile-choice:active {
-  border-color: #EA580C;
-  background: #FFF7ED;
-}
-
 .fmt-icon {
   font-size: 2rem;
-  flex-shrink: 0;
 }
-
 .fmt-text {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex: 1;
 }
 .fmt-text strong {
-  font-size: 1rem;
-  font-weight: 900;
-  color: #0F172A;
+  font-size: 0.98rem;
 }
 .fmt-text span {
   font-size: 0.78rem;
-  font-weight: 600;
-  color: #475569;
-  line-height: 1.25;
+  color: var(--text-muted);
 }
-
 .fmt-rec {
-  position: absolute;
-  top: -10px;
-  right: 12px;
-  background: #16A34A;
-  color: #FFFFFF;
-  font-size: 0.68rem;
-  font-weight: 900;
-  padding: 2px 8px;
-  border-radius: 10px;
-  text-transform: uppercase;
+  background: var(--accent-orange);
+  color: #FFF;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
 }
-
 .remember-choice {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #334155;
-  cursor: pointer;
-}
-.remember-choice input {
-  width: 16px;
-  height: 16px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
-/* ================= HEADER (TOP BAR) ================= */
+/* 3. EN-TÊTE PRINCIPAL */
 .top-header {
-  height: 68px;
-  background: linear-gradient(90deg, #0F172A 0%, #1E3A8A 60%, #0F172A 100%);
-  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
-  border-bottom: 3px solid #F59E0B;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.18);
-  flex-shrink: 0;
-  z-index: 20;
+  gap: 14px;
+  padding: 10px 18px;
+  background: var(--bg-card-alt);
+  border-bottom: 2px solid var(--accent-orange);
+  flex-wrap: wrap;
 }
-
 .brand-zone {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
-
-.club-logo-top {
-  width: 54px;
-  height: 54px;
+.club-logo-top, .club-mascot-top {
+  width: 46px;
+  height: 46px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
   cursor: pointer;
 }
-
-.club-mascot-top {
-  width: 52px;
-  height: 52px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-  cursor: pointer;
-}
-
 .brand-titles h1 {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 900;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  line-height: 1.1;
-  color: #FFFFFF;
+  letter-spacing: 0.02em;
 }
-
 .brand-titles .subtitle {
-  font-size: 0.76rem;
-  color: #FCD34D;
-  font-weight: 700;
-  letter-spacing: 0.4px;
+  font-size: 0.72rem;
+  color: var(--accent-orange);
+  font-weight: 800;
 }
-
 .weekend-kpi {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 6px;
 }
-
 .kpi-item {
+  padding: 5px 10px;
+  border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-col);
 }
-.kpi-total { background: #334155; color: #F8FAFC; }
-.kpi-win { background: #16A34A; color: #FFFFFF; }
-.kpi-loss { background: #DC2626; color: #FFFFFF; }
-.kpi-draw { background: #D97706; color: #FFFFFF; }
+.kpi-win { color: #4ADE80; border-color: rgba(74, 222, 128, 0.4); }
+.kpi-loss { color: #F87171; border-color: rgba(248, 113, 113, 0.4); }
+.kpi-draw { color: #FACC15; border-color: rgba(250, 204, 21, 0.4); }
 
 .header-controls {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
-
 .clock-box {
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 5px 10px;
-  border-radius: 8px;
-  text-align: center;
+  text-align: right;
+  margin-right: 4px;
 }
 .clock-time {
   font-size: 1rem;
   font-weight: 900;
-  color: #FBBF24;
   font-variant-numeric: tabular-nums;
 }
 .clock-sync {
-  font-size: 0.62rem;
-  color: #86EFAC;
-  display: block;
+  font-size: 0.68rem;
+  color: #4ADE80;
+  font-weight: 700;
 }
-
 .btn-top {
-  border: none;
-  border-radius: 8px;
-  padding: 7px 11px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  transition: all 0.15s;
+  gap: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-col);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
-.btn-top:hover { transform: translateY(-1px); }
-
-.btn-format {
-  background: #E0F2FE;
-  color: #0369A1;
-  border: 1px solid #7DD3FC;
-}
-.btn-staff {
-  background: #F59E0B;
-  color: #0F172A;
-}
-.btn-staff.unlocked {
-  background: #16A34A;
-  color: #FFFFFF;
-}
-.btn-logos {
-  background: #1E40AF;
-  color: #FFFFFF;
-  border: 1px solid #60A5FA;
-}
-.btn-cloud {
+.btn-top:hover {
+  border-color: var(--accent-orange);
   background: #334155;
-  color: #E2E8F0;
+}
+.btn-staff.active {
+  background: var(--accent-orange-dark);
+  border-color: var(--accent-orange);
+  color: #FFF;
 }
 
-/* Mobile tabs hidden in TV mode */
-.mobile-nav-tabs, .mobile-infos-card {
+/* 4. ONGLETS NAVIGATION MOBILE */
+.mobile-nav-tabs {
   display: none;
+  background: var(--bg-card-alt);
+  border-bottom: 1px solid var(--border-col);
+  padding: 6px 8px;
+  gap: 6px;
+}
+.mob-tab {
+  flex: 1;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-col);
+  border-radius: 8px;
+  padding: 9px 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mob-tab.active {
+  background: var(--accent-orange);
+  color: #FFF;
+  border-color: var(--accent-orange);
 }
 
-/* ================= MAIN 2-COLUMN WORKSPACE (TV MODE) ================= */
+/* 5. ESPACE PRINCIPAL 2 COLONNES (TV) / ONGLETS (MOBILE) */
 .main-workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 54% 46%;
+  grid-template-columns: 430px 1fr;
   gap: 14px;
-  padding: 12px 16px;
-  overflow: hidden;
-  min-height: 0;
+  padding: 12px 16px 56px;
+  max-width: 1920px;
+  width: 100%;
+  margin: 0 auto;
 }
-
-/* ================= LEFT COLUMN: SCHEDULE & RESULTS ================= */
-.left-column {
-  background: var(--bg-card);
-  border-radius: 14px;
-  border: 1px solid var(--border-col);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+.left-column, .right-column {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.week-nav-bar {
-  background: #EFF6FF;
-  border-bottom: 1px solid #BFDBFE;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.btn-week {
-  background: #FFFFFF;
-  border: 1px solid #93C5FD;
-  color: #1E3A8A;
-  font-weight: 800;
-  font-size: 0.78rem;
-  padding: 5px 10px;
-  border-radius: 7px;
-  cursor: pointer;
-}
-.btn-week:hover { background: #DBEAFE; }
-.btn-week.current-wk {
-  background: #1E3A8A;
-  color: #FFFFFF;
-  border-color: #1E3A8A;
-}
-
-.week-select {
-  flex: 1;
-  max-width: 290px;
-  padding: 5px 8px;
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: #0F172A;
-  border: 1px solid #93C5FD;
-  border-radius: 7px;
-  background: #FFFFFF;
-}
-
-.week-tabs-strip {
-  display: flex;
-  gap: 5px;
-  padding: 6px 12px;
-  background: #F8FAFC;
-  border-bottom: 1px solid #E2E8F0;
-  overflow-x: auto;
-  flex-shrink: 0;
-}
-.week-tabs-strip::-webkit-scrollbar { height: 4px; }
-.week-tabs-strip::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-
-.wk-tab {
-  white-space: nowrap;
-  padding: 4px 9px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  border: 1px solid #CBD5E1;
-  background: #FFFFFF;
-  color: #475569;
-  cursor: pointer;
-}
-.wk-tab.active {
-  background: #EA580C;
-  color: #FFFFFF;
-  border-color: #EA580C;
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
-  gap: 6px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.filter-group {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.filter-pill {
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  border: 1px solid #CBD5E1;
-  background: #F8FAFC;
-  color: #334155;
-  cursor: pointer;
-}
-.filter-pill.active {
-  background: #1E3A8A;
-  color: #FFFFFF;
-  border-color: #1E3A8A;
-}
-
-.matches-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.matches-list::-webkit-scrollbar { width: 6px; }
-.matches-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
-
-.match-row {
-  display: grid;
-  grid-template-columns: 92px 1fr 108px 1fr auto;
-  align-items: center;
-  gap: 8px;
-  background: #F8FAFC;
-  border: 2px solid #E2E8F0;
-  border-radius: 10px;
-  padding: 7px 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.match-row:hover {
-  border-color: #93C5FD;
-  background: #FFFFFF;
-}
-.match-row.selected-match {
-  border-color: #2563EB;
-  background: #EFF6FF;
-}
-.match-row.live-match {
-  border-color: #EA580C;
-  background: #FFF7ED;
-}
-
-.m-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.m-date {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #475569;
-}
-.m-time {
-  font-size: 0.85rem;
-  font-weight: 900;
-  color: #0F172A;
-}
-.m-cat-badge {
-  display: inline-block;
-  font-size: 0.64rem;
-  font-weight: 900;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: #DBEAFE;
-  color: #1E3A8A;
-  width: fit-content;
-}
-
-.m-team {
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  gap: 10px;
   min-width: 0;
 }
-.m-team.home {
-  justify-content: flex-end;
-  text-align: right;
-}
-.m-team.away {
-  justify-content: flex-start;
-  text-align: left;
-}
 
-.team-name-txt {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #1E293B;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.team-name-txt.is-lsbsc {
-  color: #1E3A8A;
-  font-weight: 900;
-}
-
-.club-badge-sm {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  flex-shrink: 0;
-  border-radius: 6px;
-}
-
-.m-score-center {
+/* Menus déroulants (Week-ends & Catégories) */
+.week-nav-bar {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  width: 100%;
 }
-
-.score-pill {
-  font-size: 0.96rem;
-  font-weight: 900;
-  padding: 4px 10px;
+.btn-week {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-col);
   border-radius: 8px;
-  min-width: 88px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.score-pill.win {
-  background: #DCFCE7;
-  color: #15803D;
-  border: 1px solid #86EFAC;
-}
-.score-pill.loss {
-  background: #FEE2E2;
-  color: #B91C1C;
-  border: 1px solid #FCA5A5;
-}
-.score-pill.draw {
-  background: #FEF3C7;
-  color: #B45309;
-  border: 1px solid #FDE68A;
-}
-.score-pill.live {
-  background: #EA580C;
-  color: #FFFFFF;
-}
-.score-pill.upcoming {
-  background: #E2E8F0;
-  color: #334155;
-  font-size: 0.78rem;
-}
-
-.res-tag {
-  font-size: 0.62rem;
-  font-weight: 900;
-  margin-top: 2px;
-  text-transform: uppercase;
-}
-.res-tag.win { color: #15803D; }
-.res-tag.loss { color: #B91C1C; }
-.res-tag.live { color: #EA580C; }
-
-.row-staff-actions {
-  display: flex;
-  gap: 4px;
-}
-.btn-row-edit {
-  background: #16A34A;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 7px;
-  font-size: 0.7rem;
+  padding: 8px 10px;
+  font-size: 0.8rem;
   font-weight: 800;
   cursor: pointer;
 }
-
-/* ================= RIGHT COLUMN: LIVE MATCH + NEXT MATCH ================= */
-.right-column {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 12px;
-  min-height: 0;
-  overflow: hidden;
+.btn-week:hover {
+  border-color: var(--accent-orange);
 }
-
-.live-scoreboard-card {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-  border: 2px solid #93C5FD;
-  border-radius: 14px;
-  padding: 14px 18px;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+.week-select, .custom-dropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-col);
+  border-radius: 8px;
+  padding: 8px 30px 8px 12px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 15px;
+  min-height: 38px;
+}
+.week-select {
+  flex: 1;
+  min-width: 0;
+}
+.filter-bar-dropdowns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+.filter-field {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
+  gap: 3px;
+}
+.filter-field label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
+/* Barre d'outils Staff au-dessus de la liste des matchs */
+.staff-schedule-toolbar {
+  display: none;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+body.staff-unlocked .staff-schedule-toolbar {
+  display: flex;
+}
+
+/* Liste des cartes de matchs */
+.matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100vh - 235px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.match-card-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-col);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.match-card-item:hover {
+  border-color: var(--accent-orange);
+}
+.match-card-item.selected {
+  border: 2px solid var(--accent-orange);
+  background: rgba(249, 115, 22, 0.1);
+}
+.mc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+.mc-cat-badge {
+  background: var(--accent-orange);
+  color: #FFF;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+}
+.mc-loc-tag {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  background: rgba(148, 163, 184, 0.15);
+  color: #CBD5E1;
+}
+.mc-loc-tag.home {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86EFAC;
+}
+.mc-loc-tag.away {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93C5FD;
+}
+.mc-teams-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+.mc-score-pill {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-col);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-align: center;
+  min-width: 68px;
+}
+.mc-score-pill.win { border-color: #22C55E; color: #4ADE80; }
+.mc-score-pill.loss { border-color: #EF4444; color: #F87171; }
+.mc-score-pill.live { background: #DC2626; color: #FFF; border-color: #EF4444; }
+
+.mc-venue-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border-top: 1px dashed rgba(148, 163, 184, 0.2);
+  padding-top: 5px;
+}
+.mc-precision-note {
+  font-size: 0.72rem;
+  color: #FDBA74;
+  background: rgba(249, 115, 22, 0.12);
+  border-left: 3px solid var(--accent-orange);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.mc-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.match-gps-link, .btn-mc-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.match-gps-link {
+  background: rgba(37, 99, 235, 0.2);
+  color: #93C5FD;
+  border: 1px solid rgba(59, 130, 246, 0.45);
+}
+.btn-mc-edit {
+  background: rgba(249, 115, 22, 0.2);
+  color: #FDBA74;
+  border: 1px solid rgba(249, 115, 22, 0.5);
+}
+
+/* 6. GRAND SCOREBOARD (COLONNE DROITE) */
+.live-scoreboard-card {
+  position: relative;
+  background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
+  border: 2px solid var(--border-col);
+  border-radius: 16px;
+  padding: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
 .scoreboard-Watermark {
   position: absolute;
-  right: 12px;
-  bottom: 8px;
-  width: 110px;
-  height: 110px;
+  right: -20px;
+  bottom: -20px;
+  width: 220px;
+  height: 220px;
   object-fit: contain;
-  opacity: 0.14;
+  opacity: 0.05;
   pointer-events: none;
 }
-
 .sb-top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #E2E8F0;
-  padding-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
 }
-
 .sb-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 900;
   padding: 4px 12px;
-  border-radius: 20px;
-  text-transform: uppercase;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  background: #334155;
+  color: #F8FAFC;
 }
-.sb-status-badge.live { background: #EA580C; color: #FFFFFF; }
-.sb-status-badge.finished { background: #1E3A8A; color: #FFFFFF; }
-.sb-status-badge.upcoming { background: #E2E8F0; color: #1E293B; }
-
+.sb-status-badge.live {
+  background: #DC2626;
+  color: #FFF;
+}
+.sb-status-badge.finished {
+  background: #16A34A;
+  color: #FFF;
+}
 .sb-meta-info {
   font-size: 0.82rem;
   font-weight: 800;
-  color: #475569;
+  color: #FDBA74;
 }
-
 .sb-arena {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 14px;
-  margin: 8px 0;
+  padding: 10px 6px;
 }
-
 .sb-team-box {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 6px;
 }
-
 .sb-logo-lg {
-  width: 84px;
-  height: 84px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.12));
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 6px;
 }
-
 .sb-team-title {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 900;
-  color: #0F172A;
   line-height: 1.2;
 }
-.sb-team-title.is-lsbsc { color: #1E3A8A; }
-
 .sb-loc-pill {
   font-size: 0.68rem;
   font-weight: 800;
   padding: 2px 8px;
-  border-radius: 10px;
-  background: #E2E8F0;
-  color: #475569;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  color: #CBD5E1;
 }
-
 .sb-center-score {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-}
-
-.big-digits-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #0F172A;
-  color: #FFFFFF;
-  padding: 12px 22px;
+  justify-content: center;
+  background: var(--bg-card-alt);
+  border: 2px solid var(--border-col);
   border-radius: 14px;
-  border: 3px solid #F59E0B;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  padding: 12px 20px;
+  min-width: 150px;
 }
-
-.big-digit {
-  font-size: 2.7rem;
+.sb-score-digits {
+  font-size: 2.5rem;
   font-weight: 900;
+  letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
-.big-sep {
-  font-size: 2rem;
-  color: #F59E0B;
-  font-weight: 900;
-}
-
-.sb-period-pill {
-  background: #FEF3C7;
-  color: #B45309;
-  border: 1px solid #F59E0B;
-  font-size: 0.82rem;
-  font-weight: 900;
-  padding: 4px 14px;
-  border-radius: 8px;
-}
-
-.no-live-banner {
-  background: #FFF7ED;
-  border: 2px dashed #EA580C;
-  color: #9A3412;
-  padding: 12px 16px;
-  border-radius: 12px;
-  text-align: center;
-  font-weight: 900;
-  font-size: 0.92rem;
-}
-
-/* Fouls */
-.foul-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  margin-top: 2px;
-}
-.foul-label {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #64748B;
-  text-transform: uppercase;
-}
-.foul-dots { display: flex; gap: 4px; }
-.foul-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #E2E8F0;
-  border: 1px solid #94A3B8;
-}
-.foul-dot.active { background: #F59E0B; border-color: #D97706; }
-.foul-dot.bonus { background: #DC2626; border-color: #991B1B; }
-
-/* Staff Score Panel */
-.staff-score-panel {
-  background: #EFF6FF;
-  border: 1px solid #93C5FD;
-  border-radius: 10px;
+.sb-summary-bar {
+  margin-top: 10px;
   padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid var(--border-col);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: #E2E8F0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.staff-tabs {
-  display: flex;
-  gap: 6px;
-  border-bottom: 1px solid #BFDBFE;
-  padding-bottom: 6px;
-  margin-bottom: 4px;
-  justify-content: space-between;
-  align-items: center;
-}
-.staff-tab-btn {
-  border: 1px solid #93C5FD;
-  background: #FFFFFF;
-  color: #1E3A8A;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.74rem;
-  font-weight: 900;
-  cursor: pointer;
-}
-.staff-tab-btn.active { background: #1E3A8A; color: #FFFFFF; }
-
-.live-table-grid {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 8px;
-  align-items: center;
-}
-.live-team-ctrls {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
-  justify-content: center;
-}
-.btn-pt {
-  border: none;
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 0.78rem;
-  font-weight: 900;
-  cursor: pointer;
-  color: #FFFFFF;
-  background: #2563EB;
-}
-.btn-pt:active { transform: scale(0.94); }
-.btn-pt.pt-plus3 { background: #EA580C; }
-.btn-pt.pt-minus { background: #64748B; }
-.btn-pt.pt-foul { background: #D97706; }
-
-.period-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  justify-content: center;
-  max-width: 170px;
-}
-.btn-period {
-  border: 1px solid #CBD5E1;
-  background: #FFFFFF;
-  color: #334155;
-  padding: 3px 6px;
-  border-radius: 5px;
-  font-size: 0.68rem;
-  font-weight: 900;
-  cursor: pointer;
-}
-.btn-period.active {
-  background: #EA580C;
-  color: #FFFFFF;
-  border-color: #EA580C;
 }
 
-.staff-quick-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.score-input-num {
-  width: 66px;
-  padding: 5px;
-  font-size: 1rem;
-  font-weight: 900;
-  text-align: center;
-  border: 2px solid #1E3A8A;
-  border-radius: 7px;
-}
-.btn-action-sm {
-  border: none;
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 0.76rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-.btn-save-score { background: #16A34A; color: #FFFFFF; }
-.btn-set-live { background: #EA580C; color: #FFFFFF; }
-.btn-reset-up { background: #64748B; color: #FFFFFF; }
-
-/* Next match card */
-.next-match-card {
-  background: #FFFFFF;
-  border: 2px solid #CBD5E1;
-  border-left: 6px solid #F59E0B;
+/* Cartes Match Suivant & Synthèse Club */
+.next-match-card, .club-overview-card, .mobile-quick-matches-card, .mobile-infos-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-col);
   border-radius: 14px;
-  padding: 12px 16px;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  padding: 12px 14px;
 }
-.next-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.next-title-badge {
-  background: #FEF3C7;
-  color: #B45309;
-  font-size: 0.76rem;
-  font-weight: 900;
-  padding: 3px 10px;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-.next-datetime { font-size: 0.82rem; font-weight: 900; color: #1E3A8A; }
-.next-teams-grid {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 10px;
-}
-.next-team {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.88rem;
-  font-weight: 800;
-}
-.next-team.home { justify-content: flex-end; text-align: right; }
-.next-team.away { justify-content: flex-start; text-align: left; }
-.vs-circle {
-  background: #E2E8F0;
-  color: #475569;
-  font-size: 0.75rem;
-  font-weight: 900;
-  padding: 4px 8px;
-  border-radius: 20px;
+.mobile-infos-card {
+  display: none;
 }
 
-/* ================= FOOTER TICKER ================= */
+/* 7. BANDEAU DÉFILANT BAS (BUVETTE & INFOS) */
 .bottom-ticker {
-  height: 40px;
-  background: #0F172A;
-  color: #FFFFFF;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  background: var(--bg-card-alt);
+  border-top: 2px solid var(--accent-orange);
   display: flex;
   align-items: center;
-  border-top: 2px solid #EA580C;
+  z-index: 50;
   overflow: hidden;
-  flex-shrink: 0;
 }
 .ticker-label {
-  background: linear-gradient(90deg, #EA580C, #D97706);
-  color: #FFFFFF;
+  background: var(--accent-orange);
+  color: #FFF;
   font-weight: 900;
-  font-size: 0.8rem;
-  padding: 0 16px;
+  font-size: 0.76rem;
+  padding: 0 12px;
   height: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
   white-space: nowrap;
   z-index: 2;
 }
-.ticker-track-wrap { flex: 1; overflow: hidden; position: relative; }
+.ticker-track-wrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
 .ticker-track {
   display: inline-block;
   white-space: nowrap;
   padding-left: 100%;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #F8FAFC;
-  animation: tickerMove 36s linear infinite;
+  animation: tickerMove 28s linear infinite;
 }
 @keyframes tickerMove {
   0% { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(-100%, 0, 0); }
 }
 
-/* ================= MODALS ================= */
+/* 8. MODALES (PIN, FICHE MATCH, ADRESSES CLUBS, LOGOS, CLOUD) */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(15, 23, 42, 0.85);
+  z-index: 3000;
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 100;
-  padding: 16px;
-}
-.modal-backdrop.open { display: flex; }
-.modal-card {
-  background: #FFFFFF;
-  border-radius: 16px;
-  max-width: 560px;
-  width: 100%;
-  max-height: 88vh;
+  padding: 14px;
   overflow-y: auto;
-  padding: 20px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-  border: 2px solid #1E3A8A;
+}
+.modal-backdrop.open {
+  display: flex;
+}
+.modal-card {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 2px solid var(--border-col);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.65);
 }
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #E2E8F0;
-  padding-bottom: 10px;
+  gap: 10px;
   margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-col);
 }
-.modal-header h3 { font-size: 1.05rem; font-weight: 900; color: #0F172A; }
 .pin-display {
-  font-size: 1.8rem;
-  letter-spacing: 10px;
-  font-weight: 900;
-  text-align: center;
-  background: #F1F5F9;
-  border: 2px solid #CBD5E1;
+  height: 46px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-col);
   border-radius: 10px;
-  padding: 10px;
   margin-bottom: 12px;
-  min-height: 54px;
-}
-.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.pin-btn {
-  padding: 14px;
-  font-size: 1.2rem;
-  font-weight: 900;
-  border-radius: 10px;
-  border: 1px solid #CBD5E1;
-  background: #F8FAFC;
-  cursor: pointer;
-}
-.pin-btn:hover { background: #DBEAFE; }
-.clubs-logo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-  max-height: 360px;
-  overflow-y: auto;
-}
-.club-logo-item {
-  border: 1px solid #CBD5E1;
-  border-radius: 8px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
-  background: #F8FAFC;
-}
-
-/* ==========================================================================
-   VERSION TÉLÉPHONE MODERNE, LISIBLE & ERGONOMIQUE (body.mode-mobile)
-   ========================================================================== */
-html {
-  font-size: 16px;
-}
-
-body.mode-mobile {
-  width: 100%;
-  max-width: 100vw;
-  height: auto;
-  min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
-  background: #E2E8F0;
-  padding-bottom: 28px;
-}
-
-/* Header mobile grand format & lisible */
-body.mode-mobile .top-header {
-  height: auto;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 12px 14px;
-  gap: 10px;
-}
-
-body.mode-mobile .brand-zone {
-  gap: 10px;
-}
-body.mode-mobile .club-logo-top,
-body.mode-mobile .club-mascot-top {
-  width: 48px;
-  height: 48px;
-}
-body.mode-mobile .brand-titles h1 {
-  font-size: 1.05rem;
-  line-height: 1.2;
-}
-body.mode-mobile .brand-titles .subtitle {
-  font-size: 0.76rem;
-  margin-top: 2px;
-}
-
-/* KPI du week-end bien visibles sur téléphone */
-body.mode-mobile .weekend-kpi {
-  display: flex;
-  justify-content: space-around;
-  padding: 7px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.14);
-}
-body.mode-mobile .kpi-item {
-  font-size: 0.85rem;
-  padding: 4px 10px;
-}
-
-body.mode-mobile .bottom-ticker,
-body.mode-mobile .scoreboard-Watermark {
-  display: none !important;
-}
-
-body.mode-mobile .header-controls {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  width: 100%;
-}
-body.mode-mobile .clock-box {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-}
-body.mode-mobile .clock-time {
-  font-size: 1rem;
-}
-body.mode-mobile .clock-sync {
-  font-size: 0.74rem;
-}
-body.mode-mobile .btn-top {
   justify-content: center;
-  padding: 10px 8px;
-  font-size: 0.84rem;
-  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  color: var(--accent-orange);
 }
-body.mode-mobile .btn-logos {
-  display: inline-flex;
-}
-
-/* Barre d'onglets mobile tactile (44px+) */
-body.mode-mobile .mobile-nav-tabs {
+.pin-pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  background: #0F172A;
-  padding: 10px 12px;
-  position: sticky;
-  top: 0;
-  z-index: 25;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
 }
-
-body.mode-mobile .mob-tab {
-  border: 1px solid #334155;
-  background: #1E293B;
-  color: #E2E8F0;
-  font-size: 0.84rem;
-  font-weight: 900;
-  padding: 11px 6px;
+.pin-btn {
+  height: 50px;
   border-radius: 10px;
+  border: 1px solid var(--border-col);
+  background: var(--bg-dark);
+  color: var(--text-main);
+  font-size: 1.15rem;
+  font-weight: 900;
   cursor: pointer;
 }
-body.mode-mobile .mob-tab.active {
-  background: linear-gradient(135deg, #EA580C, #D97706);
-  color: #FFFFFF;
-  border-color: #FDE68A;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+.pin-btn:hover {
+  border-color: var(--accent-orange);
 }
 
+.btn-action-sm {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-col);
+  background: var(--bg-dark);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-save-score {
+  background: var(--accent-orange);
+  border-color: var(--accent-orange);
+  color: #FFF;
+}
+.btn-reset-up {
+  background: #334155;
+  color: #F8FAFC;
+}
+
+/* Formulaires d'édition de fiche match et d'adresses des clubs */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.form-field.full {
+  grid-column: 1 / -1;
+}
+.form-field label {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #CBD5E1;
+}
+.form-field input, .form-field select, .form-field textarea {
+  background: var(--bg-dark);
+  color: var(--text-main);
+  border: 1px solid var(--border-col);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+  outline: 2px solid var(--accent-orange);
+  border-color: var(--accent-orange);
+}
+
+.clubs-address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.club-addr-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-col);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 9. ADAPTATION MOBILE & MODE-MOBILE */
 body.mode-mobile .main-workspace {
-  display: block;
-  padding: 12px;
-  overflow: visible;
-  height: auto;
+  grid-template-columns: 1fr;
 }
-
-/* Gestion de l'affichage par onglet en mode mobile */
+body.mode-mobile .mobile-nav-tabs {
+  display: flex;
+}
 body.mode-mobile .left-column,
 body.mode-mobile .right-column,
 body.mode-mobile .mobile-infos-card {
   display: none;
 }
-body.mode-mobile .left-column.active-mobile-sec {
-  display: flex;
-  overflow: visible;
-  border-radius: 16px;
-}
-body.mode-mobile .right-column.active-mobile-sec {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  overflow: visible;
-}
-body.mode-mobile .mobile-infos-card.active-mobile-sec {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 2px solid #CBD5E1;
-  padding: 18px;
-}
-
-body.mode-mobile .mobile-infos-card h3 {
-  font-size: 1.15rem;
-  font-weight: 900;
-  color: #1E3A8A;
-}
-body.mode-mobile .mobile-info-body {
-  font-size: 0.96rem;
-  line-height: 1.55;
-  color: #1E293B;
-  font-weight: 600;
-  background: #F8FAFC;
-  padding: 14px;
-  border-radius: 12px;
-  border-left: 5px solid #EA580C;
-}
-body.mode-mobile .mobile-info-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* Grand Scoreboard bien lisible sur téléphone */
-body.mode-mobile .live-scoreboard-card {
-  padding: 16px 14px;
-  border-radius: 16px;
-  gap: 12px;
-}
-body.mode-mobile .sb-top-bar {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-body.mode-mobile .sb-status-badge {
-  font-size: 0.85rem;
-  padding: 5px 12px;
-}
-body.mode-mobile .sb-meta-info {
-  font-size: 0.86rem;
-}
-body.mode-mobile .sb-arena {
-  grid-template-columns: 1fr auto 1fr;
-  gap: 8px;
-  margin: 12px 0;
-}
-body.mode-mobile .sb-logo-lg {
-  width: 68px;
-  height: 68px;
-}
-body.mode-mobile .sb-team-title {
-  font-size: 0.92rem;
-  line-height: 1.25;
-}
-body.mode-mobile .sb-loc-pill {
-  font-size: 0.68rem;
-  padding: 3px 8px;
-}
-body.mode-mobile .big-digits-wrap {
-  padding: 10px 14px;
-  gap: 8px;
-  border-width: 2.5px;
-  border-radius: 12px;
-}
-body.mode-mobile .big-digit {
-  font-size: 2.15rem;
-}
-body.mode-mobile .big-sep {
-  font-size: 1.55rem;
-}
-body.mode-mobile .sb-period-pill {
-  font-size: 0.8rem;
-  padding: 4px 10px;
-}
-
-/* Barre de synthèse visible aussi sur téléphone */
-body.mode-mobile .sb-summary-bar {
-  display: flex !important;
-  font-size: 0.82rem;
-  padding: 8px 10px;
-  gap: 6px;
-}
-
-/* Carte synthèse club visible et adaptée au mobile */
-body.mode-mobile .club-overview-card {
+body.mode-mobile .active-mobile-sec {
   display: flex !important;
   flex-direction: column;
-  align-items: stretch;
-  padding: 14px;
-  gap: 10px;
-}
-body.mode-mobile .overview-stats {
-  justify-content: space-between;
-}
-body.mode-mobile .ov-stat-box {
-  flex: 1;
 }
 
-/* Carte aperçu des matchs du week-end directement sous Direct & Suivant sur mobile */
-.mobile-quick-matches-card {
-  display: none;
+@media (max-width: 900px) {
+  .main-workspace {
+    grid-template-columns: 1fr !important;
+    padding: 10px 10px 52px !important;
+  }
+  .mobile-nav-tabs {
+    display: flex !important;
+  }
+  body.mode-mobile .matches-list, .matches-list {
+    max-height: none;
+  }
+  .form-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
-body.mode-mobile .mobile-quick-matches-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: #FFFFFF;
-  border-radius: 16px;
-  border: 1px solid #CBD5E1;
-  padding: 14px;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
-}
-.mq-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 2px solid #EFF6FF;
-  padding-bottom: 8px;
-}
-.mq-header h4 {
-  font-size: 0.95rem;
-  font-weight: 900;
-  color: #1E3A8A;
-}
-.mq-see-all {
-  background: #EFF6FF;
-  color: #1E3A8A;
-  border: 1px solid #93C5FD;
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 0.78rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-.mq-item {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 12px;
-  background: #F8FAFC;
-  border: 1.5px solid #E2E8F0;
-  cursor: pointer;
-}
-.mq-item.active-mq {
-  border-color: #2563EB;
-  background: #EFF6FF;
-}
-.mq-team {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 4px;
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #0F172A;
-}
-.mq-team.is-us {
-  color: #1E3A8A;
-  font-weight: 900;
-}
-.mq-team img {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-}
-.mq-mid {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-.mq-cat {
-  font-size: 0.68rem;
-  font-weight: 900;
-  background: #DBEAFE;
-  color: #1E3A8A;
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-/* Table de marque tactile sur téléphone */
-body.mode-mobile .staff-tabs {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-body.mode-mobile .staff-tabs > div {
-  display: flex;
-  width: 100%;
-  gap: 6px;
-}
-body.mode-mobile .staff-tab-btn {
-  flex: 1;
-  padding: 10px 6px;
-  font-size: 0.8rem;
-}
-body.mode-mobile .live-table-grid {
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-body.mode-mobile .live-team-ctrls {
-  background: #FFFFFF;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #BFDBFE;
-}
-body.mode-mobile .btn-pt {
-  flex: 1 1 28%;
-  padding: 12px 6px;
-  font-size: 0.95rem;
-}
-body.mode-mobile .period-selector {
-  max-width: 100%;
-  width: 100%;
-}
-body.mode-mobile .btn-period {
-  flex: 1;
-  padding: 9px 4px;
-  font-size: 0.8rem;
-}
-body.mode-mobile .staff-quick-row {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-}
-body.mode-mobile .staff-quick-row > div {
-  justify-content: center;
-}
-body.mode-mobile .score-input-num {
-  width: 82px;
-  padding: 8px;
-  font-size: 1.2rem;
-}
-body.mode-mobile .btn-action-sm {
-  padding: 12px;
-  font-size: 0.88rem;
-}
-
-/* Liste complète des matchs allégée & ultra-lisible sur téléphone */
-body.mode-mobile .week-nav-bar {
-  flex-wrap: wrap;
-  padding: 10px;
-  gap: 8px;
-}
-body.mode-mobile .week-select {
-  order: -1;
-  width: 100%;
-  max-width: 100%;
-  flex: 1 1 100%;
-  padding: 10px;
-  font-size: 0.95rem;
-}
-body.mode-mobile .btn-week {
-  flex: 1;
-  padding: 10px 6px;
-  font-size: 0.85rem;
-}
-body.mode-mobile .wk-tab {
-  padding: 7px 12px;
-  font-size: 0.8rem;
-}
-body.mode-mobile .filter-bar {
-  padding: 8px 10px;
-  gap: 8px;
-}
-body.mode-mobile .filter-pill {
-  padding: 6px 11px;
-  font-size: 0.8rem;
-}
-body.mode-mobile .cat-scroll {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  width: 100%;
-}
-body.mode-mobile .cat-scroll .filter-pill {
-  white-space: nowrap;
-}
-body.mode-mobile .matches-list {
-  overflow-y: visible;
-  max-height: none;
-  padding: 10px;
-  gap: 10px;
-}
-body.mode-mobile .match-row {
-  grid-template-columns: 1fr auto 1fr;
-  grid-template-rows: auto auto;
-  gap: 8px;
-  padding: 12px 10px;
-  border-radius: 12px;
-}
-body.mode-mobile .m-meta {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #E2E8F0;
-  padding-bottom: 6px;
-}
-body.mode-mobile .m-date {
-  font-size: 0.8rem;
-}
-body.mode-mobile .m-time {
-  font-size: 0.92rem;
-}
-body.mode-mobile .m-cat-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-}
-body.mode-mobile .m-team {
-  flex-direction: column;
-  gap: 6px;
-  justify-content: center !important;
-  text-align: center !important;
-}
-body.mode-mobile .m-team.home {
-  flex-direction: column-reverse;
-}
-body.mode-mobile .club-badge-sm {
-  width: 42px;
-  height: 42px;
-}
-body.mode-mobile .team-name-txt {
-  white-space: normal;
-  font-size: 0.84rem;
-  line-height: 1.2;
-}
-body.mode-mobile .score-pill {
-  min-width: 82px;
-  font-size: 1rem;
-  padding: 6px 10px;
-}
-body.mode-mobile .res-tag {
-  font-size: 0.7rem;
-}
-body.mode-mobile .row-staff-actions {
-  grid-column: 1 / -1;
-  justify-content: center;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #CBD5E1;
-}
-body.mode-mobile .btn-row-edit {
-  flex: 1;
-  padding: 10px;
-  font-size: 0.85rem;
-}
-
-/* Match suivant sur téléphone */
-body.mode-mobile .next-match-card {
-  padding: 14px;
-  border-radius: 16px;
-}
-body.mode-mobile .next-title-badge {
-  font-size: 0.82rem;
-}
-body.mode-mobile .next-datetime {
-  font-size: 0.86rem;
-}
-body.mode-mobile .next-team {
-  flex-direction: column;
-  font-size: 0.84rem;
-  text-align: center !important;
-  justify-content: center !important;
-}
-body.mode-mobile .next-team.home {
-  flex-direction: column-reverse;
-}
-
-/* ================= BOUTON D'INSTALLATION PWA ================= */
-.btn-install {
-  background: #16A34A;
-  color: #FFFFFF;
-  border: 1px solid #86EFAC;
-}
-.btn-install-splash {
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(90deg, #16A34A, #15803D);
-  color: #FFFFFF;
-  border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 0.9rem;
-  font-weight: 900;
-  cursor: pointer;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-}
-
-
-/* ==========================================================================
-   AMÉLIORATION VISUELLE TV 16:9 — ÉQUILIBRE DE LA COLONNE DROITE (ZÉRO VIDE)
-   ========================================================================== */
-body.mode-tv .right-column {
-  grid-template-rows: 1fr auto auto;
-  gap: 12px;
-}
-
-body.mode-tv .live-scoreboard-card {
-  justify-content: flex-start;
-  gap: 10px;
-  padding: 16px 22px;
-  background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #F1F5F9 100%);
-  border: 2px solid #93C5FD;
-}
-
-body.mode-tv .sb-arena-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 0;
-}
-
-body.mode-tv .sb-arena {
-  width: 100%;
-  gap: 18px;
-  margin: 0;
-}
-
-body.mode-tv .sb-logo-lg {
-  width: 112px;
-  height: 112px;
-  transition: transform 0.2s;
-}
-
-body.mode-tv .sb-team-title {
-  font-size: 1.24rem;
-  max-width: 240px;
-}
-
-body.mode-tv .sb-loc-pill.lsbsc-pill {
-  background: #DBEAFE;
-  color: #1E3A8A;
-  border: 1px solid #93C5FD;
-}
-
-body.mode-tv .big-digits-wrap {
-  padding: 16px 28px;
-  gap: 14px;
-  border-radius: 16px;
-}
-
-body.mode-tv .big-digit {
-  font-size: 3.4rem;
-}
-
-body.mode-tv .big-sep {
-  font-size: 2.4rem;
-}
-
-body.mode-tv .sb-period-pill {
-  font-size: 0.9rem;
-  padding: 5px 16px;
-}
-
-.sb-summary-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
-  border-radius: 10px;
-  padding: 7px 14px;
-  width: 100%;
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #1E3A8A;
-}
-
-.sb-summary-pill {
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #0F172A;
-}
-.sb-summary-pill.win {
-  background: #DCFCE7;
-  color: #15803D;
-  border-color: #86EFAC;
-}
-.sb-summary-pill.loss {
-  background: #FEE2E2;
-  color: #B91C1C;
-  border-color: #FCA5A5;
-}
-.sb-summary-pill.live {
-  background: #FFEDD5;
-  color: #C2410C;
-  border-color: #FDBA74;
-}
-
-body.mode-tv .scoreboard-Watermark {
-  width: 150px;
-  height: 150px;
-  right: 16px;
-  bottom: 12px;
-  opacity: 0.12;
-}
-
-/* Carte Match Suivant agrandie sur TV */
-body.mode-tv .next-match-card {
-  padding: 14px 18px;
-  gap: 10px;
-}
-body.mode-tv .next-match-card .club-badge-sm {
-  width: 44px;
-  height: 44px;
-}
-body.mode-tv .next-team {
-  font-size: 0.96rem;
-}
-
-/* Carte Synthèse Week-end & Infos Club (Bas Droite TV) */
-.club-overview-card {
-  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
-  color: #FFFFFF;
-  border-radius: 14px;
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 2px solid #F59E0B;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
-}
-
-.overview-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.overview-mascot {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.overview-texts h4 {
-  font-size: 0.88rem;
-  font-weight: 900;
-  color: #FCD34D;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-.overview-texts p {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #E2E8F0;
-}
-
-.overview-stats {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.ov-stat-box {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 8px;
-  padding: 5px 10px;
-  text-align: center;
-  min-width: 58px;
-}
-.ov-stat-val {
-  display: block;
-  font-size: 1rem;
-  font-weight: 900;
-  color: #FFFFFF;
-}
-.ov-stat-lbl {
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: #CBD5E1;
-  text-transform: uppercase;
-}
-
-/* Masquer la carte synthèse bas droite en mode téléphone allégé */
-body.mode-mobile .club-overview-card,
-body.mode-mobile .sb-summary-bar {
-  display: none !important;
-}
-
-/* ==========================================================================
-   STATUTS SPÉCIAUX : MATCH REPORTÉ & FORFAIT (V8)
-   ========================================================================== */
-.match-row.postponed-match {
-  border-color: #9333EA;
-  background: #FAF5FF;
-}
-.match-row.forfeit-match {
-  border-color: #475569;
-  background: #F1F5F9;
-}
-
-.score-pill.postponed {
-  background: #F3E8FF;
-  color: #6B21A8;
-  border: 1px solid #C084FC;
-  font-size: 0.74rem;
-}
-.score-pill.forfeit {
-  background: #E2E8F0;
-  color: #1E293B;
-  border: 1px solid #94A3B8;
-  font-size: 0.78rem;
-}
-.score-pill.forfeit-win {
-  background: #DCFCE7;
-  color: #15803D;
-  border: 1px solid #86EFAC;
-}
-.score-pill.forfeit-loss {
-  background: #FEE2E2;
-  color: #B91C1C;
-  border: 1px solid #FCA5A5;
-}
-
-.res-tag.postponed { color: #7E22CE; }
-.res-tag.forfeit { color: #334155; }
-
-.m-note-sub {
-  font-size: 0.62rem;
-  font-weight: 800;
-  color: #6B21A8;
-  max-width: 112px;
-  text-align: center;
-  line-height: 1.15;
-  margin-top: 2px;
-}
-
-.sb-status-badge.postponed { background: #7E22CE; color: #FFFFFF; }
-.sb-status-badge.forfeit { background: #334155; color: #FFFFFF; }
-
-.special-status-banner {
-  border-radius: 14px;
-  padding: 12px 18px;
-  text-align: center;
-  font-weight: 900;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-}
-.special-status-banner.postponed {
-  background: #F3E8FF;
-  border: 2px solid #9333EA;
-  color: #581C87;
-}
-.special-status-banner.forfeit {
-  background: #F1F5F9;
-  border: 2px solid #475569;
-  color: #0F172A;
-}
-.special-status-title {
-  font-size: 1.05rem;
-  letter-spacing: 0.3px;
-}
-.special-status-reason {
-  font-size: 0.84rem;
-  font-weight: 800;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 3px 10px;
-  border-radius: 8px;
-}
-
-.sb-summary-pill.postponed {
-  background: #F3E8FF;
-  color: #6B21A8;
-  border-color: #C084FC;
-}
-.sb-summary-pill.forfeit {
-  background: #E2E8F0;
-  color: #0F172A;
-  border-color: #94A3B8;
-}
-
-/* Panneau Staff : Statut spécial (Reporté / Forfait) */
-.staff-special-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.staff-special-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.inp-special-reason {
-  flex: 1;
-  min-width: 180px;
-  padding: 6px 10px;
-  border-radius: 7px;
-  border: 1px solid #93C5FD;
-  font-size: 0.8rem;
-  font-weight: 700;
-  background: #FFFFFF;
-  color: #0F172A;
-}
-.preset-chips {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.chip-reason {
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #334155;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 3px 7px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.chip-reason:hover {
-  background: #DBEAFE;
-  border-color: #60A5FA;
-}
-.btn-postpone { background: #7E22CE; color: #FFFFFF; }
-.btn-forfeit { background: #334155; color: #FFFFFF; }
-
-/* ==========================================================================
-   INTÉGRATION STREAMING TWITCH & MULTI-VIDÉOS (V12)
-   ========================================================================== */
-.video-modal-card {
-  max-width: 820px;
-  border-color: #9146FF;
-}
-.video-modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.video-player-frame-wrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: #0F172A;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 2px solid #334155;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
-}
-.video-player-frame-wrap iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.video-player-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: #F8FAFC;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid #CBD5E1;
-}
-.video-external-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #9146FF;
-  color: #FFFFFF;
-  text-decoration: none;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.video-playlist {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 220px;
-  overflow-y: auto;
-}
-.video-clip-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: #F8FAFC;
-  border: 1.5px solid #CBD5E1;
-  cursor: pointer;
-  text-align: left;
-}
-.video-clip-item.active-clip {
-  background: #F5F3FF;
-  border-color: #9146FF;
-}
-.video-clip-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.video-clip-title {
-  font-size: 0.85rem;
-  font-weight: 900;
-  color: #0F172A;
-}
-.video-clip-sub {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #64748B;
-}
-
-.staff-twitch-box {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.staff-twitch-inputs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.inp-twitch {
-  flex: 1;
-  min-width: 150px;
-  padding: 6px 9px;
-  border-radius: 7px;
-  border: 1px solid #D8B4FE;
-  font-size: 0.78rem;
-  font-weight: 700;
-  background: #FFFFFF;
-}
-.staff-twitch-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.staff-tw-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #F5F3FF;
-  border: 1px solid #D8B4FE;
-  color: #6D28D9;
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-.staff-tw-del {
-  background: #FEE2E2;
-  color: #B91C1C;
-  border: none;
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-weight: 900;
-  cursor: pointer;
-}
-.btn-twitch-full {
-  background: linear-gradient(135deg, #9146FF, #6D28D9);
-  color: #FFFFFF;
-}
-
-
-/* ================= YOUTUBE : boutons et zone staff ================= */
-.btn-youtube { background: #DC2626; color: #FFFFFF; }
-.btn-youtube:hover { background: #B91C1C; }
-.btn-youtube-full { background: #DC2626; color: #FFFFFF; }
-.row-youtube-badge, .youtube-pill-btn {
-  border: none;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 0.72rem;
-  font-weight: 900;
-  background: #FEE2E2;
-  color: #991B1B;
-  border: 1px solid #FCA5A5;
-  cursor: pointer;
-}
-.youtube-pill-btn { background: #DC2626; color: #FFFFFF; border-color: #B91C1C; padding: 6px 12px; font-size: 0.78rem; }
-.row-youtube-badge:hover, .youtube-pill-btn:hover { filter: brightness(0.95); }
-.staff-youtube-box { display: flex; flex-direction: column; gap: 4px; }
-.staff-youtube-inputs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.inp-youtube {
-  flex: 1 1 140px;
-  min-width: 0;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #FCA5A5;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-.staff-youtube-list { display: flex; flex-wrap: wrap; gap: 6px; }
