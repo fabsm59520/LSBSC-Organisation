@@ -13,8 +13,511 @@
   <link rel="icon" type="image/png" href="assets/logo-lsbsc.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Styles complets : Visibilité Staff, Menus déroulants, Mobile, QR Code TV, Rotation TV, Partage & Table de marque -->
+  <style>
+    /* 1. Visibilité stricte en mode Direct / Scores (Staff) */
+    .staff-only-tool {
+      display: none !important;
+    }
+    body.staff-unlocked .staff-only-tool {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 2. Masquer l'ancien ruban de semaines */
+    #weekTabsStrip {
+      display: none !important;
+    }
+
+    /* 3. Menus déroulants (Week-ends, Lieu, Catégories) */
+    .week-nav-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .week-select,
+    .custom-dropdown {
+      appearance: none;
+      -webkit-appearance: none;
+      background-color: #1E293B;
+      color: #F8FAFC;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 8px 30px 8px 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 16px;
+      min-height: 38px;
+    }
+    .week-select {
+      flex: 1;
+      min-width: 0;
+    }
+    .week-select:focus,
+    .custom-dropdown:focus {
+      outline: 2px solid #F97316;
+      border-color: #F97316;
+    }
+    .filter-bar-dropdowns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 8px;
+    }
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .filter-field label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #94A3B8;
+      letter-spacing: 0.04em;
+    }
+
+    /* 4. Barre d'actions rapides sous le Scoreboard (Partage WhatsApp, GPS, Période & Fautes) */
+    .sb-extra-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .sb-period-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(249, 115, 22, 0.18);
+      color: #FDBA74;
+      border: 1px solid rgba(249, 115, 22, 0.45);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+    .sb-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-left: auto;
+    }
+    .btn-quick-act {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #1E293B;
+      color: #F8FAFC;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-quick-act:hover {
+      background: #334155;
+      border-color: #F97316;
+    }
+    .btn-quick-act.btn-share-wa {
+      background: rgba(22, 163, 74, 0.2);
+      border-color: rgba(34, 197, 94, 0.5);
+      color: #86EFAC;
+    }
+    .btn-quick-act.btn-gps-map {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #93C5FD;
+    }
+
+    /* Bouton GPS directement sur les cartes de matchs à l'extérieur */
+    .match-gps-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      background: rgba(37, 99, 235, 0.18);
+      color: #93C5FD;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      text-decoration: none;
+    }
+    .match-gps-link:hover {
+      background: rgba(37, 99, 235, 0.35);
+    }
+
+    /* Alerte 5 fautes d'équipe (Bonus / Pénalité) */
+    .foul-bonus-alert {
+      background: #DC2626 !important;
+      color: #FFFFFF !important;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 0.72rem;
+      animation: pulseBonus 1.2s infinite;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    @keyframes pulseBonus {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.06); opacity: 0.85; }
+    }
+
+    /* 5. Console Table de Marque Rapide (Mode Staff : +1, +2, +3, Annuler, Quart-Temps, Fautes) */
+    .pro-staff-console {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(249, 115, 22, 0.45);
+      border-radius: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    body.staff-unlocked .pro-staff-console {
+      display: flex;
+    }
+    .pro-staff-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #FDBA74;
+    }
+    .pro-staff-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .pro-team-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+    }
+    .btn-score-fast {
+      min-width: 44px;
+      min-height: 38px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #1E293B;
+      color: #F8FAFC;
+      font-weight: 900;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-score-fast.plus {
+      background: #EA580C;
+      border-color: #F97316;
+      color: #FFF;
+    }
+    .btn-score-fast.foul {
+      background: #7F1D1D;
+      border-color: #DC2626;
+      color: #FCA5A5;
+      font-size: 0.75rem;
+      padding: 0 8px;
+    }
+    .pro-period-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+    }
+    .btn-period-chip {
+      padding: 5px 9px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0F172A;
+      color: #CBD5E1;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-period-chip.active {
+      background: #F97316;
+      color: #FFF;
+      border-color: #FB923C;
+    }
+
+    /* 6. Widget QR Code fixe pour l'Écran TV Salle (masqué sur mobile) */
+    .tv-qr-floating {
+      position: fixed;
+      right: 16px;
+      bottom: 48px;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 2px solid #F97316;
+      border-radius: 14px;
+      padding: 8px 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .tv-qr-floating:hover {
+      transform: scale(1.04);
+    }
+    .tv-qr-floating img {
+      width: 64px;
+      height: 64px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      padding: 3px;
+      object-fit: contain;
+    }
+    .tv-qr-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 145px;
+    }
+    .tv-qr-text strong {
+      font-size: 0.78rem;
+      color: #F8FAFC;
+      line-height: 1.15;
+    }
+    .tv-qr-text span {
+      font-size: 0.68rem;
+      color: #FDBA74;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    body.mode-mobile .tv-qr-floating {
+      display: none !important;
+    }
+
+    /* Carte QR Code dans l'onglet Infos Mobile */
+    .mobile-qr-share-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    .mobile-qr-share-box img {
+      width: 68px;
+      height: 68px;
+      border-radius: 8px;
+      background: #FFF;
+      padding: 4px;
+      cursor: pointer;
+    }
+
+    /* Encart Rotation Automatique Buvette / QR sur TV quand aucun match n'est en direct */
+    .tv-promo-slide {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      border: 2px solid #F97316;
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-top: 8px;
+      color: #F8FAFC;
+    }
+    .tv-promo-slide.visible {
+      display: flex;
+    }
+    .tv-promo-slide img {
+      width: 84px;
+      height: 84px;
+      background: #FFF;
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    /* Bannière de mise à jour PWA */
+    .pwa-update-toast {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      background: #EA580C;
+      color: #FFF;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 7. Adaptation complète Mobile (mode-mobile & petits écrans) */
+    @media (max-width: 900px) {
+      .tv-qr-floating {
+        display: none !important;
+      }
+      .top-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 10px 12px !important;
+      }
+      .brand-zone {
+        justify-content: flex-start;
+        gap: 8px !important;
+      }
+      .club-logo-top, .club-mascot-top {
+        width: 36px !important;
+        height: 36px !important;
+      }
+      .brand-titles h1 {
+        font-size: 0.95rem !important;
+        line-height: 1.15 !important;
+      }
+      .brand-titles .subtitle {
+        font-size: 0.68rem !important;
+      }
+      .weekend-kpi {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 4px !important;
+      }
+      .kpi-item {
+        flex: 1;
+        text-align: center;
+        font-size: 0.75rem !important;
+        padding: 4px 6px !important;
+      }
+      .header-controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 6px !important;
+        width: 100%;
+      }
+      .clock-box {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 4px 8px;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 6px;
+      }
+      .btn-top {
+        flex: 1 1 auto;
+        min-height: 38px;
+        font-size: 0.78rem !important;
+        padding: 6px 10px !important;
+        text-align: center;
+        justify-content: center;
+      }
+
+      /* Navigation par onglets mobile */
+      .mobile-nav-tabs {
+        display: flex !important;
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        width: 100%;
+        overflow-x: auto;
+      }
+      .mob-tab {
+        flex: 1;
+        white-space: nowrap;
+        font-size: 0.8rem !important;
+        padding: 10px 6px !important;
+      }
+
+      /* Barre de semaines et filtres sur mobile */
+      .week-nav-bar {
+        flex-wrap: wrap;
+      }
+      .week-select {
+        order: -1;
+        flex: 1 1 100%;
+        width: 100%;
+        margin-bottom: 4px;
+        font-size: 0.92rem;
+      }
+      .btn-week {
+        flex: 1;
+        min-height: 36px;
+        font-size: 0.8rem !important;
+      }
+      .filter-bar-dropdowns {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      /* Scoreboard responsive sur téléphone */
+      .sb-arena {
+        grid-template-columns: 1fr auto 1fr !important;
+        gap: 6px !important;
+        padding: 8px 4px !important;
+      }
+      .sb-logo-lg {
+        width: 48px !important;
+        height: 48px !important;
+      }
+      .sb-team-title {
+        font-size: 0.78rem !important;
+        word-break: break-word;
+      }
+      .sb-loc-pill {
+        font-size: 0.62rem !important;
+        padding: 2px 5px !important;
+      }
+      .pro-staff-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    body.mode-mobile .week-nav-bar {
+      flex-wrap: wrap;
+    }
+    body.mode-mobile .week-select {
+      order: -1;
+      flex: 1 1 100%;
+      width: 100%;
+      margin-bottom: 4px;
+    }
+    body.mode-mobile .btn-week {
+      flex: 1;
+      min-height: 38px;
+    }
+  </style>
 </head>
 <body class="mode-tv">
+
+  <!-- Notification de mise à jour PWA -->
+  <div id="pwaUpdateToast" class="pwa-update-toast">
+    <span>🔄 Nouvelle version disponible !</span>
+    <button class="btn-action-sm btn-save-score" onclick="window.location.reload()">Actualiser</button>
+  </div>
 
   <!-- ================= ÉCRAN DE SÉLECTION DU FORMAT AU CHARGEMENT ================= -->
   <div id="formatSelectorOverlay" class="format-overlay open">
@@ -59,8 +562,8 @@
   <!-- ================= EN-TÊTE PRINCIPAL ================= -->
   <header class="top-header">
     <div class="brand-zone">
-      <img id="headerLogoImg" class="club-logo-top" src="assets/logo-lsbsc.png" alt="Logo LSBSC" onclick="requestPinAccess('logos')" title="Gestion Logos & Mascotte">
-      <img id="headerMascotImg" class="club-mascot-top" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC" onclick="requestPinAccess('logos')" title="Gestion Logos & Mascotte">
+      <img id="headerLogoImg" class="club-logo-top" src="assets/logo-lsbsc.png" alt="Logo LSBSC" onclick="handleHeaderLogoClick()" title="Logo LSBSC">
+      <img id="headerMascotImg" class="club-mascot-top" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC" onclick="handleHeaderLogoClick()" title="Mascotte LSBSC">
       <div class="brand-titles">
         <h1>LILLE SUD BASKETBALL SPORTING CLUB</h1>
         <div class="subtitle">SOUTH LILLE • PROGRAMMATION & RÉSULTATS</div>
@@ -81,10 +584,14 @@
       </div>
       <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application sur l'écran d'accueil">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
-      <button class="btn-top btn-youtube" onclick="openVideoGalleryModal()" title="Regarder les matchs en direct et replays YouTube du club">📺 Vidéos & Live</button>
-      <button class="btn-top btn-logos" onclick="requestPinAccess('logos')">🛡️ Logos</button>
+
+      <!-- Boutons visibles uniquement quand le mode Direct / Scores est activé -->
+      <button id="btnVideoLive" class="btn-top btn-youtube staff-only-tool" onclick="openVideoGalleryModal()" title="Regarder les matchs en direct et replays YouTube du club">📺 Vidéos & Live</button>
+      <button id="btnLogosAdmin" class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')" title="Gestion des logos">🛡️ Logos</button>
+      <button id="btnSettingsAdmin" class="btn-top btn-cloud staff-only-tool" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
+
+      <!-- Bouton principal d'activation du mode Direct / Scores -->
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
-      <button class="btn-top btn-cloud" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
     </div>
   </header>
 
@@ -98,34 +605,51 @@
   <!-- ================= ESPACE PRINCIPAL ================= -->
   <main class="main-workspace">
 
-    <!-- COLONNE GAUCHE : LISTE DES MATCHS DU WEEK-END & NAVIGATION SEMAINES -->
+    <!-- COLONNE GAUCHE : LISTE DES MATCHS DU WEEK-END & NAVIGATION PAR MENUS DÉROULANTS -->
     <section id="sectionSchedule" class="left-column">
+      
+      <!-- Sélection des dates du week-end par menu déroulant -->
       <div class="week-nav-bar">
         <button class="btn-week" onclick="shiftWeek(-1)">◀ Préc.</button>
-        <select id="weekSelect" class="week-select" onchange="selectWeek(this.value)"></select>
+        <select id="weekSelect" class="week-select" onchange="selectWeek(this.value)" aria-label="Sélectionner le week-end"></select>
         <button class="btn-week current-wk" onclick="selectCurrentWeek()">📅 Actuel</button>
         <button class="btn-week" onclick="shiftWeek(1)">Suiv. ▶</button>
       </div>
 
-      <div id="weekTabsStrip" class="week-tabs-strip"></div>
+      <!-- Conservé masqué pour compatibilité avec app.js -->
+      <div id="weekTabsStrip" class="week-tabs-strip" style="display:none;"></div>
 
-      <div class="filter-bar">
-        <div class="filter-group">
-          <button class="filter-pill loc-pill active" onclick="setLocFilter('ALL', this)">Tous</button>
-          <button class="filter-pill loc-pill" onclick="setLocFilter('HOME', this)">🏠 Domicile</button>
-          <button class="filter-pill loc-pill" onclick="setLocFilter('AWAY', this)">🚌 Extérieur</button>
+      <!-- Filtres Lieu & Catégorie en menus déroulants (alimenté dynamiquement + mémorisé) -->
+      <div class="filter-bar filter-bar-dropdowns">
+        <div class="filter-field">
+          <label for="locSelect">📍 Lieu des matchs</label>
+          <select id="locSelect" class="custom-dropdown" onchange="handleLocSelectChange(this.value)">
+            <option value="ALL">🏠/🚌 Tous les matchs</option>
+            <option value="HOME">🏠 Domicile uniquement</option>
+            <option value="AWAY">🚌 Extérieur uniquement</option>
+          </select>
         </div>
-        <div class="filter-group cat-scroll">
-          <button class="filter-pill cat-pill active" onclick="setCatFilter('ALL', this)">Toutes Cat.</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U9', this)">U9</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U11F', this)">U11F</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U13F', this)">U13F</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U15F', this)">U15F</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U15M', this)">U15M</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U18F', this)">U18F</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('U18M', this)">U18M</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('SM1', this)">SM1</button>
-          <button class="filter-pill cat-pill" onclick="setCatFilter('SM2', this)">SM2</button>
+
+        <div class="filter-field">
+          <label for="catSelect">🏀 Catégorie (Mémorisée)</label>
+          <select id="catSelect" class="custom-dropdown" onchange="handleCatSelectChange(this.value)">
+            <option value="ALL">Toutes les catégories</option>
+            <option value="U9">U9</option>
+            <option value="U11F">U11F</option>
+            <option value="U13F">U13F</option>
+            <option value="U15F">U15F</option>
+            <option value="U15M">U15M</option>
+            <option value="U18F">U18F</option>
+            <option value="U18M">U18M</option>
+            <option value="SM1">SM1</option>
+            <option value="SM2">SM2</option>
+          </select>
+        </div>
+
+        <!-- Boutons cachés conservés pour la compatibilité interne avec les fonctions existantes de app.js -->
+        <div style="display:none;">
+          <button id="hiddenLocTrigger" class="filter-pill loc-pill active"></button>
+          <button id="hiddenCatTrigger" class="filter-pill cat-pill active"></button>
         </div>
       </div>
 
@@ -151,22 +675,85 @@
               <div id="sbHomeName" class="sb-team-title">U13 FILLE BENJAMINES</div>
               <span id="sbHomeLocPill" class="sb-loc-pill">LOCAUX (DOMICILE)</span>
               <div id="sbHomeFouls"></div>
+              <div id="sbHomeBonusBadge"></div>
             </div>
 
             <div id="sbCenterWrap" class="sb-center-score"></div>
 
             <div class="sb-team-box">
               <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
+              <img id="sbAwayLogoFallback" style="display:none;" alt="">
               <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
               <span id="sbAwayLocPill" class="sb-loc-pill">VISITEURS</span>
               <div id="sbAwayFouls"></div>
+              <div id="sbAwayBonusBadge"></div>
             </div>
           </div>
 
           <div id="sbMatchSummaryBar" class="sb-summary-bar"></div>
+
+          <!-- Barre d'actions enrichie : Période en cours, Itinéraire GPS & Partage WhatsApp -->
+          <div class="sb-extra-bar">
+            <span id="sbPeriodDisplay" class="sb-period-pill">⏱️ Période : Q1</span>
+            <div class="sb-quick-actions">
+              <a id="btnSbGps" class="btn-quick-act btn-gps-map" href="https://www.google.com/maps/search/?api=1&query=Lille+Sud+Basketball" target="_blank" rel="noopener">
+                📍 Itinéraire GPS
+              </a>
+              <button type="button" class="btn-quick-act btn-share-wa" onclick="shareCurrentMatchResult()">
+                📤 Partager Score
+              </button>
+            </div>
+          </div>
         </div>
 
+        <!-- Panneau de score existant géré par app.js -->
         <div id="staffScorePanel" class="staff-score-panel" style="display:none;"></div>
+
+        <!-- Console Rapide Table de Marque (+1, +2, +3, Annuler, Quart-temps & Fautes) visible en Mode Direct/Scores -->
+        <div id="proStaffConsole" class="pro-staff-console">
+          <div class="pro-staff-header">
+            <span>⚡ Aide Table de Marque Rapide (Quart-temps, Points & Fautes)</span>
+            <button type="button" class="btn-quick-act" onclick="undoLastQuickScore()">↩️ Annuler dernière action</button>
+          </div>
+          <div class="pro-period-bar">
+            <button type="button" class="btn-period-chip active" onclick="setQuickPeriod('Q1', this)">Q1</button>
+            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('Q2', this)">Q2</button>
+            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('MI-TEMPS', this)">Mi-Temps</button>
+            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('Q3', this)">Q3</button>
+            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('Q4', this)">Q4</button>
+            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('PROLONG.', this)">Prolong.</button>
+            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('TERMINÉ', this)">Terminé</button>
+          </div>
+          <div class="pro-staff-grid">
+            <div class="pro-team-btns">
+              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('home', 1)">+1</button>
+              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('home', 2)">+2</button>
+              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('home', 3)">+3</button>
+              <button type="button" class="btn-score-fast" onclick="quickAdjustScore('home', -1)">-1</button>
+              <button type="button" class="btn-score-fast foul" onclick="quickAdjustFouls('home', 1)">+Faute</button>
+              <button type="button" class="btn-score-fast" onclick="quickAdjustFouls('home', -1)" title="Retirer une faute">-F</button>
+            </div>
+            <div style="text-align:center;font-size:0.72rem;font-weight:800;color:#94A3B8;">VS</div>
+            <div class="pro-team-btns">
+              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('away', 1)">+1</button>
+              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('away', 2)">+2</button>
+              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('away', 3)">+3</button>
+              <button type="button" class="btn-score-fast" onclick="quickAdjustScore('away', -1)">-1</button>
+              <button type="button" class="btn-score-fast foul" onclick="quickAdjustFouls('away', 1)">+Faute</button>
+              <button type="button" class="btn-score-fast" onclick="quickAdjustFouls('away', -1)" title="Retirer une faute">-F</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENCART ROTATION AUTOMATIQUE TV (Buvette & QR Code quand aucun match n'est en direct) -->
+      <div id="tvPromoSlide" class="tv-promo-slide">
+        <div>
+          <div style="font-size:0.75rem;font-weight:900;color:#F97316;text-transform:uppercase;letter-spacing:0.05em;">🍔 Buvette LSBSC & Suivi Mobile en Direct</div>
+          <h4 style="margin:4px 0;font-size:1.05rem;">Scannez le QR Code pour suivre les scores sur votre téléphone !</h4>
+          <p id="tvPromoTickerMirror" style="margin:0;font-size:0.84rem;color:#CBD5E1;">Retrouvez le programme du week-end, les scores en direct et les infos buvette sur votre smartphone.</p>
+        </div>
+        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC Direct" onclick="openQrZoomModal()">
       </div>
 
       <!-- MILIEU : ENCART DU MATCH SUIVANT -->
@@ -184,14 +771,33 @@
     <section id="sectionMobileInfos" class="mobile-infos-card">
       <h3>🍔 Buvette & Actualités du Club LSBSC</h3>
       <p id="mobileTickerStaticText" class="mobile-info-body"></p>
-      <div class="mobile-info-actions">
-        <button class="btn-action-sm btn-youtube-full" onclick="openVideoGalleryModal()">📺 Regarder les Directs & Vidéos YouTube</button>
-        <button class="btn-action-sm btn-save-score" onclick="requestPinAccess('settings')">✏️ Modifier l'annonce Buvette / Sync</button>
+
+      <!-- Encart de partage QR Code sur Mobile -->
+      <div class="mobile-qr-share-box">
+        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" onclick="openQrZoomModal()">
+        <div>
+          <strong style="font-size:0.86rem;color:#F8FAFC;">📲 Partager l'application aux supporters</strong>
+          <p style="margin:3px 0 0;font-size:0.75rem;color:#94A3B8;">Touchez le QR Code pour l'afficher en plein écran et le faire scanner autour de vous.</p>
+        </div>
+      </div>
+
+      <div class="mobile-info-actions" style="margin-top:12px;">
+        <button class="btn-action-sm btn-youtube-full staff-only-tool" onclick="openVideoGalleryModal()">📺 Regarder les Directs & Vidéos YouTube</button>
+        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="requestPinAccess('settings')">✏️ Modifier l'annonce Buvette / Sync</button>
         <button class="btn-action-sm btn-set-live" onclick="openFormatOverlay()">🖥️ Changer le format d'affichage (TV / Mobile)</button>
       </div>
     </section>
 
   </main>
+
+  <!-- ================= WIDGET QR CODE FIXE (ÉCRAN TV SALLE) ================= -->
+  <div id="tvQrFloatingWidget" class="tv-qr-floating" onclick="openQrZoomModal()" title="Cliquez pour agrandir le QR Code">
+    <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC Direct">
+    <div class="tv-qr-text">
+      <strong>📱 Scores & Buvette sur Mobile</strong>
+      <span>Scannez-moi depuis les gradins !</span>
+    </div>
+  </div>
 
   <!-- ================= BANDEAU INFOS & BUVETTE ================= -->
   <footer class="bottom-ticker">
@@ -201,11 +807,27 @@
     </div>
   </footer>
 
+  <!-- ================= MODAL ZOOM QR CODE ================= -->
+  <div id="qrZoomModal" class="modal-backdrop" onclick="closeQrZoomModal()">
+    <div class="modal-card" style="max-width:360px;text-align:center;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📱 Accès Direct Mobile LSBSC</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeQrZoomModal()">✖</button>
+      </div>
+      <div style="padding:14px;background:#FFFFFF;border-radius:14px;display:inline-block;margin:10px auto;">
+        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" style="width:240px;height:240px;display:block;">
+      </div>
+      <p style="font-size:0.85rem;font-weight:700;color:#475569;margin-top:6px;">
+        Scannez ce QR Code avec l'appareil photo de votre téléphone pour ouvrir les résultats et le direct du LSBSC.
+      </p>
+    </div>
+  </div>
+
   <!-- ================= MODAL CLAVIER CODE PIN ================= -->
   <div id="pinModal" class="modal-backdrop">
     <div class="modal-card" style="max-width:360px;">
       <div class="modal-header">
-        <h3 id="pinModalTitle">🔒 Code PIN Requis</h3>
+        <h3 id="pinModalTitle">🔒 Accès Staff Sécurisé</h3>
         <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖</button>
       </div>
       <div id="pinDisplayBox" class="pin-display"></div>
@@ -226,7 +848,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL LOGOS & MASCOTTE (PROTÉGÉ PIN 9694) ================= -->
+  <!-- ================= MODAL LOGOS & MASCOTTE (ACCÈS SÉCURISÉ STAFF) ================= -->
   <div id="logosModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
@@ -275,7 +897,6 @@
     </div>
   </div>
 
-
   <!-- ================= MODAL LECTEUR YOUTUBE LIVE & REPLAYS ================= -->
   <div id="videoModal" class="modal-backdrop">
     <div class="modal-card video-modal-card">
@@ -288,5 +909,361 @@
   </div>
 
   <script src="js/app.js"></script>
+
+  <!-- ================= MODULE COMPLET D'AMÉLIORATIONS LSBSC ================= -->
+  <script>
+    // --- État local pour la table de marque rapide & historique d'annulation ---
+    const lsbscHistoryStack = [];
+    let currentPeriodLabel = localStorage.getItem('lsbsc_current_period') || 'Q1';
+    let quickFouls = JSON.parse(localStorage.getItem('lsbsc_quick_fouls') || '{"home":0,"away":0}');
+    let wakeLockSentinel = null;
+
+    // 1. GESTION DES MENUS DÉROULANTS & MÉMORISATION DE LA CATÉGORIE FAVORITE
+    function handleLocSelectChange(val) {
+      localStorage.setItem('lsbsc_fav_loc', val);
+      const dummyBtn = document.getElementById('hiddenLocTrigger');
+      if (typeof setLocFilter === 'function') {
+        setLocFilter(val, dummyBtn);
+      }
+      setTimeout(enhanceMatchCardsWithGps, 120);
+    }
+
+    function handleCatSelectChange(val) {
+      localStorage.setItem('lsbsc_fav_cat', val);
+      const dummyBtn = document.getElementById('hiddenCatTrigger');
+      if (typeof setCatFilter === 'function') {
+        setCatFilter(val, dummyBtn);
+      }
+      setTimeout(enhanceMatchCardsWithGps, 120);
+    }
+
+    // Alimentation dynamique du menu déroulant des catégories depuis data/matches.json
+    async function populateDynamicCategories() {
+      const catSelect = document.getElementById('catSelect');
+      if (!catSelect) return;
+      try {
+        const res = await fetch('data/matches.json');
+        if (res.ok) {
+          const data = await res.json();
+          const matchesArray = Array.isArray(data) ? data : (data.matches || []);
+          const categories = new Set();
+          matchesArray.forEach(m => {
+            const c = m.category || m.cat || m.categorie || m.equipeCode;
+            if (c) categories.add(String(c).trim());
+          });
+          if (categories.size > 0) {
+            const existing = new Set(Array.from(catSelect.options).map(o => o.value));
+            categories.forEach(cat => {
+              if (!existing.has(cat)) {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                catSelect.appendChild(opt);
+              }
+            });
+          }
+        }
+      } catch (e) {
+        // Garde la liste par défaut si matches.json n'est pas encore chargé
+      }
+
+      // Restaurer la catégorie et le lieu favoris mémorisés
+      const savedCat = localStorage.getItem('lsbsc_fav_cat');
+      if (savedCat && Array.from(catSelect.options).some(o => o.value === savedCat)) {
+        catSelect.value = savedCat;
+        handleCatSelectChange(savedCat);
+      }
+      const locSelect = document.getElementById('locSelect');
+      const savedLoc = localStorage.getItem('lsbsc_fav_loc');
+      if (locSelect && savedLoc) {
+        locSelect.value = savedLoc;
+        handleLocSelectChange(savedLoc);
+      }
+    }
+
+    // 2. VISIBILITÉ STRICTE DU MODE DIRECT / SCORES (STAFF)
+    function handleHeaderLogoClick() {
+      if (document.body.classList.contains('staff-unlocked') && typeof requestPinAccess === 'function') {
+        requestPinAccess('logos');
+      }
+    }
+
+    function syncStaffToolsVisibility() {
+      const staffPanel = document.getElementById('staffScorePanel');
+      const staffBtn = document.getElementById('btnStaffToggle');
+
+      const isUnlocked =
+        (typeof staffMode !== 'undefined' && staffMode === true) ||
+        (typeof isStaffMode !== 'undefined' && isStaffMode === true) ||
+        (staffPanel && staffPanel.style.display !== 'none') ||
+        (staffBtn && (staffBtn.classList.contains('active') || staffBtn.textContent.includes('🔓') || staffBtn.textContent.toLowerCase().includes('quitter')));
+
+      document.body.classList.toggle('staff-unlocked', Boolean(isUnlocked));
+      if (isUnlocked) {
+        requestScreenWakeLock();
+      }
+    }
+
+    // 3. BOUTONS ITINÉRAIRE GPS (GOOGLE MAPS / WAZE) SUR LES MATCHS & LE SCOREBOARD
+    function updateScoreboardGpsLink() {
+      const homeName = (document.getElementById('sbHomeName')?.textContent || '').trim();
+      const awayName = (document.getElementById('sbAwayName')?.textContent || '').trim();
+      const homeLoc = (document.getElementById('sbHomeLocPill')?.textContent || '').toUpperCase();
+      const btnGps = document.getElementById('btnSbGps');
+      if (!btnGps) return;
+
+      let destinationQuery = 'Salle de basket Lille Sud';
+      if (homeName && !homeName.toUpperCase().includes('LILLE SUD') && !homeName.toUpperCase().includes('LSBSC') && !homeLoc.includes('LOCAUX')) {
+        destinationQuery = 'Salle basket ' + homeName;
+      } else if (awayName && !awayName.toUpperCase().includes('LILLE SUD') && !awayName.toUpperCase().includes('LSBSC') && homeLoc.includes('EXT')) {
+        destinationQuery = 'Salle basket ' + awayName;
+      } else if (homeName && !homeName.toUpperCase().includes('U') && !homeName.toUpperCase().includes('SM')) {
+        destinationQuery = 'Salle basket ' + homeName;
+      }
+      btnGps.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(destinationQuery);
+    }
+
+    function enhanceMatchCardsWithGps() {
+      const container = document.getElementById('matchesListContainer');
+      if (!container) return;
+      const cards = container.children;
+      Array.from(cards).forEach(card => {
+        if (card.querySelector('.match-gps-link')) return;
+        const text = card.textContent || '';
+        const isAway = text.toUpperCase().includes('EXT') || text.includes('🚌') || card.innerHTML.includes('AWAY');
+        if (isAway) {
+          const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+          const clubQuery = lines.find(l => l.length > 4 && !l.includes(':') && !l.toUpperCase().includes('LILLE SUD')) || 'Basket Nord';
+          const gpsLink = document.createElement('a');
+          gpsLink.className = 'match-gps-link';
+          gpsLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Salle basket ' + clubQuery);
+          gpsLink.target = '_blank';
+          gpsLink.rel = 'noopener';
+          gpsLink.innerHTML = '📍 Itinéraire Salle';
+          gpsLink.onclick = (e) => e.stopPropagation();
+          card.appendChild(gpsLink);
+        }
+      });
+    }
+
+    // 4. PARTAGE RAPIDE WHATSAPP / RÉSEAUX DU RÉSULTAT OU SCORE EN DIRECT
+    async function shareCurrentMatchResult() {
+      const status = (document.getElementById('sbStatusBadge')?.textContent || 'Match LSBSC').trim();
+      const meta = (document.getElementById('sbMetaInfo')?.textContent || '').trim();
+      const home = (document.getElementById('sbHomeName')?.textContent || 'Domicile').trim();
+      const away = (document.getElementById('sbAwayName')?.textContent || 'Visiteurs').trim();
+      const centerScore = (document.getElementById('sbCenterWrap')?.textContent || '').replace(/\s+/g, ' ').trim();
+      const period = currentPeriodLabel ? ` (${currentPeriodLabel})` : '';
+
+      const shareText = `🏀 *LSBSC South Lille — ${status}${period}*\n📅 ${meta}\n🔥 *${home}*  ${centerScore}  *${away}*\n📲 Suivez tous les matchs en direct : ${window.location.href}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'LSBSC Direct — Résultat & Score',
+            text: shareText.replace(/\*/g, ''),
+            url: window.location.href
+          });
+          return;
+        } catch (err) {
+          // L'utilisateur a fermé la fenêtre ou partage natif indisponible
+        }
+      }
+      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
+      window.open(waUrl, '_blank', 'noopener');
+    }
+
+    // 5. CONSOLE TABLE DE MARQUE RAPIDE (+1, +2, +3, ANNULER, QUART-TEMPS & FAUTES BONUS)
+    function setQuickPeriod(period, btnEl) {
+      currentPeriodLabel = period;
+      localStorage.setItem('lsbsc_current_period', period);
+      const pill = document.getElementById('sbPeriodDisplay');
+      if (pill) pill.textContent = '⏱️ Période : ' + period;
+      document.querySelectorAll('.btn-period-chip').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+    }
+
+    function renderQuickFouls() {
+      const homeFoulsEl = document.getElementById('sbHomeFouls');
+      const awayFoulsEl = document.getElementById('sbAwayFouls');
+      const homeBonusEl = document.getElementById('sbHomeBonusBadge');
+      const awayBonusEl = document.getElementById('sbAwayBonusBadge');
+
+      if (homeFoulsEl && !homeFoulsEl.innerHTML.trim()) {
+        homeFoulsEl.textContent = `Fautes : ${quickFouls.home}`;
+      }
+      if (awayFoulsEl && !awayFoulsEl.innerHTML.trim()) {
+        awayFoulsEl.textContent = `Fautes : ${quickFouls.away}`;
+      }
+      if (homeBonusEl) {
+        homeBonusEl.innerHTML = quickFouls.home >= 5 ? '<span class="foul-bonus-alert">🚨 5 FAUTES (BONUS)</span>' : '';
+      }
+      if (awayBonusEl) {
+        awayBonusEl.innerHTML = quickFouls.away >= 5 ? '<span class="foul-bonus-alert">🚨 5 FAUTES (BONUS)</span>' : '';
+      }
+    }
+
+    function quickAdjustFouls(side, delta) {
+      lsbscHistoryStack.push({ type: 'foul', side, delta });
+      quickFouls[side] = Math.max(0, (quickFouls[side] || 0) + delta);
+      localStorage.setItem('lsbsc_quick_fouls', JSON.stringify(quickFouls));
+      const targetEl = document.getElementById(side === 'home' ? 'sbHomeFouls' : 'sbAwayFouls');
+      if (targetEl) targetEl.textContent = `Fautes d'équipe : ${quickFouls[side]}`;
+      renderQuickFouls();
+    }
+
+    function quickAdjustScore(side, delta) {
+      lsbscHistoryStack.push({ type: 'score', side, delta });
+      // Cherche d'abord les champs input du panneau staffScorePanel générés par app.js
+      const staffPanel = document.getElementById('staffScorePanel');
+      if (staffPanel) {
+        const numInputs = staffPanel.querySelectorAll('input[type="number"]');
+        if (numInputs.length >= 2) {
+          const idx = side === 'home' ? 0 : 1;
+          const currentVal = parseInt(numInputs[idx].value || '0', 10);
+          numInputs[idx].value = Math.max(0, currentVal + delta);
+          numInputs[idx].dispatchEvent(new Event('input', { bubbles: true }));
+          numInputs[idx].dispatchEvent(new Event('change', { bubbles: true }));
+          const saveBtn = staffPanel.querySelector('.btn-save-score, button');
+          if (saveBtn) saveBtn.click();
+          return;
+        }
+      }
+      // Sinon met à jour directement les chiffres affichés au centre du scoreboard
+      const centerWrap = document.getElementById('sbCenterWrap');
+      if (centerWrap) {
+        const nums = centerWrap.textContent.match(/\d+/g);
+        if (nums && nums.length >= 2) {
+          let h = parseInt(nums[0], 10);
+          let a = parseInt(nums[1], 10);
+          if (side === 'home') h = Math.max(0, h + delta);
+          else a = Math.max(0, a + delta);
+          centerWrap.innerHTML = `<span style="font-size:2.2rem;font-weight:900;">${h} - ${a}</span>`;
+        }
+      }
+    }
+
+    function undoLastQuickScore() {
+      const last = lsbscHistoryStack.pop();
+      if (!last) return;
+      if (last.type === 'score') {
+        quickAdjustScore(last.side, -last.delta);
+        lsbscHistoryStack.pop();
+      } else if (last.type === 'foul') {
+        quickAdjustFouls(last.side, -last.delta);
+        lsbscHistoryStack.pop();
+      }
+    }
+
+    // 6. MODE ÉCRAN TOUJOURS ALLUMÉ (WAKE LOCK API) POUR TV & TABLE DE MARQUE
+    async function requestScreenWakeLock() {
+      if ('wakeLock' in navigator && !wakeLockSentinel) {
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+          });
+        } catch (e) {
+          // WakeLock non autorisé ou batterie faible
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && (document.body.classList.contains('mode-tv') || document.body.classList.contains('staff-unlocked'))) {
+        requestScreenWakeLock();
+      }
+    });
+
+    // 7. ROTATION AUTOMATIQUE EN MODE TV (SCOREBOARD / BUVETTE & QR CODE)
+    let tvSlideState = false;
+    function initTvAutoRotation() {
+      setInterval(() => {
+        if (!document.body.classList.contains('mode-tv') || document.body.classList.contains('staff-unlocked')) {
+          const promo = document.getElementById('tvPromoSlide');
+          if (promo) promo.classList.remove('visible');
+          return;
+        }
+        const statusBadge = document.getElementById('sbStatusBadge');
+        const isLiveMatch = statusBadge && statusBadge.classList.contains('live') && statusBadge.textContent.toUpperCase().includes('EN COURS');
+        const promoSlide = document.getElementById('tvPromoSlide');
+        const tickerSource = document.getElementById('mobileTickerStaticText') || document.getElementById('tickerTextDisplay');
+        const tickerMirror = document.getElementById('tvPromoTickerMirror');
+
+        if (tickerSource && tickerMirror && tickerSource.textContent.trim()) {
+          tickerMirror.textContent = tickerSource.textContent.trim();
+        }
+
+        // Si aucun match n'est en direct, alterne l'affichage de la bannière Buvette/QR toutes les 15s
+        if (!isLiveMatch && promoSlide) {
+          tvSlideState = !tvSlideState;
+          promoSlide.classList.toggle('visible', tvSlideState);
+        } else if (promoSlide) {
+          promoSlide.classList.remove('visible');
+        }
+      }, 15000);
+    }
+
+    // 8. MODAL ZOOM QR CODE
+    function openQrZoomModal() {
+      const modal = document.getElementById('qrZoomModal');
+      if (modal) modal.classList.add('open');
+      if (modal) modal.style.display = 'flex';
+    }
+    function closeQrZoomModal() {
+      const modal = document.getElementById('qrZoomModal');
+      if (modal) modal.classList.remove('open');
+      if (modal) modal.style.display = '';
+    }
+
+    // 9. DÉTECTION DE MISE À JOUR DU SERVICE WORKER
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              const toast = document.getElementById('pwaUpdateToast');
+              if (toast) toast.style.display = 'inline-flex';
+            }
+          });
+        });
+      });
+    }
+
+    // INITIALISATION GLOBALE AU CHARGEMENT
+    document.addEventListener('DOMContentLoaded', () => {
+      syncStaffToolsVisibility();
+      populateDynamicCategories();
+      renderQuickFouls();
+      updateScoreboardGpsLink();
+      initTvAutoRotation();
+      requestScreenWakeLock();
+
+      const pill = document.getElementById('sbPeriodDisplay');
+      if (pill) pill.textContent = '⏱️ Période : ' + currentPeriodLabel;
+
+      const observer = new MutationObserver(() => {
+        syncStaffToolsVisibility();
+        updateScoreboardGpsLink();
+        enhanceMatchCardsWithGps();
+      });
+
+      const staffPanel = document.getElementById('staffScorePanel');
+      const staffBtn = document.getElementById('btnStaffToggle');
+      const matchesList = document.getElementById('matchesListContainer');
+      const sbHome = document.getElementById('sbHomeName');
+
+      if (staffPanel) observer.observe(staffPanel, { attributes: true, attributeFilter: ['style', 'class'] });
+      if (staffBtn) observer.observe(staffBtn, { attributes: true, childList: true, characterData: true, subtree: true });
+      if (matchesList) observer.observe(matchesList, { childList: true });
+      if (sbHome) observer.observe(sbHome, { childList: true, characterData: true, subtree: true });
+
+      if (window.innerWidth <= 768 && !localStorage.getItem('lsbsc_display_mode')) {
+        document.body.classList.remove('mode-tv');
+        document.body.classList.add('mode-mobile');
+      }
+    });
+  </script>
 </body>
 </html>
