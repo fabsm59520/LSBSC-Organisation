@@ -2675,3 +2675,217 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   loadAllData();
 });
+/* ================= EXTENSION : PIN 9694 UNIFIÉ, FICHES MATCHS, ADRESSES & QR TV ================= */
+state.pinStaff = "9694";
+state.pinLogos = "9694";
+SCHEDULE_FIELDS.push("salle", "address", "precision");
+
+const _origRenderAll = renderAll;
+renderAll = function() {
+  document.body.classList.toggle("staff-unlocked", Boolean(state.staffUnlocked));
+  _origRenderAll();
+  enhanceTvAndAddressesUI();
+};
+
+function getMatchVenueInfo(m) {
+  const salle = m.salle || (isLSBSC(m.home) ? "ANTOINE BLONDIN A 790M2" : "Salle Municipale");
+  const address = m.address || (isLSBSC(m.home) ? "3 RUE FRANCOIS COPPÉE 59000 LILLE" : normalizeClubKey(m.home));
+  const precision = m.precision || "";
+  const gpsUrl = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(salle + " " + address);
+  return { salle, address, precision, gpsUrl };
+}
+
+function enhanceTvAndAddressesUI() {
+  // 1. Enrichir la barre d'infos du Scoreboard avec l'adresse exacte, le lien GPS et la précision
+  const current = state.matches.find(m => m.id === state.selectedMatchId);
+  const summaryBar = document.getElementById("sbMatchSummaryBar");
+  if (current && summaryBar) {
+    const info = getMatchVenueInfo(current);
+    const firstPill = summaryBar.querySelector(".sb-summary-pill");
+    if (firstPill) {
+      firstPill.outerHTML = `<a class="sb-summary-pill gps-pill" href="${info.gpsUrl}" target="_blank" rel="noopener">📍 ${info.salle} — ${info.address} (GPS ↗)</a>`;
+    }
+    if (info.precision && !summaryBar.querySelector(".precision-pill")) {
+      summaryBar.insertAdjacentHTML("beforeend", `<span class="sb-summary-pill precision-pill">📌 ${info.precision}</span>`);
+    }
+  }
+
+  // 2. Ajouter le QR Code proprement dans la carte Synthèse Club (en bas à droite sur TV)
+  const ovCard = document.getElementById("clubOverviewCard");
+  if (ovCard && !ovCard.querySelector(".tv-qr-inline")) {
+    ovCard.insertAdjacentHTML("beforeend", `
+      <div class="tv-qr-inline" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.14);padding:4px 8px;border-radius:10px;border:1px solid rgba(255,255,255,0.3);cursor:pointer;" onclick="document.getElementById('qrModal').classList.add('open')" title="Agrandir le QR Code">
+        <img src="assets/qrcode-lsbsc.png" alt="QR" style="width:42px;height:42px;border-radius:6px;background:#FFF;padding:2px;">
+        <span style="font-size:0.65rem;font-weight:800;line-height:1.15;color:#FDE68A;">📱 Scannez<br>Direct Mobile</span>
+      </div>
+    `);
+  }
+
+  // 3. Ajouter l'adresse, la précision et le bouton "✏️ Fiche" sur chaque ligne de match
+  const filtered = state.matches.filter(m => {
+    if (m.wk !== state.currentWeek) return false;
+    if (state.catFilter !== "ALL" && m.cat !== state.catFilter) return false;
+    if (state.locFilter === "HOME" && !isLSBSC(m.home)) return false;
+    if (state.locFilter === "AWAY" && !isLSBSC(m.away)) return false;
+    return true;
+  });
+  const rows = document.querySelectorAll("#matchesListContainer .match-row");
+  rows.forEach((row, idx) => {
+    const m = filtered[idx];
+    if (!m) return;
+    const info = getMatchVenueInfo(m);
+    const center = row.querySelector(".m-score-center");
+    if (center && !center.querySelector(".m-address-sub")) {
+      center.insertAdjacentHTML("beforeend", `<a class="m-address-sub" href="${info.gpsUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 ${info.salle}</a>`);
+      if (info.precision) {
+        center.insertAdjacentHTML("beforeend", `<span class="m-precision-tag">📌 ${info.precision}</span>`);
+      }
+    }
+    const staffActions = row.querySelector(".row-staff-actions");
+    if (staffActions && state.staffUnlocked && !staffActions.querySelector(".btn-edit-sheet-row")) {
+      staffActions.insertAdjacentHTML("beforeend", `<button class="btn-row-edit btn-edit-sheet-row" style="background:#1E3A8A;" onclick="event.stopPropagation();openMatchSheetModal(${m.id})">✏️ Fiche</button>`);
+    }
+  });
+}
+
+window.openMatchSheetModal = function(matchId) {
+  if (!state.staffUnlocked) {
+    requestPinAccess("staff");
+    return;
+  }
+  const isNew = matchId === "NEW";
+  const currentWkObj = getWeeksList().find(w => w.wk === state.currentWeek) || { wk: "w11", label: "Week-end en cours", short: "Actuel" };
+  const m = isNew ? {
+    id: Date.now(),
+    wk: currentWkObj.wk,
+    wkLabel: currentWkObj.label,
+    wkShort: currentWkObj.short,
+    date: "SAM. 21 NOV.",
+    time: "17H00",
+    cat: state.catFilter !== "ALL" ? state.catFilter : "U13F",
+    comp: "Champ.",
+    home: "U13 FILLE BENJAMINES",
+    away: "CLUB ADVERSE",
+    sh: 0,
+    sa: 0,
+    status: "upcoming",
+    salle: "ANTOINE BLONDIN A 790M2",
+    address: "3 RUE FRANCOIS COPPÉE 59000 LILLE",
+    precision: ""
+  } : state.matches.find(x => x.id === matchId);
+
+  if (!m) return;
+  const info = getMatchVenueInfo(m);
+  document.getElementById("matchSheetModalTitle").textContent = isNew ? "➕ Ajouter un Match" : `✏️ Modifier Fiche Match (${m.cat})`;
+  document.getElementById("msMatchId").value = isNew ? "NEW" : m.id;
+  document.getElementById("msDate").value = m.date || "";
+  document.getElementById("msTime").value = m.time || "";
+  document.getElementById("msCat").value = m.cat || "U13F";
+  document.getElementById("msComp").value = m.comp || "Champ.";
+  document.getElementById("msHome").value = m.home || "";
+  document.getElementById("msAway").value = m.away || "";
+  document.getElementById("msSalle").value = info.salle;
+  document.getElementById("msAddress").value = info.address;
+  document.getElementById("msPrecision").value = m.precision || "";
+  document.getElementById("matchSheetModal").classList.add("open");
+};
+
+window.saveMatchSheetModal = function() {
+  const idVal = document.getElementById("msMatchId").value;
+  const isNew = idVal === "NEW";
+  const currentWkObj = getWeeksList().find(w => w.wk === state.currentWeek) || { wk: "w11", label: "Week-end", short: "WE" };
+  let m = isNew ? {
+    id: Math.max(0, ...state.matches.map(x => Number(x.id) || 0)) + 1,
+    wk: currentWkObj.wk,
+    wkLabel: currentWkObj.label,
+    wkShort: currentWkObj.short,
+    sh: 0, sa: 0, status: "upcoming", period: "À venir", fh: 0, fa: 0, liveTracking: false
+  } : state.matches.find(x => String(x.id) === String(idVal));
+
+  if (!m) return;
+  m.date = document.getElementById("msDate").value.trim().toUpperCase();
+  m.time = document.getElementById("msTime").value.trim().toUpperCase();
+  m.cat = document.getElementById("msCat").value;
+  m.comp = document.getElementById("msComp").value.trim();
+  m.home = document.getElementById("msHome").value.trim();
+  m.away = document.getElementById("msAway").value.trim();
+  m.salle = document.getElementById("msSalle").value.trim();
+  m.address = document.getElementById("msAddress").value.trim();
+  m.precision = document.getElementById("msPrecision").value.trim();
+
+  if (isNew) {
+    state.matches.push(m);
+    state.selectedMatchId = m.id;
+  }
+  const bIdx = state.baseMatches.findIndex(x => x.id === m.id);
+  if (bIdx !== -1) state.baseMatches[bIdx] = Object.assign({}, m);
+
+  saveState(true);
+  closeModals();
+  renderAll();
+};
+
+window.openClubAddressesModal = function() {
+  if (!state.staffUnlocked) {
+    requestPinAccess("staff");
+    return;
+  }
+  const map = new Map();
+  state.matches.forEach(m => {
+    const ck = normalizeClubKey(m.home);
+    if (!map.has(ck)) {
+      const info = getMatchVenueInfo(m);
+      map.set(ck, { club: ck, salle: info.salle, address: info.address, precision: info.precision });
+    }
+  });
+  const list = Array.from(map.values()).sort((a, b) => a.club.localeCompare(b.club));
+  const container = document.getElementById("clubAddressesList");
+  container.innerHTML = list.map((item, i) => `
+    <div class="club-addr-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong style="color:#1E3A8A;font-size:0.86rem;">🏀 ${item.club}</strong>
+        <button class="btn-action-sm btn-save-score" onclick="applyClubAddressToAllMatches('${item.club.replace(/'/g, "\\'")}', ${i})">💾 Appliquer aux matchs</button>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-field">
+          <label>Nom de la salle</label>
+          <input type="text" id="caSalle_${i}" value="${item.salle.replace(/"/g, "&quot;")}">
+        </div>
+        <div class="form-field">
+          <label>Adresse complète</label>
+          <input type="text" id="caAddr_${i}" value="${item.address.replace(/"/g, "&quot;")}">
+        </div>
+        <div class="form-field full">
+          <label>📌 Précision (Accès, parking, salle bis...)</label>
+          <input type="text" id="caPrec_${i}" value="${(item.precision || "").replace(/"/g, "&quot;")}">
+        </div>
+      </div>
+    </div>
+  `).join("");
+  document.getElementById("clubAddressesModal").classList.add("open");
+};
+
+window.applyClubAddressToAllMatches = function(clubKey, idx) {
+  const salle = document.getElementById("caSalle_" + idx).value.trim();
+  const address = document.getElementById("caAddr_" + idx).value.trim();
+  const precision = document.getElementById("caPrec_" + idx).value.trim();
+  let count = 0;
+  state.matches.forEach(m => {
+    if (normalizeClubKey(m.home) === clubKey) {
+      m.salle = salle;
+      m.address = address;
+      m.precision = precision;
+      count++;
+    }
+  });
+  state.baseMatches.forEach(m => {
+    if (normalizeClubKey(m.home) === clubKey) {
+      m.salle = salle;
+      m.address = address;
+      m.precision = precision;
+    }
+  });
+  saveState(true);
+  renderAll();
+  alert(`Adresse enregistrée sur ${count} match(s) à domicile de ${clubKey} !`);
+};

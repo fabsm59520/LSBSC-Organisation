@@ -13,382 +13,8 @@
   <link rel="icon" type="image/png" href="assets/logo-lsbsc.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
-
-  <style>
-    /* 1. Visibilité stricte en mode Direct / Scores (Staff PIN 9694) */
-    .staff-only-tool {
-      display: none !important;
-    }
-    body.staff-unlocked .staff-only-tool {
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #weekTabsStrip {
-      display: none !important;
-    }
-
-    /* 2. Barre d'actions rapides sous le Scoreboard (Partage WhatsApp, GPS, Édition Fiche Match, Période & Fautes) */
-    .sb-extra-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(148, 163, 184, 0.2);
-    }
-    .sb-period-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(249, 115, 22, 0.18);
-      color: #FDBA74;
-      border: 1px solid rgba(249, 115, 22, 0.45);
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.76rem;
-      font-weight: 800;
-    }
-    .sb-quick-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-left: auto;
-    }
-    .btn-quick-act {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: #1E293B;
-      color: #F8FAFC;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 6px 11px;
-      font-size: 0.76rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.15s ease;
-    }
-    .btn-quick-act:hover {
-      background: #334155;
-      border-color: #F97316;
-    }
-    .btn-quick-act.btn-share-wa {
-      background: rgba(22, 163, 74, 0.2);
-      border-color: rgba(34, 197, 94, 0.5);
-      color: #86EFAC;
-    }
-    .btn-quick-act.btn-gps-map {
-      background: rgba(37, 99, 235, 0.2);
-      border-color: rgba(59, 130, 246, 0.5);
-      color: #93C5FD;
-    }
-    .btn-quick-act.btn-edit-sheet {
-      background: rgba(249, 115, 22, 0.22);
-      border-color: rgba(249, 115, 22, 0.6);
-      color: #FDBA74;
-    }
-
-    /* Alerte 5 fautes d'équipe (Bonus / Pénalité) */
-    .foul-bonus-alert {
-      background: #DC2626 !important;
-      color: #FFFFFF !important;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 0.72rem;
-      animation: pulseBonus 1.2s infinite;
-      display: inline-block;
-      margin-top: 4px;
-    }
-    @keyframes pulseBonus {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.06); opacity: 0.85; }
-    }
-
-    /* 3. Console Table de Marque Rapide (Mode Staff : +1, +2, +3, Annuler, Quart-Temps, Fautes) */
-    .pro-staff-console {
-      margin-top: 10px;
-      padding: 10px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(249, 115, 22, 0.45);
-      border-radius: 10px;
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-    }
-    body.staff-unlocked .pro-staff-console {
-      display: flex;
-    }
-    .pro-staff-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 6px;
-      font-size: 0.76rem;
-      font-weight: 800;
-      color: #FDBA74;
-    }
-    .pro-staff-grid {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 8px;
-      align-items: center;
-    }
-    .pro-team-btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      justify-content: center;
-    }
-    .btn-score-fast {
-      min-width: 44px;
-      min-height: 38px;
-      border-radius: 8px;
-      border: 1px solid #475569;
-      background: #1E293B;
-      color: #F8FAFC;
-      font-weight: 900;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    .btn-score-fast.plus {
-      background: #EA580C;
-      border-color: #F97316;
-      color: #FFF;
-    }
-    .btn-score-fast.foul {
-      background: #7F1D1D;
-      border-color: #DC2626;
-      color: #FCA5A5;
-      font-size: 0.75rem;
-      padding: 0 8px;
-    }
-    .pro-period-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      justify-content: center;
-    }
-    .btn-period-chip {
-      padding: 5px 9px;
-      border-radius: 6px;
-      border: 1px solid #334155;
-      background: #0F172A;
-      color: #CBD5E1;
-      font-size: 0.72rem;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .btn-period-chip.active {
-      background: #F97316;
-      color: #FFF;
-      border-color: #FB923C;
-    }
-
-    /* 4. Widget QR Code fixe pour l'Écran TV Salle (masqué sur mobile) */
-    .tv-qr-floating {
-      position: fixed;
-      right: 16px;
-      bottom: 48px;
-      z-index: 45;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(15, 23, 42, 0.94);
-      border: 2px solid #F97316;
-      border-radius: 14px;
-      padding: 8px 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-    .tv-qr-floating:hover {
-      transform: scale(1.04);
-    }
-    .tv-qr-floating img {
-      width: 64px;
-      height: 64px;
-      border-radius: 8px;
-      background: #FFFFFF;
-      padding: 3px;
-      object-fit: contain;
-    }
-    .tv-qr-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      max-width: 145px;
-    }
-    .tv-qr-text strong {
-      font-size: 0.78rem;
-      color: #F8FAFC;
-      line-height: 1.15;
-    }
-    .tv-qr-text span {
-      font-size: 0.68rem;
-      color: #FDBA74;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    body.mode-mobile .tv-qr-floating {
-      display: none !important;
-    }
-
-    .mobile-qr-share-box {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(30, 41, 59, 0.7);
-      border: 1px solid #334155;
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-top: 10px;
-    }
-    .mobile-qr-share-box img {
-      width: 68px;
-      height: 68px;
-      border-radius: 8px;
-      background: #FFF;
-      padding: 4px;
-      cursor: pointer;
-    }
-
-    .tv-promo-slide {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-      border: 2px solid #F97316;
-      border-radius: 14px;
-      padding: 14px 18px;
-      margin-top: 8px;
-      color: #F8FAFC;
-    }
-    .tv-promo-slide.visible {
-      display: flex;
-    }
-    .tv-promo-slide img {
-      width: 84px;
-      height: 84px;
-      background: #FFF;
-      padding: 4px;
-      border-radius: 10px;
-    }
-
-    .pwa-update-toast {
-      position: fixed;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      background: #EA580C;
-      color: #FFF;
-      padding: 8px 16px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 800;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
-      display: none;
-      align-items: center;
-      gap: 10px;
-    }
-
-    @media (max-width: 900px) {
-      .tv-qr-floating {
-        display: none !important;
-      }
-      .top-header {
-        flex-direction: column;
-        align-items: stretch !important;
-        gap: 8px !important;
-        padding: 10px 12px !important;
-      }
-      .brand-zone {
-        justify-content: flex-start;
-        gap: 8px !important;
-      }
-      .club-logo-top, .club-mascot-top {
-        width: 36px !important;
-        height: 36px !important;
-      }
-      .brand-titles h1 {
-        font-size: 0.95rem !important;
-        line-height: 1.15 !important;
-      }
-      .brand-titles .subtitle {
-        font-size: 0.68rem !important;
-      }
-      .weekend-kpi {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        gap: 4px !important;
-      }
-      .kpi-item {
-        flex: 1;
-        text-align: center;
-        font-size: 0.75rem !important;
-        padding: 4px 6px !important;
-      }
-      .header-controls {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 6px !important;
-        width: 100%;
-      }
-      .clock-box {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        padding: 4px 8px;
-        background: rgba(15, 23, 42, 0.5);
-        border-radius: 6px;
-      }
-      .btn-top {
-        flex: 1 1 auto;
-        min-height: 38px;
-        font-size: 0.78rem !important;
-        padding: 6px 10px !important;
-        text-align: center;
-        justify-content: center;
-      }
-      .week-nav-bar {
-        flex-wrap: wrap;
-      }
-      .week-select {
-        order: -1;
-        flex: 1 1 100%;
-        width: 100%;
-        margin-bottom: 4px;
-        font-size: 0.92rem;
-      }
-      .btn-week {
-        flex: 1;
-        min-height: 36px;
-        font-size: 0.8rem !important;
-      }
-      .pro-staff-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
 </head>
 <body class="mode-tv">
-
-  <!-- Notification de mise à jour PWA -->
-  <div id="pwaUpdateToast" class="pwa-update-toast">
-    <span>🔄 Nouvelle version disponible !</span>
-    <button class="btn-action-sm btn-save-score" onclick="window.location.reload()">Actualiser</button>
-  </div>
 
   <!-- ================= ÉCRAN DE SÉLECTION DU FORMAT AU CHARGEMENT ================= -->
   <div id="formatSelectorOverlay" class="format-overlay open">
@@ -433,11 +59,11 @@
   <!-- ================= EN-TÊTE PRINCIPAL ================= -->
   <header class="top-header">
     <div class="brand-zone">
-      <img id="headerLogoImg" class="club-logo-top" src="assets/logo-lsbsc.png" alt="Logo LSBSC" onclick="handleHeaderLogoClick()" title="Logo LSBSC">
-      <img id="headerMascotImg" class="club-mascot-top" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC" onclick="handleHeaderLogoClick()" title="Mascotte LSBSC">
+      <img id="headerLogoImg" class="club-logo-top" src="assets/logo-lsbsc.png" alt="Logo LSBSC" onclick="if(document.body.classList.contains('staff-unlocked')) requestPinAccess('logos')" title="Logo LSBSC">
+      <img id="headerMascotImg" class="club-mascot-top" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC" onclick="if(document.body.classList.contains('staff-unlocked')) requestPinAccess('logos')" title="Mascotte LSBSC">
       <div class="brand-titles">
         <h1>LILLE SUD BASKETBALL SPORTING CLUB</h1>
-        <div class="subtitle">SOUTH LILLE • PROGRAMMATION & RÉSULTATS 2026-2027</div>
+        <div class="subtitle">SOUTH LILLE • PROGRAMMATION & RÉSULTATS</div>
       </div>
     </div>
 
@@ -453,17 +79,15 @@
         <div id="liveClock" class="clock-time">15:30:00</div>
         <span id="syncStatusBadge" class="clock-sync">● Direct Synchronisé</span>
       </div>
-      <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application sur l'écran d'accueil">📲 Installer</button>
+      <button id="btnInstallApp" class="btn-top btn-install" onclick="triggerPwaInstall()" title="Installer l'application">📲 Installer</button>
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
 
-      <!-- Boutons visibles uniquement quand le mode Direct / Scores (Staff PIN 9694) est activé -->
-      <button id="btnAddMatchTop" class="btn-top staff-only-tool" onclick="openEditMatchModal('NEW')" title="Ajouter une nouvelle fiche match">➕ Nouveau Match</button>
-      <button id="btnClubAddressesTop" class="btn-top staff-only-tool" onclick="requestPinAccess('addresses')" title="Modifier les adresses des salles et clubs">📍 Adresses Clubs</button>
-      <button id="btnVideoLive" class="btn-top btn-youtube staff-only-tool" onclick="openVideoGalleryModal()" title="Regarder les matchs en direct et replays YouTube du club">📺 Vidéos & Live</button>
-      <button id="btnLogosAdmin" class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')" title="Gestion des logos">🛡️ Logos</button>
-      <button id="btnSettingsAdmin" class="btn-top btn-cloud staff-only-tool" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
+      <!-- Outils visibles uniquement en mode Direct / Scores (PIN 9694) -->
+      <button class="btn-top btn-youtube staff-only-tool" onclick="openVideoGalleryModal()" title="Directs et replays YouTube & Twitch">📺 Vidéos & Live</button>
+      <button class="btn-top btn-logos staff-only-tool" onclick="openClubAddressesModal()" title="Gérer les adresses des clubs et salles">📍 Adresses</button>
+      <button class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')">🛡️ Logos</button>
+      <button class="btn-top btn-cloud staff-only-tool" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
 
-      <!-- Bouton principal d'activation du mode Direct / Scores (PIN 9694) -->
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
     </div>
   </header>
@@ -478,53 +102,39 @@
   <!-- ================= ESPACE PRINCIPAL ================= -->
   <main class="main-workspace">
 
-    <!-- COLONNE GAUCHE : LISTE DES MATCHS DU WEEK-END & NAVIGATION PAR MENUS DÉROULANTS -->
+    <!-- COLONNE GAUCHE : LISTE DES MATCHS DU WEEK-END & NAVIGATION SEMAINES -->
     <section id="sectionSchedule" class="left-column">
-      
-      <!-- Sélection des dates du week-end par menu déroulant -->
       <div class="week-nav-bar">
         <button class="btn-week" onclick="shiftWeek(-1)">◀ Préc.</button>
-        <select id="weekSelect" class="week-select" onchange="selectWeek(this.value)" aria-label="Sélectionner le week-end"></select>
+        <select id="weekSelect" class="week-select" onchange="selectWeek(this.value)"></select>
         <button class="btn-week current-wk" onclick="selectCurrentWeek()">📅 Actuel</button>
         <button class="btn-week" onclick="shiftWeek(1)">Suiv. ▶</button>
       </div>
 
       <div id="weekTabsStrip" class="week-tabs-strip" style="display:none;"></div>
 
-      <!-- Filtres Lieu & Catégorie en menus déroulants -->
-      <div class="filter-bar filter-bar-dropdowns">
-        <div class="filter-field">
-          <label for="locSelect">📍 Lieu des matchs</label>
-          <select id="locSelect" class="custom-dropdown" onchange="setLocFilter(this.value)">
-            <option value="ALL">🏠/🚌 Tous les matchs</option>
-            <option value="HOME">🏠 Domicile uniquement</option>
-            <option value="AWAY">🚌 Extérieur uniquement</option>
-          </select>
-        </div>
+      <!-- Menus déroulants pour Lieu et Catégories (+ bouton Ajout Match en mode Staff) -->
+      <div class="filter-bar">
+        <select id="locSelectDropdown" class="filter-select-pill" onchange="setLocFilter(this.value)">
+          <option value="ALL">🏠/🚌 Tous les lieux</option>
+          <option value="HOME">🏠 Domicile (Lille Sud)</option>
+          <option value="AWAY">🚌 Extérieur</option>
+        </select>
 
-        <div class="filter-field">
-          <label for="catSelect">🏀 Catégorie (Mémorisée)</label>
-          <select id="catSelect" class="custom-dropdown" onchange="setCatFilter(this.value)">
-            <option value="ALL">Toutes les catégories</option>
-            <option value="U9">U9</option>
-            <option value="U11F">U11F</option>
-            <option value="U13F">U13F</option>
-            <option value="U15F">U15F</option>
-            <option value="U15M">U15M</option>
-            <option value="U18F">U18F</option>
-            <option value="U18M">U18M</option>
-            <option value="SM1">SM1</option>
-            <option value="SM2">SM2</option>
-          </select>
-        </div>
-      </div>
+        <select id="catSelectDropdown" class="filter-select-pill" onchange="setCatFilter(this.value)">
+          <option value="ALL">🏀 Toutes les catégories</option>
+          <option value="U9">U9 Mixte Mini-Poussins</option>
+          <option value="U11F">U11F Poussines</option>
+          <option value="U13F">U13F Benjamines</option>
+          <option value="U15F">U15F Minimes</option>
+          <option value="U15M">U15M Minimes Garçons</option>
+          <option value="U18F">U18F Cadettes</option>
+          <option value="U18M">U18M Cadets</option>
+          <option value="SM1">Seniors Masculins 1</option>
+          <option value="SM2">Seniors Masculins 2</option>
+        </select>
 
-      <!-- Barre d'outils Staff (visible uniquement en mode Direct/Scores PIN 9694) -->
-      <div class="staff-schedule-toolbar">
-        <button type="button" class="btn-action-sm btn-save-score" onclick="openEditMatchModal('NEW')">➕ Ajouter un match</button>
-        <button type="button" class="btn-action-sm" onclick="openClubAddressesModal()">📍 Carnet d'adresses des clubs</button>
-        <button type="button" class="btn-action-sm" onclick="exportMatchesJsonFile()">💾 Exporter matches.json</button>
-        <button type="button" class="btn-action-sm" onclick="resetMatchesToPdfDefault()">🔄 Recharger PDF officiel</button>
+        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="openMatchSheetModal('NEW')">➕ Ajouter un match</button>
       </div>
 
       <div id="matchesListContainer" class="matches-list"></div>
@@ -539,7 +149,10 @@
 
         <div class="sb-top-bar">
           <span id="sbStatusBadge" class="sb-status-badge live">🔴 MATCH EN COURS</span>
-          <span id="sbMetaInfo" class="sb-meta-info">DIM. 15 NOV. à 15H30 • U13F</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="sbMetaInfo" class="sb-meta-info">DIM. 15 NOV. à 15H30 • U13F</span>
+            <button class="btn-action-sm staff-only-tool" style="background:#1E3A8A;color:#FFF;" onclick="openMatchSheetModal(state.selectedMatchId)">✏️ Fiche / Adresse</button>
+          </div>
         </div>
 
         <div class="sb-arena-wrap">
@@ -549,95 +162,28 @@
               <div id="sbHomeName" class="sb-team-title">U13 FILLE BENJAMINES</div>
               <span id="sbHomeLocPill" class="sb-loc-pill">LOCAUX (DOMICILE)</span>
               <div id="sbHomeFouls"></div>
-              <div id="sbHomeBonusBadge"></div>
             </div>
 
             <div id="sbCenterWrap" class="sb-center-score"></div>
 
             <div class="sb-team-box">
-              <img id="sbAwayLogo" class="sb-logo-lg" src="assets/logo-lsbsc.png" alt="Logo Visiteurs">
+              <img id="sbAwayLogo" class="sb-logo-lg" src="" alt="Logo Visiteurs">
               <div id="sbAwayName" class="sb-team-title">WATTIGNIES/TEMPLEMARS AS</div>
               <span id="sbAwayLocPill" class="sb-loc-pill">VISITEURS</span>
               <div id="sbAwayFouls"></div>
-              <div id="sbAwayBonusBadge"></div>
             </div>
           </div>
 
           <div id="sbMatchSummaryBar" class="sb-summary-bar"></div>
-
-          <!-- Barre d'actions enrichie : Période en cours, Édition Fiche Match (Staff), Itinéraire GPS & Partage WhatsApp -->
-          <div class="sb-extra-bar">
-            <span id="sbPeriodDisplay" class="sb-period-pill">⏱️ Période : Q1</span>
-            <div class="sb-quick-actions">
-              <button id="btnEditSelectedMatch" type="button" class="btn-quick-act btn-edit-sheet staff-only-tool">
-                ✏️ Modifier Fiche / Adresse
-              </button>
-              <a id="btnSbGps" class="btn-quick-act btn-gps-map" href="https://www.google.com/maps/search/?api=1&query=3+Rue+Francois+Coppee+59000+Lille" target="_blank" rel="noopener">
-                📍 Itinéraire GPS
-              </a>
-              <button type="button" class="btn-quick-act btn-share-wa" onclick="shareCurrentMatchResult()">
-                📤 Partager Score
-              </button>
-            </div>
-          </div>
         </div>
 
         <div id="staffScorePanel" class="staff-score-panel" style="display:none;"></div>
-
-        <!-- Console Rapide Table de Marque (+1, +2, +3, Annuler, Quart-temps & Fautes) visible en Mode Direct/Scores -->
-        <div id="proStaffConsole" class="pro-staff-console">
-          <div class="pro-staff-header">
-            <span>⚡ Table de Marque Rapide (Points, Quart-temps & Fautes)</span>
-            <div style="display:flex;gap:6px;">
-              <button type="button" class="btn-quick-act" onclick="toggleSelectedMatchLiveStatus()">🔴 Basculer En Direct / Terminé</button>
-              <button type="button" class="btn-quick-act" onclick="undoLastQuickScore()">↩️ Annuler action</button>
-            </div>
-          </div>
-          <div class="pro-period-bar">
-            <button type="button" class="btn-period-chip active" onclick="setQuickPeriod('Q1', this)">Q1</button>
-            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('Q2', this)">Q2</button>
-            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('MI-TEMPS', this)">Mi-Temps</button>
-            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('Q3', this)">Q3</button>
-            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('Q4', this)">Q4</button>
-            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('PROLONG.', this)">Prolong.</button>
-            <button type="button" class="btn-period-chip" onclick="setQuickPeriod('TERMINÉ', this)">Terminé</button>
-          </div>
-          <div class="pro-staff-grid">
-            <div class="pro-team-btns">
-              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('home', 1)">+1</button>
-              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('home', 2)">+2</button>
-              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('home', 3)">+3</button>
-              <button type="button" class="btn-score-fast" onclick="quickAdjustScore('home', -1)">-1</button>
-              <button type="button" class="btn-score-fast foul" onclick="quickAdjustFouls('home', 1)">+Faute</button>
-              <button type="button" class="btn-score-fast" onclick="quickAdjustFouls('home', -1)" title="Retirer une faute">-F</button>
-            </div>
-            <div style="text-align:center;font-size:0.72rem;font-weight:800;color:#94A3B8;">VS</div>
-            <div class="pro-team-btns">
-              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('away', 1)">+1</button>
-              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('away', 2)">+2</button>
-              <button type="button" class="btn-score-fast plus" onclick="quickAdjustScore('away', 3)">+3</button>
-              <button type="button" class="btn-score-fast" onclick="quickAdjustScore('away', -1)">-1</button>
-              <button type="button" class="btn-score-fast foul" onclick="quickAdjustFouls('away', 1)">+Faute</button>
-              <button type="button" class="btn-score-fast" onclick="quickAdjustFouls('away', -1)" title="Retirer une faute">-F</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ENCART ROTATION AUTOMATIQUE TV (Buvette & QR Code quand aucun match n'est en direct) -->
-      <div id="tvPromoSlide" class="tv-promo-slide">
-        <div>
-          <div style="font-size:0.75rem;font-weight:900;color:#F97316;text-transform:uppercase;letter-spacing:0.05em;">🍔 Buvette LSBSC & Suivi Mobile en Direct</div>
-          <h4 style="margin:4px 0;font-size:1.05rem;">Scannez le QR Code pour suivre les scores sur votre téléphone !</h4>
-          <p id="tvPromoTickerMirror" style="margin:0;font-size:0.84rem;color:#CBD5E1;">Retrouvez le programme du week-end, les adresses GPS des salles et les infos buvette sur votre smartphone.</p>
-        </div>
-        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC Direct" onclick="openQrZoomModal()">
       </div>
 
       <!-- MILIEU : ENCART DU MATCH SUIVANT -->
       <div id="nextMatchContainer" class="next-match-card"></div>
 
-      <!-- BAS : SYNTHÈSE DU WEEK-END & INFOS SALLE -->
+      <!-- BAS : SYNTHÈSE DU WEEK-END & INFOS SALLE (+ QR CODE INTÉGRÉ) -->
       <div id="clubOverviewCard" class="club-overview-card"></div>
 
       <!-- APERÇU RAPIDE DES MATCHS DU WEEK-END (MODE TÉLÉPHONE) -->
@@ -649,34 +195,21 @@
     <section id="sectionMobileInfos" class="mobile-infos-card">
       <h3>🍔 Buvette & Actualités du Club LSBSC</h3>
       <p id="mobileTickerStaticText" class="mobile-info-body"></p>
-
-      <div class="mobile-qr-share-box">
-        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" onclick="openQrZoomModal()">
-        <div>
-          <strong style="font-size:0.86rem;color:#F8FAFC;">📲 Partager l'application aux supporters</strong>
-          <p style="margin:3px 0 0;font-size:0.75rem;color:#94A3B8;">Touchez le QR Code pour l'afficher en plein écran et le faire scanner autour de vous.</p>
+      <div style="display:flex;align-items:center;gap:12px;background:#F8FAFC;border:1px solid #CBD5E1;padding:10px;border-radius:12px;">
+        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" style="width:64px;height:64px;cursor:pointer;" onclick="document.getElementById('qrModal').classList.add('open')">
+        <div style="font-size:0.82rem;font-weight:700;color:#1E293B;">
+          <strong>📲 QR Code Accès Mobile</strong><br>Touchez le QR Code pour l'agrandir et le partager aux supporters.
         </div>
       </div>
-
-      <div class="mobile-info-actions" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;">
-        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="openEditMatchModal('NEW')">➕ Ajouter un match</button>
-        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="openClubAddressesModal()">📍 Gérer les adresses des clubs</button>
+      <div class="mobile-info-actions">
         <button class="btn-action-sm btn-youtube-full staff-only-tool" onclick="openVideoGalleryModal()">📺 Regarder les Directs & Vidéos YouTube</button>
+        <button class="btn-action-sm btn-save-score staff-only-tool" onclick="openClubAddressesModal()">📍 Gérer les Adresses des Clubs</button>
         <button class="btn-action-sm btn-save-score staff-only-tool" onclick="requestPinAccess('settings')">✏️ Modifier l'annonce Buvette / Sync</button>
         <button class="btn-action-sm btn-set-live" onclick="openFormatOverlay()">🖥️ Changer le format d'affichage (TV / Mobile)</button>
       </div>
     </section>
 
   </main>
-
-  <!-- ================= WIDGET QR CODE FIXE (ÉCRAN TV SALLE) ================= -->
-  <div id="tvQrFloatingWidget" class="tv-qr-floating" onclick="openQrZoomModal()" title="Cliquez pour agrandir le QR Code">
-    <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC Direct">
-    <div class="tv-qr-text">
-      <strong>📱 Scores & Buvette sur Mobile</strong>
-      <span>Scannez-moi depuis les gradins !</span>
-    </div>
-  </div>
 
   <!-- ================= BANDEAU INFOS & BUVETTE ================= -->
   <footer class="bottom-ticker">
@@ -686,27 +219,11 @@
     </div>
   </footer>
 
-  <!-- ================= MODAL ZOOM QR CODE ================= -->
-  <div id="qrZoomModal" class="modal-backdrop" onclick="closeQrZoomModal()">
-    <div class="modal-card" style="max-width:360px;text-align:center;" onclick="event.stopPropagation()">
-      <div class="modal-header">
-        <h3>📱 Accès Direct Mobile LSBSC</h3>
-        <button class="btn-action-sm btn-reset-up" onclick="closeQrZoomModal()">✖</button>
-      </div>
-      <div style="padding:14px;background:#FFFFFF;border-radius:14px;display:inline-block;margin:10px auto;">
-        <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" style="width:240px;height:240px;display:block;">
-      </div>
-      <p style="font-size:0.85rem;font-weight:700;color:#CBD5E1;margin-top:6px;">
-        Scannez ce QR Code avec l'appareil photo de votre téléphone pour ouvrir les résultats, les adresses GPS et le direct du LSBSC.
-      </p>
-    </div>
-  </div>
-
   <!-- ================= MODAL CLAVIER CODE PIN (9694) ================= -->
   <div id="pinModal" class="modal-backdrop">
     <div class="modal-card" style="max-width:360px;">
       <div class="modal-header">
-        <h3 id="pinModalTitle">🔒 Accès Staff Sécurisé</h3>
+        <h3 id="pinModalTitle">🔒 Code PIN Requis</h3>
         <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖</button>
       </div>
       <div id="pinDisplayBox" class="pin-display"></div>
@@ -727,162 +244,95 @@
     </div>
   </div>
 
-  <!-- ================= MODAL ÉDITION COMPLÈTE D'UNE FICHE MATCH (PROTÉGÉ PIN 9694) ================= -->
-  <div id="editMatchModal" class="modal-backdrop">
-    <div class="modal-card" style="max-width:680px;">
+  <!-- ================= MODAL ÉDITION FICHE MATCH & ADRESSE (PIN 9694) ================= -->
+  <div id="matchSheetModal" class="modal-backdrop">
+    <div class="modal-card" style="max-width:640px;">
       <div class="modal-header">
-        <h3 id="editMatchModalTitle">✏️ Modifier la Fiche Match</h3>
+        <h3 id="matchSheetModalTitle">✏️ Modifier la Fiche Match & l'Adresse</h3>
         <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖ Fermer</button>
       </div>
-
-      <form onsubmit="saveMatchFromModal(event)">
-        <input type="hidden" id="emOriginalId">
-
-        <div class="form-grid-2">
-          <div class="form-field">
-            <label for="emDate">📅 Date (Format calendrier)</label>
-            <input type="date" id="emDate" onchange="autoFormatDateLabelFromIso(this.value)" required>
-          </div>
-          <div class="form-field">
-            <label for="emDateLabel">🗓️ Libellé Date affiché (ex: SAM. 21 NOV.)</label>
-            <input type="text" id="emDateLabel" placeholder="SAM. 21 NOV." required>
-          </div>
-
-          <div class="form-field">
-            <label for="emTime">⏰ Heure du match (ex: 18H30)</label>
-            <input type="text" id="emTime" placeholder="18H30" required>
-          </div>
-          <div class="form-field">
-            <label for="emWeek">📆 Groupe Week-end (Menu déroulant)</label>
-            <input type="text" id="emWeek" placeholder="WE 21-22 NOV." required>
-          </div>
-
-          <div class="form-field">
-            <label for="emCat">🏀 Catégorie LSBSC</label>
-            <select id="emCat">
-              <option value="U9">U9</option>
-              <option value="U11F">U11F</option>
-              <option value="U13F">U13F</option>
-              <option value="U15F">U15F</option>
-              <option value="U15M">U15M</option>
-              <option value="U18F">U18F</option>
-              <option value="U18M">U18M</option>
-              <option value="SM1">SM1</option>
-              <option value="SM2">SM2</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="emLocation">🏠/🚌 Lieu pour le LSBSC</label>
-            <select id="emLocation">
-              <option value="HOME">🏠 Domicile (Salle Antoine Blondin)</option>
-              <option value="AWAY">🚌 Extérieur (En déplacement)</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="emHome"> Équipe Locaux (Domicile)</label>
-            <input type="text" id="emHome" required>
-          </div>
-          <div class="form-field">
-            <label for="emAway">🎽 Équipe Visiteurs (Extérieur)</label>
-            <input type="text" id="emAway" required>
-          </div>
-
-          <div class="form-field">
-            <label for="emScoreHome">🔢 Score Locaux (laisser vide si à venir)</label>
-            <input type="number" id="emScoreHome" min="0" placeholder="-">
-          </div>
-          <div class="form-field">
-            <label for="emScoreAway">🔢 Score Visiteurs (laisser vide si à venir)</label>
-            <input type="number" id="emScoreAway" min="0" placeholder="-">
-          </div>
-
-          <div class="form-field">
-            <label for="emStatus">🚦 Statut de la rencontre</label>
-            <select id="emStatus">
-              <option value="UPCOMING">⏳ À venir</option>
-              <option value="LIVE">🔴 En Direct (LIVE)</option>
-              <option value="FINISHED">✅ Terminé</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label for="emId">🔢 N° Rencontre / Journée</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-              <input type="text" id="emId" placeholder="N° Renc." title="Numéro de rencontre">
-              <input type="text" id="emJournee" placeholder="Journée" title="Numéro de journée">
-              <input type="text" id="emComp" placeholder="Champ." title="Compétition">
-            </div>
-          </div>
-
-          <!-- Sélection rapide d'une adresse de club pré-enregistrée -->
-          <div class="form-field full">
-            <label for="emClubPresetSelect">⚡ Choisir automatiquement la salle & l'adresse d'un club du carnet :</label>
-            <select id="emClubPresetSelect" onchange="applyClubAddressPreset(this.value)"></select>
-          </div>
-
-          <div class="form-field">
-            <label for="emSalle">🏟️ Nom de la Salle / Complexe sportif</label>
-            <input type="text" id="emSalle" placeholder="Ex: ANTOINE BLONDIN A 790M2">
-          </div>
-          <div class="form-field">
-            <label for="emAddress">📍 Adresse postale complète (pour le GPS)</label>
-            <input type="text" id="emAddress" placeholder="Ex: 3 RUE FRANCOIS COPPÉE, 59000 LILLE">
-          </div>
-
-          <div class="form-field full">
-            <label for="emPrecision">📌 Apporter une précision sur le match ou l'adresse (Salle annexe, heure RDV, parking, arbitrage...)</label>
-            <textarea id="emPrecision" rows="2" placeholder="Ex: RDV 13h15 devant la salle, entrée parking par la rue Saint-Gabriel..."></textarea>
-          </div>
+      <div class="form-grid-2">
+        <input type="hidden" id="msMatchId">
+        <div class="form-field">
+          <label>Date affichée (ex: SAM. 21 NOV.)</label>
+          <input type="text" id="msDate" placeholder="SAM. 21 NOV.">
         </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid #334155;">
-          <button type="button" id="btnDeleteMatchModal" class="btn-action-sm" style="background:#7F1D1D;border-color:#DC2626;color:#FCA5A5;" onclick="deleteMatchFromModal()">🗑️ Supprimer ce match</button>
-          <div style="display:flex;gap:8px;margin-left:auto;">
-            <button type="button" class="btn-action-sm btn-reset-up" onclick="closeModals()">Annuler</button>
-            <button type="submit" class="btn-action-sm btn-save-score">💾 Enregistrer la fiche match</button>
-          </div>
+        <div class="form-field">
+          <label>Heure (ex: 18H30)</label>
+          <input type="text" id="msTime" placeholder="18H30">
         </div>
-      </form>
+        <div class="form-field">
+          <label>Catégorie</label>
+          <select id="msCat">
+            <option value="U9">U9</option>
+            <option value="U11F">U11F</option>
+            <option value="U13F">U13F</option>
+            <option value="U15F">U15F</option>
+            <option value="U15M">U15M</option>
+            <option value="U18F">U18F</option>
+            <option value="U18M">U18M</option>
+            <option value="SM1">SM1</option>
+            <option value="SM2">SM2</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Compétition</label>
+          <input type="text" id="msComp" placeholder="Champ.">
+        </div>
+        <div class="form-field">
+          <label>Équipe Locaux (Domicile)</label>
+          <input type="text" id="msHome">
+        </div>
+        <div class="form-field">
+          <label>Équipe Visiteurs (Extérieur)</label>
+          <input type="text" id="msAway">
+        </div>
+        <div class="form-field">
+          <label>Nom de la Salle / Gymnase</label>
+          <input type="text" id="msSalle" placeholder="ANTOINE BLONDIN A 790M2">
+        </div>
+        <div class="form-field">
+          <label>Adresse complète (Rue, CP, Ville)</label>
+          <input type="text" id="msAddress" placeholder="3 RUE FRANCOIS COPPÉE 59000 LILLE">
+        </div>
+        <div class="form-field full">
+          <label>📌 Précisions (Accès salle, heure de RDV, parking, consignes...)</label>
+          <input type="text" id="msPrecision" placeholder="Ex: Entrée parking rue François Coppée, RDV 45 min avant...">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+        <button class="btn-action-sm btn-save-score" onclick="saveMatchSheetModal()">💾 Enregistrer la fiche match</button>
+      </div>
     </div>
   </div>
 
-  <!-- ================= MODAL CARNET D'ADRESSES DES CLUBS (PROTÉGÉ PIN 9694) ================= -->
+  <!-- ================= MODAL CARNET D'ADRESSES DES CLUBS (PIN 9694) ================= -->
   <div id="clubAddressesModal" class="modal-backdrop">
-    <div class="modal-card" style="max-width:740px;">
+    <div class="modal-card" style="max-width:680px;">
       <div class="modal-header">
         <h3>📍 Carnet d'Adresses des Clubs & Précisions Salles</h3>
         <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖ Fermer</button>
       </div>
-
-      <p style="font-size:0.8rem;color:#CBD5E1;margin-bottom:10px;">
-        Modifiez ici le nom de la salle, l'adresse postale ou ajoutez une précision (parking, accès, salle bis) pour n'importe quel club. Cliquez sur <strong>💾 Appliquer aux matchs</strong> pour mettre à jour toutes les rencontres concernées.
+      <p style="font-size:0.8rem;color:#475569;margin-bottom:10px;font-weight:700;">
+        Modifiez ici la salle, l'adresse ou les précisions d'un club : cela mettra automatiquement à jour tous les matchs où ce club reçoit.
       </p>
-
-      <!-- Ajout d'un nouveau club au carnet -->
-      <div class="club-addr-card" style="margin-bottom:12px;border-color:#F97316;">
-        <strong style="font-size:0.82rem;color:#FDBA74;">➕ Ajouter un nouveau club au carnet d'adresses :</strong>
-        <div class="form-grid-2">
-          <div class="form-field">
-            <input type="text" id="newClubNameInp" placeholder="Nom du club (ex: WATTIGNIES BC)">
-          </div>
-          <div class="form-field">
-            <input type="text" id="newClubSalleInp" placeholder="Nom de la salle">
-          </div>
-          <div class="form-field">
-            <input type="text" id="newClubAddrInp" placeholder="Adresse complète (Rue, CP, Ville)">
-          </div>
-          <div class="form-field" style="display:flex;flex-direction:row;gap:6px;">
-            <input type="text" id="newClubPrecInp" placeholder="Précision accès / parking" style="flex:1;">
-            <button type="button" class="btn-action-sm btn-save-score" onclick="addNewClubToDirectory()">Ajouter</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="clubAddressesListContainer" class="clubs-address-list"></div>
+      <div id="clubAddressesList" style="display:flex;flex-direction:column;gap:8px;max-height:62vh;overflow-y:auto;"></div>
     </div>
   </div>
 
-  <!-- ================= MODAL LOGOS & MASCOTTE (ACCÈS SÉCURISÉ STAFF) ================= -->
+  <!-- ================= MODAL ZOOM QR CODE ================= -->
+  <div id="qrModal" class="modal-backdrop" onclick="closeModals()">
+    <div class="modal-card" style="max-width:340px;text-align:center;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📱 Scannez pour ouvrir sur Mobile</h3>
+        <button class="btn-action-sm btn-reset-up" onclick="closeModals()">✖</button>
+      </div>
+      <img src="assets/qrcode-lsbsc.png" alt="QR Code LSBSC" style="width:230px;height:230px;margin:8px auto;display:block;">
+      <p style="font-size:0.8rem;font-weight:700;color:#475569;">Suivez le direct, le programme et les adresses GPS depuis votre smartphone.</p>
+    </div>
+  </div>
+
+  <!-- ================= MODAL LOGOS & MASCOTTE ================= -->
   <div id="logosModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
@@ -905,7 +355,7 @@
           </label>
         </div>
       </div>
-      <h4 style="font-size:0.88rem;color:#93C5FD;">Blasons des Clubs Adverses (Kalisport) :</h4>
+      <h4 style="font-size:0.88rem;color:#1E3A8A;">Blasons des Clubs Adverses (Kalisport) :</h4>
       <div id="clubsLogoGrid" class="clubs-logo-grid"></div>
     </div>
   </div>
@@ -943,162 +393,5 @@
   </div>
 
   <script src="js/app.js"></script>
-
-  <!-- ================= FONCTIONS COMPLÉMENTAIRES TABLE DE MARQUE, PARTAGE & WAKE LOCK ================= -->
-  <script>
-    const lsbscHistoryStack = [];
-    let currentPeriodLabel = localStorage.getItem('lsbsc_current_period') || 'Q1';
-    let quickFouls = JSON.parse(localStorage.getItem('lsbsc_quick_fouls') || '{"home":0,"away":0}');
-    let wakeLockSentinel = null;
-
-    function handleHeaderLogoClick() {
-      if (document.body.classList.contains('staff-unlocked') && typeof requestPinAccess === 'function') {
-        requestPinAccess('logos');
-      }
-    }
-
-    async function shareCurrentMatchResult() {
-      const status = (document.getElementById('sbStatusBadge')?.textContent || 'Match LSBSC').trim();
-      const meta = (document.getElementById('sbMetaInfo')?.textContent || '').trim();
-      const home = (document.getElementById('sbHomeName')?.textContent || 'Domicile').trim();
-      const away = (document.getElementById('sbAwayName')?.textContent || 'Visiteurs').trim();
-      const centerScore = (document.getElementById('sbCenterWrap')?.querySelector('.sb-score-digits')?.textContent || '').trim();
-      const venue = (document.getElementById('sbMatchSummaryBar')?.textContent || '').replace(/\s+/g, ' ').trim();
-      const period = currentPeriodLabel ? ` (${currentPeriodLabel})` : '';
-
-      const shareText = `🏀 *LSBSC South Lille — ${status}${period}*\n📅 ${meta}\n🔥 *${home}*  ${centerScore}  *${away}*\n${venue}\n📲 Suivez tous les matchs en direct : ${window.location.href}`;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: 'LSBSC Direct — Résultat & Score',
-            text: shareText.replace(/\*/g, ''),
-            url: window.location.href
-          });
-          return;
-        } catch (err) {}
-      }
-      const waUrl = 'https://wa.me/?text=' + encodeURIComponent(shareText);
-      window.open(waUrl, '_blank', 'noopener');
-    }
-
-    function setQuickPeriod(period, btnEl) {
-      currentPeriodLabel = period;
-      localStorage.setItem('lsbsc_current_period', period);
-      const pill = document.getElementById('sbPeriodDisplay');
-      if (pill) pill.textContent = '⏱️ Période : ' + period;
-      document.querySelectorAll('.btn-period-chip').forEach(b => b.classList.remove('active'));
-      if (btnEl) btnEl.classList.add('active');
-    }
-
-    function renderQuickFouls() {
-      const homeFoulsEl = document.getElementById('sbHomeFouls');
-      const awayFoulsEl = document.getElementById('sbAwayFouls');
-      const homeBonusEl = document.getElementById('sbHomeBonusBadge');
-      const awayBonusEl = document.getElementById('sbAwayBonusBadge');
-
-      if (homeFoulsEl) homeFoulsEl.textContent = `Fautes d'équipe : ${quickFouls.home}`;
-      if (awayFoulsEl) awayFoulsEl.textContent = `Fautes d'équipe : ${quickFouls.away}`;
-      if (homeBonusEl) {
-        homeBonusEl.innerHTML = quickFouls.home >= 5 ? '<span class="foul-bonus-alert">🚨 5 FAUTES (BONUS)</span>' : '';
-      }
-      if (awayBonusEl) {
-        awayBonusEl.innerHTML = quickFouls.away >= 5 ? '<span class="foul-bonus-alert">🚨 5 FAUTES (BONUS)</span>' : '';
-      }
-    }
-
-    function quickAdjustFouls(side, delta) {
-      lsbscHistoryStack.push({ type: 'foul', side, delta });
-      quickFouls[side] = Math.max(0, (quickFouls[side] || 0) + delta);
-      localStorage.setItem('lsbsc_quick_fouls', JSON.stringify(quickFouls));
-      renderQuickFouls();
-    }
-
-    function quickAdjustScore(side, delta) {
-      const m = matchesList.find(x => String(x.id) === String(selectedMatchId));
-      if (!m) return;
-      lsbscHistoryStack.push({ type: 'score', side, delta });
-      if (side === 'home') {
-        m.scoreHome = Math.max(0, Number(m.scoreHome || 0) + delta);
-      } else {
-        m.scoreAway = Math.max(0, Number(m.scoreAway || 0) + delta);
-      }
-      if (m.status === 'UPCOMING') m.status = 'LIVE';
-      persistDataLocally();
-      renderAll();
-    }
-
-    function toggleSelectedMatchLiveStatus() {
-      const m = matchesList.find(x => String(x.id) === String(selectedMatchId));
-      if (!m) return;
-      if (m.status === 'LIVE') {
-        m.status = 'FINISHED';
-      } else {
-        m.status = 'LIVE';
-        if (m.scoreHome === null || m.scoreHome === undefined) m.scoreHome = 0;
-        if (m.scoreAway === null || m.scoreAway === undefined) m.scoreAway = 0;
-      }
-      persistDataLocally();
-      renderAll();
-    }
-
-    function undoLastQuickScore() {
-      const last = lsbscHistoryStack.pop();
-      if (!last) return;
-      if (last.type === 'score') {
-        quickAdjustScore(last.side, -last.delta);
-        lsbscHistoryStack.pop();
-      } else if (last.type === 'foul') {
-        quickAdjustFouls(last.side, -last.delta);
-        lsbscHistoryStack.pop();
-      }
-    }
-
-    async function requestScreenWakeLock() {
-      if ('wakeLock' in navigator && !wakeLockSentinel) {
-        try {
-          wakeLockSentinel = await navigator.wakeLock.request('screen');
-          wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
-        } catch (e) {}
-      }
-    }
-
-    function openQrZoomModal() {
-      const modal = document.getElementById('qrZoomModal');
-      if (modal) modal.classList.add('open');
-    }
-    function closeQrZoomModal() {
-      const modal = document.getElementById('qrZoomModal');
-      if (modal) modal.classList.remove('open');
-    }
-
-    let tvSlideState = false;
-    function initTvAutoRotation() {
-      setInterval(() => {
-        if (!document.body.classList.contains('mode-tv') || document.body.classList.contains('staff-unlocked')) {
-          const promo = document.getElementById('tvPromoSlide');
-          if (promo) promo.classList.remove('visible');
-          return;
-        }
-        const statusBadge = document.getElementById('sbStatusBadge');
-        const isLiveMatch = statusBadge && statusBadge.classList.contains('live');
-        const promoSlide = document.getElementById('tvPromoSlide');
-        if (!isLiveMatch && promoSlide) {
-          tvSlideState = !tvSlideState;
-          promoSlide.classList.toggle('visible', tvSlideState);
-        } else if (promoSlide) {
-          promoSlide.classList.remove('visible');
-        }
-      }, 15000);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      renderQuickFouls();
-      initTvAutoRotation();
-      requestScreenWakeLock();
-      const pill = document.getElementById('sbPeriodDisplay');
-      if (pill) pill.textContent = '⏱️ Période : ' + currentPeriodLabel;
-    });
-  </script>
 </body>
 </html>
