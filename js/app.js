@@ -3427,3 +3427,21 @@ document.addEventListener("DOMContentLoaded", () => {
   updateTvCarouselPauseButtons();
   setTimeout(checkUrlSharedMatchParam, 150);
 });
+
+
+/* ================= EXTENSION V27 : MISE À L'ÉCHELLE AUTOMATIQUE MOBILE (VW/REM) & OCCUPATION PLEIN ÉCRAN ================= */
+
+const _prevApplyDisplayModeV27 = applyDisplayMode;
+applyDisplayMode = function(mode) {
+  document.documentElement.classList.toggle("html-mode-mobile", mode === "mobile");
+  document.documentElement.classList.toggle("html-mode-tv", mode !== "mobile");
+  _prevApplyDisplayModeV27(mode);
+};
+
+// Appliquer immédiatement la classe sur <html> selon le mode actif
+document.documentElement.classList.toggle("html-mode-mobile", state.displayMode === "mobile" || document.body.classList.contains("mode-mobile"));
+
+document.addEventListener("DOMContentLoaded", () => {
+  const isMob = state.displayMode === "mobile" || document.body.classList.contains("mode-mobile");
+  document.documentElement.classList.toggle("html-mode-mobile", isMob);
+});

@@ -3991,3 +3991,589 @@ body.mode-mobile #btnToggleTvPauseTop {
 .share-clean-link.app-link:hover {
   background: #FFEDD5;
 }
+
+
+/* ==========================================================================
+   V27 : REFONTE GRAND FORMAT MOBILE (100% ESPACE OCCUPÉ, GRANDS LOGOS & TEXTES)
+   S'adapte automatiquement même si le navigateur mobile est en "Version PC" (vw)
+   ========================================================================== */
+
+html.html-mode-mobile {
+  font-size: clamp(16px, 4.15vw, 42px) !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+body.mode-mobile {
+  width: 100% !important;
+  max-width: 100vw !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #0F172A !important;
+  padding-bottom: 1.5rem !important;
+  font-size: 1rem !important;
+}
+
+/* 1. EN-TÊTE MOBILE GRAND FORMAT */
+body.mode-mobile .top-header {
+  height: auto !important;
+  padding: 0.65rem 0.75rem !important;
+  gap: 0.6rem !important;
+  border-bottom: 3px solid #F59E0B !important;
+  flex-shrink: 0 !important;
+}
+
+body.mode-mobile .brand-zone {
+  display: grid !important;
+  grid-template-columns: 3.2rem 1fr 3.2rem !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.5rem 0.65rem !important;
+  border-radius: 0.9rem !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.mode-mobile .club-logo-top,
+body.mode-mobile .club-mascot-top {
+  width: 3.2rem !important;
+  height: 3.2rem !important;
+}
+
+body.mode-mobile .brand-titles h1 {
+  font-size: 1.05rem !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.3px !important;
+}
+
+body.mode-mobile .brand-titles .subtitle {
+  font-size: 0.78rem !important;
+  margin-top: 0.15rem !important;
+  color: #FDE68A !important;
+}
+
+body.mode-mobile .header-controls {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+}
+
+body.mode-mobile .header-controls .btn-top {
+  min-height: 3rem !important;
+  padding: 0.6rem 0.75rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+  border-radius: 0.8rem !important;
+}
+
+/* 2. BARRE DES 4 ONGLETS TACTILES GEANTS */
+body.mode-mobile .mobile-nav-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0.45rem !important;
+  padding: 0.55rem 0.65rem !important;
+  background: #0F172A !important;
+  border-bottom: 2px solid #1E3A8A !important;
+  flex-shrink: 0 !important;
+}
+
+body.mode-mobile .mob-tab {
+  min-height: 4.1rem !important;
+  padding: 0.5rem 0.25rem !important;
+  border-radius: 0.85rem !important;
+  gap: 0.25rem !important;
+}
+
+body.mode-mobile .mob-tab-ico {
+  font-size: 1.45rem !important;
+  line-height: 1 !important;
+}
+
+body.mode-mobile .mob-tab-lbl {
+  font-size: 0.86rem !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+}
+
+/* 3. ESPACE PRINCIPAL MOBILE REMPLISSANT TOUT L'ÉCRAN */
+body.mode-mobile .main-workspace {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0.65rem !important;
+  background: #E2E8F0 !important;
+  min-height: calc(100vh - 9.5rem) !important;
+  gap: 0.75rem !important;
+}
+
+body.mode-mobile .right-column.active-mobile-sec {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
+}
+
+/* 4. CARTE SCOREBOARD DIRECT GRAND FORMAT */
+body.mode-mobile .live-scoreboard-card {
+  flex: 1 1 auto !important;
+  padding: 1rem 0.85rem !important;
+  border-radius: 1.15rem !important;
+  border-width: 3px !important;
+  gap: 0.85rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+
+body.mode-mobile .sb-top-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.5rem !important;
+  padding-bottom: 0.65rem !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+}
+
+body.mode-mobile .sb-status-badge {
+  font-size: 0.92rem !important;
+  padding: 0.45rem 0.85rem !important;
+  border-radius: 999px !important;
+}
+
+body.mode-mobile .sb-meta-info {
+  font-size: 0.95rem !important;
+  font-weight: 900 !important;
+  color: #1E3A8A !important;
+}
+
+/* Onglets [ 🏀 Match & Infos ] | [ 📤 Partager ] */
+body.mode-mobile .sb-view-tabs {
+  gap: 0.5rem !important;
+  margin-top: 0.15rem !important;
+}
+
+body.mode-mobile .sb-view-tab {
+  min-height: 3.1rem !important;
+  padding: 0.6rem 0.5rem !important;
+  font-size: 0.92rem !important;
+  border-radius: 0.8rem !important;
+}
+
+/* Zone centrale : Score géant + 2 grandes cartes Équipes */
+body.mode-mobile .sb-arena-wrap {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 0.85rem !important;
+  width: 100% !important;
+}
+
+body.mode-mobile .sb-arena {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.7rem !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+body.mode-mobile .sb-center-score {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  padding: 1rem 0.85rem !important;
+  border-radius: 1rem !important;
+  border: 3px solid #F59E0B !important;
+  gap: 0.5rem !important;
+}
+
+body.mode-mobile .big-digits-wrap {
+  padding: 0.25rem 0.75rem !important;
+  gap: 1rem !important;
+}
+
+body.mode-mobile .big-digit {
+  font-size: 3.1rem !important;
+  line-height: 1.05 !important;
+}
+
+body.mode-mobile .big-sep {
+  font-size: 2.3rem !important;
+}
+
+body.mode-mobile .sb-period-pill {
+  font-size: 0.98rem !important;
+  padding: 0.4rem 1rem !important;
+  border-radius: 999px !important;
+}
+
+/* Cartes des 2 Équipes avec GRANDS LOGOS et GRAND TEXTE */
+body.mode-mobile .sb-team-box {
+  background: #F8FAFC !important;
+  border: 2px solid #CBD5E1 !important;
+  border-radius: 1rem !important;
+  padding: 1rem 0.6rem !important;
+  gap: 0.6rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 11.5rem !important;
+}
+
+body.mode-mobile .sb-logo-lg {
+  width: 5.6rem !important;
+  height: 5.6rem !important;
+  object-fit: contain !important;
+}
+
+body.mode-mobile .sb-team-title {
+  font-size: 1.08rem !important;
+  font-weight: 900 !important;
+  line-height: 1.22 !important;
+  color: #0F172A !important;
+  max-width: 100% !important;
+}
+
+body.mode-mobile .sb-loc-pill {
+  font-size: 0.8rem !important;
+  font-weight: 900 !important;
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 999px !important;
+}
+
+/* Barre GPS & Catégorie sous les équipes */
+body.mode-mobile .sb-summary-bar {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.55rem !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+body.mode-mobile .sb-summary-pill {
+  font-size: 0.95rem !important;
+  padding: 0.75rem 0.6rem !important;
+  border-radius: 0.8rem !important;
+}
+
+body.mode-mobile .sb-summary-pill.gps-pill,
+body.mode-mobile .sb-summary-pill.precision-pill,
+body.mode-mobile .youtube-pill-btn {
+  grid-column: 1 / -1 !important;
+  font-size: 1rem !important;
+  padding: 0.9rem 0.85rem !important;
+  border-radius: 0.85rem !important;
+}
+
+/* 5. CARTE MATCH SUIVANT GRAND FORMAT */
+body.mode-mobile .next-match-card {
+  padding: 1rem 0.9rem !important;
+  border-radius: 1.1rem !important;
+  border-left: 6px solid #F59E0B !important;
+  gap: 0.75rem !important;
+}
+
+body.mode-mobile .next-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 0.4rem !important;
+}
+
+body.mode-mobile .next-title-badge {
+  font-size: 0.92rem !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 0.5rem !important;
+}
+
+body.mode-mobile .next-datetime {
+  font-size: 0.95rem !important;
+}
+
+body.mode-mobile .next-teams-grid {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+  padding: 0.35rem 0 !important;
+}
+
+body.mode-mobile .next-team {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  font-size: 0.98rem !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+}
+
+body.mode-mobile .next-team.home {
+  flex-direction: column-reverse !important;
+}
+
+body.mode-mobile .next-match-card .club-badge-sm {
+  width: 3.8rem !important;
+  height: 3.8rem !important;
+}
+
+body.mode-mobile .vs-circle {
+  font-size: 0.9rem !important;
+  padding: 0.45rem 0.7rem !important;
+}
+
+/* 6. APERÇU DU PROGRAMME DU WEEK-END SUR L'ONGLET DIRECT (ZÉRO VIDE EN BAS D'ÉCRAN) */
+body.mode-mobile #mobileQuickMatchesCard {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.65rem !important;
+}
+
+body.mode-mobile .mq-header {
+  padding: 0.85rem 1rem !important;
+  border-radius: 0.9rem !important;
+}
+
+body.mode-mobile .mq-header h4 {
+  font-size: 1.02rem !important;
+}
+
+body.mode-mobile .mq-see-all {
+  font-size: 0.88rem !important;
+  padding: 0.5rem 0.85rem !important;
+  border-radius: 0.65rem !important;
+}
+
+body.mode-mobile .mq-item {
+  padding: 0.9rem 0.7rem !important;
+  border-radius: 1rem !important;
+  gap: 0.5rem !important;
+}
+
+body.mode-mobile .mq-team img {
+  width: 3.4rem !important;
+  height: 3.4rem !important;
+}
+
+body.mode-mobile .mq-team span {
+  font-size: 0.94rem !important;
+  line-height: 1.2 !important;
+}
+
+body.mode-mobile .mq-cat {
+  font-size: 0.82rem !important;
+  padding: 0.25rem 0.6rem !important;
+}
+
+body.mode-mobile .mq-gps-link {
+  font-size: 0.84rem !important;
+  padding: 0.45rem 0.7rem !important;
+}
+
+/* 7. ONGLET SÉLECTION D'ÉQUIPE & HISTORIQUE GRAND FORMAT */
+body.mode-mobile .mob-team-selector-card {
+  padding: 1rem 0.85rem !important;
+  border-radius: 1.1rem !important;
+  gap: 0.85rem !important;
+}
+
+body.mode-mobile .mob-team-selector-title h3 {
+  font-size: 1.12rem !important;
+}
+
+body.mode-mobile .mob-team-tiles-grid {
+  gap: 0.6rem !important;
+}
+
+body.mode-mobile .mob-team-tile {
+  padding: 0.9rem 0.75rem !important;
+  border-radius: 0.95rem !important;
+  min-height: 5.8rem !important;
+  gap: 0.45rem !important;
+}
+
+body.mode-mobile .mob-team-cat-badge {
+  font-size: 0.95rem !important;
+  padding: 0.25rem 0.65rem !important;
+}
+
+body.mode-mobile .mob-team-record {
+  font-size: 0.84rem !important;
+  padding: 0.2rem 0.5rem !important;
+}
+
+body.mode-mobile .mob-team-full-name {
+  font-size: 0.98rem !important;
+}
+
+body.mode-mobile .mob-selected-team-banner {
+  padding: 1rem !important;
+  border-radius: 1.05rem !important;
+  gap: 0.75rem !important;
+}
+
+body.mode-mobile .mob-st-title {
+  font-size: 1.15rem !important;
+}
+
+body.mode-mobile .mob-st-sub {
+  font-size: 0.9rem !important;
+}
+
+body.mode-mobile .mob-pf-btn {
+  padding: 0.65rem 0.4rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 0.7rem !important;
+}
+
+body.mode-mobile .mob-section-divider {
+  padding: 0.75rem 1rem !important;
+  font-size: 0.98rem !important;
+  border-radius: 0.8rem !important;
+}
+
+body.mode-mobile .match-row {
+  padding: 1rem 0.8rem !important;
+  border-radius: 1.1rem !important;
+  gap: 0.7rem !important;
+}
+
+body.mode-mobile .m-meta {
+  padding: 0.55rem 0.75rem !important;
+  border-radius: 0.7rem !important;
+}
+
+body.mode-mobile .m-date {
+  font-size: 0.92rem !important;
+}
+
+body.mode-mobile .m-time {
+  font-size: 1.05rem !important;
+}
+
+body.mode-mobile .match-row .club-badge-sm {
+  width: 3.8rem !important;
+  height: 3.8rem !important;
+}
+
+body.mode-mobile .team-name-txt {
+  font-size: 0.98rem !important;
+}
+
+body.mode-mobile .score-pill {
+  font-size: 1.18rem !important;
+  padding: 0.55rem 0.85rem !important;
+  min-width: 5.8rem !important;
+}
+
+body.mode-mobile .m-address-sub {
+  font-size: 0.88rem !important;
+  padding: 0.5rem 0.8rem !important;
+}
+
+/* 8. ONGLET PARTAGER GRAND FORMAT SUR MOBILE */
+body.mode-mobile .share-preview-card {
+  padding: 0.9rem !important;
+  border-radius: 0.95rem !important;
+  gap: 0.65rem !important;
+}
+
+body.mode-mobile .share-preview-header strong {
+  font-size: 0.92rem !important;
+}
+
+body.mode-mobile .share-clean-box {
+  padding: 0.9rem !important;
+  gap: 0.6rem !important;
+  font-size: 0.95rem !important;
+}
+
+body.mode-mobile .share-clean-club {
+  font-size: 0.86rem !important;
+}
+
+body.mode-mobile .share-clean-matchup {
+  font-size: 1.1rem !important;
+  padding: 0.55rem 0.75rem !important;
+}
+
+body.mode-mobile .share-clean-meta {
+  font-size: 0.94rem !important;
+  gap: 0.35rem !important;
+}
+
+body.mode-mobile .share-clean-link {
+  font-size: 0.95rem !important;
+  padding: 0.65rem 0.85rem !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+body.mode-mobile .share-tile-btn {
+  min-height: 4.2rem !important;
+  padding: 0.8rem 0.5rem !important;
+  font-size: 0.95rem !important;
+  border-radius: 0.85rem !important;
+}
+
+body.mode-mobile .share-tile-ico {
+  font-size: 1.5rem !important;
+}
+
+/* 9. ONGLETS BUVETTE & INFOS CLUB GRAND FORMAT SUR MOBILE */
+body.mode-mobile .mobile-infos-card.active-mobile-sec {
+  padding: 1rem 0.85rem !important;
+  border-radius: 1.1rem !important;
+  gap: 0.9rem !important;
+}
+
+body.mode-mobile .mobile-infos-card h3 {
+  font-size: 1.2rem !important;
+}
+
+body.mode-mobile .mobile-info-body {
+  font-size: 1rem !important;
+  padding: 0.9rem !important;
+}
+
+body.mode-mobile .buvette-cat-card,
+body.mode-mobile .info-topic-card {
+  padding: 1rem !important;
+  border-radius: 1rem !important;
+  gap: 0.65rem !important;
+}
+
+body.mode-mobile .buvette-cat-title,
+body.mode-mobile .info-topic-title {
+  font-size: 1.12rem !important;
+}
+
+body.mode-mobile .buvette-item-row {
+  padding: 0.6rem 0.7rem !important;
+}
+
+body.mode-mobile .buvette-item-name {
+  font-size: 1rem !important;
+}
+
+body.mode-mobile .buvette-item-price {
+  font-size: 1.02rem !important;
+  padding: 0.35rem 0.75rem !important;
+}
+
+body.mode-mobile .info-topic-body {
+  font-size: 0.98rem !important;
+  line-height: 1.48 !important;
+}
