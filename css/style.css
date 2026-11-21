@@ -4577,3 +4577,255 @@ body.mode-mobile .info-topic-body {
   font-size: 0.98rem !important;
   line-height: 1.48 !important;
 }
+
+
+/* ==========================================================================
+   V29 : STATISTIQUES PAR QUART-TEMPS (POINTS, FAUTES, TIRS 1/2/3 PTS & BILAN ÉQUIPE)
+   ========================================================================== */
+
+.sb-view-tabs.sb-view-tabs-3 {
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.sb-stats-tab-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.qt-box-card {
+  background: #FFFFFF;
+  border: 2px solid #93C5FD;
+  border-left: 6px solid #1E3A8A;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.qt-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px dashed #CBD5E1;
+  padding-bottom: 6px;
+}
+
+.qt-box-header strong {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: #1E3A8A;
+  text-transform: uppercase;
+}
+
+.qt-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.qt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.qt-table th {
+  background: #0F172A;
+  color: #FDE68A;
+  font-weight: 900;
+  padding: 6px 5px;
+  border: 1px solid #334155;
+  white-space: nowrap;
+}
+
+.qt-table th.qt-col-half {
+  background: #1E3A8A;
+  color: #FFFFFF;
+}
+
+.qt-table th.qt-col-tot {
+  background: #EA580C;
+  color: #FFFFFF;
+}
+
+.qt-table td {
+  padding: 7px 5px;
+  border: 1px solid #CBD5E1;
+  font-weight: 800;
+  color: #0F172A;
+  background: #F8FAFC;
+}
+
+.qt-table td.qt-team-cell {
+  text-align: left;
+  font-weight: 900;
+  padding-left: 8px;
+  max-width: 155px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qt-table tr.is-lsbsc-row td {
+  background: #EFF6FF;
+  color: #1E3A8A;
+}
+
+.qt-table td.qt-half-cell {
+  background: #E2E8F0;
+  font-weight: 900;
+}
+
+.qt-table td.qt-tot-cell {
+  background: #FFF7ED;
+  color: #C2410C;
+  font-weight: 900;
+  font-size: 0.92rem;
+}
+
+.qt-table td.qt-foul-bonus {
+  background: #FEE2E2 !important;
+  color: #B91C1C !important;
+  font-weight: 900;
+}
+
+.qt-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.qt-kpi-tile {
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qt-kpi-tile.best-off {
+  background: #DCFCE7;
+  border-color: #86EFAC;
+}
+
+.qt-kpi-tile.best-def {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+}
+
+.qt-kpi-tile.shots-tile {
+  background: #FFFBEB;
+  border-color: #FCD34D;
+}
+
+.qt-kpi-tile.fouls-tile {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+.qt-kpi-lbl {
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.qt-kpi-val {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.qt-kpi-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.qt-inline-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.qt-inline-strip:hover {
+  background: #FDE68A;
+}
+
+/* Carte statistiques cumulées par quart-temps sur l'onglet Équipe (Mobile) */
+.team-season-qt-card {
+  background: #FFFFFF;
+  border: 2px solid #2563EB;
+  border-radius: 1rem;
+  padding: 0.95rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.team-season-qt-card h4 {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #1E3A8A;
+  border-bottom: 2px solid #EFF6FF;
+  padding-bottom: 0.45rem;
+}
+
+/* Adaptation mobile grand format V27 pour les tableaux et cartes de stats QT */
+body.mode-mobile .sb-view-tabs.sb-view-tabs-3 .sb-view-tab {
+  font-size: 0.82rem !important;
+  padding: 0.55rem 0.25rem !important;
+}
+
+body.mode-mobile .qt-box-card {
+  padding: 0.85rem 0.75rem !important;
+  border-radius: 0.95rem !important;
+}
+
+body.mode-mobile .qt-table {
+  font-size: 0.84rem !important;
+}
+
+body.mode-mobile .qt-table th,
+body.mode-mobile .qt-table td {
+  padding: 0.48rem 0.3rem !important;
+}
+
+body.mode-mobile .qt-kpi-grid {
+  grid-template-columns: 1fr !important;
+  gap: 0.55rem !important;
+}
+
+body.mode-mobile .qt-kpi-lbl {
+  font-size: 0.82rem !important;
+}
+
+body.mode-mobile .qt-kpi-val {
+  font-size: 1rem !important;
+}
+
+body.mode-mobile .qt-kpi-sub {
+  font-size: 0.85rem !important;
+}

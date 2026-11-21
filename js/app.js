@@ -3073,7 +3073,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-/* ================= EXTENSION V25 : PARTAGE PROPRE (LIENS CLIQUABLES MASQUÉS, ZÉRO '', URL OFFICIELLE GITHUB) & BOUTON PAUSE/LECTURE CARROUSEL ================= */
+/* ================= EXTENSION V28 : PARTAGE PROPRE (ADRESSE EXACTEMENT MASQUÉE + LIEN GPS COURT ?gps=ID & ?match=ID) & BOUTON PAUSE/LECTURE CARROUSEL ================= */
 
 const OFFICIAL_LSBSC_APP_URL = "https://fabsm59520.github.io/LSBSC-Organisation/";
 state.selectedMatchViewTab = "match"; // 'match' | 'share'
@@ -3082,6 +3082,11 @@ state.publicAppUrl = OFFICIAL_LSBSC_APP_URL;
 function getAppShareUrl(matchId) {
   const base = OFFICIAL_LSBSC_APP_URL;
   return matchId ? `${base}?match=${encodeURIComponent(matchId)}` : base;
+}
+
+function getShortGpsShareUrl(matchId) {
+  const base = OFFICIAL_LSBSC_APP_URL;
+  return matchId ? `${base}?gps=${encodeURIComponent(matchId)}` : base;
 }
 
 // Synchroniser l'état des boutons Pause / Lecture du carrousel (en-tête principal + barre du carrousel)
@@ -3105,14 +3110,42 @@ function updateTvCarouselPauseButtons() {
   }
 }
 
-// Génère les informations propres du match sans aucun caractère corrompu '' ni URL brute à rallonge
+// Redirection automatique immédiate vers Google Maps si ?gps=ID est ouvert, ou sélection du match si ?match=ID
+function handleIncomingUrlParams() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const gpsId = parseInt(params.get("gps"), 10);
+    if (gpsId) {
+      const targetGps = state.matches.find(m => m.id === gpsId);
+      if (targetGps) {
+        const info = getMatchVenueInfo(targetGps);
+        window.location.replace(info.gpsUrl);
+        return;
+      }
+    }
+    const sharedId = parseInt(params.get("match"), 10);
+    if (sharedId) {
+      const target = state.matches.find(m => m.id === sharedId);
+      if (target) {
+        state.autoWeek = false;
+        state.currentWeek = target.wk;
+        state.selectedMatchId = target.id;
+        state.selectedMatchViewTab = "match";
+        renderAll();
+      }
+    }
+  } catch (e) {}
+}
+
+// Génère les informations propres du match : adresse exacte masquée derrière le lien GPS cliquable
 function buildMatchSharePayload(m) {
-  if (!m) return { subject: "Match LSBSC", plainText: "", htmlText: "", appUrl: OFFICIAL_LSBSC_APP_URL, gpsUrl: "" };
+  if (!m) return { subject: "Match LSBSC", plainText: "", htmlText: "", appUrl: OFFICIAL_LSBSC_APP_URL, gpsUrl: "", shortGpsUrl: "" };
   const info = getMatchVenueInfo(m);
   const homeUs = isLSBSC(m.home);
   const locType = homeUs ? "Match à Domicile (Lille Sud)" : "Match à l'Extérieur";
   const outcome = computeMatchOutcome(m);
   const appUrl = getAppShareUrl(m.id);
+  const shortGpsUrl = getShortGpsShareUrl(m.id);
 
   let statusLine = "";
   let subjectPrefix = `[LSBSC ${m.cat}]`;
@@ -3135,8 +3168,7 @@ function buildMatchSharePayload(m) {
     subjectPrefix = `MATCH [LSBSC ${m.cat}] ${m.date} à ${m.time}`;
   }
 
-  // Version HTML riche (pour Copier-Coller dans Mail, Word, Facebook, Messageries riches) :
-  // Le lien Google Maps et le lien "Application LSBSC" sont des hyperliens cliquables qui cachent l'URL brute !
+  // 1. Version HTML riche (E-mail, Word, Messageries) : adresse exacte et URLs totalement masquées derrière les liens cliquables
   const htmlParts = [
     `<div style="font-family:Arial,sans-serif;line-height:1.5;color:#0F172A;">`,
     `<strong>LILLE SUD BASKETBALL SPORTING CLUB (LSBSC)</strong><br>`,
@@ -3144,13 +3176,13 @@ function buildMatchSharePayload(m) {
     `<strong style="font-size:1.05em;color:#1E3A8A;">${m.home} vs ${m.away}</strong><br>`,
     `<strong>Date :</strong> ${m.date} à ${m.time} (${m.wkLabel || ""})<br>`,
     `<strong>Statut :</strong> ${statusLine}<br><br>`,
-    `<strong>Lieu :</strong> <a href="${info.gpsUrl}" target="_blank" rel="noopener" style="color:#1D4ED8;font-weight:bold;text-decoration:underline;">${info.salle} — ${info.address} (Itinéraire Google Maps)</a><br>`,
+    `<strong>Lieu :</strong> <a href="${info.gpsUrl}" target="_blank" rel="noopener" style="color:#1D4ED8;font-weight:bold;text-decoration:underline;">Itinéraire Google Maps (${info.salle})</a><br>`,
     info.precision ? `<strong>Précisions :</strong> ${info.precision}<br>` : ``,
-    `<br><strong>Direct, Programme & GPS :</strong> <a href="${appUrl}" target="_blank" rel="noopener" style="color:#EA580C;font-weight:bold;text-decoration:underline;">Application LSBSC</a>`,
+    `<br><strong>Direct & Résultats :</strong> <a href="${appUrl}" target="_blank" rel="noopener" style="color:#EA580C;font-weight:bold;text-decoration:underline;">Application LSBSC</a>`,
     `</div>`
   ];
 
-  // Version Texte universelle (sans emojis 4-octets qui produisent des '' sur WhatsApp Desktop, et sans l'URL Google Maps brute à rallonge)
+  // 2. Version Texte universelle (WhatsApp & SMS) : adresse exacte masquée, remplacée par le lien court ?gps=ID
   const plainLines = [
     `*LILLE SUD BASKETBALL SPORTING CLUB (LSBSC)*`,
     `• Catégorie : ${m.cat} (${m.comp || "Champ."}) — ${locType}`,
@@ -3159,8 +3191,8 @@ function buildMatchSharePayload(m) {
     `• Date : ${m.date} à ${m.time} (${m.wkLabel || ""})`,
     `• ${statusLine}`,
     ``,
-    `• Salle : ${info.salle}`,
-    `• Adresse : ${info.address}`
+    `• Itinéraire GPS (${info.salle}) :`,
+    `${shortGpsUrl}`
   ];
 
   if (info.precision) {
@@ -3169,7 +3201,7 @@ function buildMatchSharePayload(m) {
 
   plainLines.push(
     ``,
-    `• Direct, Programme & Itinéraire GPS sur Application LSBSC :`,
+    `• Direct & Résultats — Application LSBSC :`,
     `${appUrl}`
   );
 
@@ -3179,6 +3211,7 @@ function buildMatchSharePayload(m) {
     htmlText: htmlParts.join(""),
     appUrl: appUrl,
     gpsUrl: info.gpsUrl,
+    shortGpsUrl: shortGpsUrl,
     info: info
   };
 }
@@ -3239,7 +3272,6 @@ function renderSelectedMatchShareTab() {
   const encodedSubject = encodeURIComponent(payload.subject);
   const encodedUrl = encodeURIComponent(payload.appUrl);
 
-  // Utiliser api.whatsapp.com/send au lieu de wa.me pour éviter la corruption d'encodage UTF-8 sur Windows/Desktop
   const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || "");
   const smsUrl = isIOS ? `sms:&body=${encodedText}` : `sms:?body=${encodedText}`;
@@ -3261,7 +3293,7 @@ function renderSelectedMatchShareTab() {
         <div class="share-clean-meta">
           <div>📅 <strong>Date :</strong> ${current.date} à ${current.time} (${current.wkLabel || ""})</div>
           <div>📊 <strong>Statut :</strong> ${statusBadgeHtml}</div>
-          <div>🏟️ <strong>Salle :</strong> ${info.salle} — ${info.address}</div>
+          <div>🏟️ <strong>Salle :</strong> ${info.salle}</div>
           ${info.precision ? `<div>📌 <strong>Précisions :</strong> ${info.precision}</div>` : ""}
         </div>
         <div class="share-clean-links-row">
@@ -3328,7 +3360,6 @@ window.triggerNativeMatchShare = async function(matchId) {
   window.copyMatchShareText(m.id);
 };
 
-// Copie simultanément en HTML Riche (avec les liens cachés "Itinéraire Google Maps" et "Application LSBSC") et en Texte propre
 window.copyMatchShareText = function(matchId) {
   const m = state.matches.find(x => x.id === matchId) || state.matches.find(x => x.id === state.selectedMatchId);
   if (!m) return;
@@ -3385,7 +3416,6 @@ function fallbackCopyText(txt, cb) {
   if (cb) cb();
 }
 
-// Mettre à jour automatiquement l'onglet Partage quand on change de match ou quand le score évolue
 const _prevRenderRightColumnV24 = renderRightColumn;
 renderRightColumn = function() {
   _prevRenderRightColumnV24();
@@ -3394,40 +3424,13 @@ renderRightColumn = function() {
   }
 };
 
-// Ajouter aussi un bouton rapide "📤 Partager" sur chaque tuile de match dans l'onglet Sélection Équipe sur Mobile
 const _prevRenderSingleMobileMatchTileV24 = renderSingleMobileMatchTile;
 renderSingleMobileMatchTile = function(m) {
   const baseHtml = _prevRenderSingleMobileMatchTileV24(m);
   if (baseHtml.includes("openShareTabForMatch")) return baseHtml;
   const shareBtnHtml = `<button type="button" class="m-address-sub" style="background:#FFF7ED;color:#EA580C;border-color:#FDBA74;cursor:pointer;" onclick="event.stopPropagation();openShareTabForMatch(${m.id})">📤 Partager ce match</button>`;
-  return baseHtml.replace(`</div>
-      <div class="m-team away">`, `${shareBtnHtml}</div>
-      <div class="m-team away">`);
+  return baseHtml.replace("</div>\n      <div class=\"m-team away\">", `${shareBtnHtml}</div>\n      <div class="m-team away">`);
 };
-
-// Lecture du lien direct (?match=ID) à l'ouverture de l'application pour sélectionner automatiquement le match partagé
-function checkUrlSharedMatchParam() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const sharedId = parseInt(params.get("match"), 10);
-    if (sharedId) {
-      const target = state.matches.find(m => m.id === sharedId);
-      if (target) {
-        state.autoWeek = false;
-        state.currentWeek = target.wk;
-        state.selectedMatchId = target.id;
-        state.selectedMatchViewTab = "match";
-        renderAll();
-      }
-    }
-  } catch (e) {}
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  updateTvCarouselPauseButtons();
-  setTimeout(checkUrlSharedMatchParam, 150);
-});
-
 
 /* ================= EXTENSION V27 : MISE À L'ÉCHELLE AUTOMATIQUE MOBILE (VW/REM) & OCCUPATION PLEIN ÉCRAN ================= */
 
@@ -3438,10 +3441,745 @@ applyDisplayMode = function(mode) {
   _prevApplyDisplayModeV27(mode);
 };
 
-// Appliquer immédiatement la classe sur <html> selon le mode actif
 document.documentElement.classList.toggle("html-mode-mobile", state.displayMode === "mobile" || document.body.classList.contains("mode-mobile"));
 
 document.addEventListener("DOMContentLoaded", () => {
+  updateTvCarouselPauseButtons();
   const isMob = state.displayMode === "mobile" || document.body.classList.contains("mode-mobile");
   document.documentElement.classList.toggle("html-mode-mobile", isMob);
+  setTimeout(handleIncomingUrlParams, 100);
 });
+
+
+/* ================= EXTENSION V29 : COMPTABILISATION & STATISTIQUES PAR QUART-TEMPS (POINTS, FAUTES, TIRS & BILAN ÉQUIPE) ================= */
+
+const QT_KEYS = ["QT1", "QT2", "QT3", "QT4", "Prol."];
+
+if (typeof DYNAMIC_FIELDS !== "undefined" && !DYNAMIC_FIELDS.includes("quarterStats")) {
+  DYNAMIC_FIELDS.push("quarterStats");
+}
+
+function normalizeActiveQuarter(period) {
+  const p = String(period || "").trim();
+  if (p === "QT1") return "QT1";
+  if (p === "QT2" || p === "Mi-Temps") return "QT2";
+  if (p === "QT3") return "QT3";
+  if (p === "QT4") return "QT4";
+  if (p === "Prol.") return "Prol.";
+  return "QT1";
+}
+
+function createEmptyQuarterSlot() {
+  return { ph: 0, pa: 0, fh: 0, fa: 0, h1: 0, h2: 0, h3: 0, a1: 0, a2: 0, a3: 0 };
+}
+
+function ensureQuarterStats(m) {
+  if (!m) return null;
+  if (!m.quarterStats || typeof m.quarterStats !== "object") {
+    m.quarterStats = {};
+  }
+  QT_KEYS.forEach(k => {
+    if (!m.quarterStats[k] || typeof m.quarterStats[k] !== "object") {
+      m.quarterStats[k] = createEmptyQuarterSlot();
+    } else {
+      const s = m.quarterStats[k];
+      s.ph = Number(s.ph) || 0;
+      s.pa = Number(s.pa) || 0;
+      s.fh = Number(s.fh) || 0;
+      s.fa = Number(s.fa) || 0;
+      s.h1 = Number(s.h1) || 0;
+      s.h2 = Number(s.h2) || 0;
+      s.h3 = Number(s.h3) || 0;
+      s.a1 = Number(s.a1) || 0;
+      s.a2 = Number(s.a2) || 0;
+      s.a3 = Number(s.a3) || 0;
+    }
+  });
+
+  // Si le match avait déjà des points ou fautes saisis avant l'activation du suivi QT, les rattacher au QT actif
+  const sumPh = QT_KEYS.reduce((acc, k) => acc + (m.quarterStats[k].ph || 0), 0);
+  const sumPa = QT_KEYS.reduce((acc, k) => acc + (m.quarterStats[k].pa || 0), 0);
+  if (sumPh === 0 && sumPa === 0 && ((m.sh || 0) > 0 || (m.sa || 0) > 0)) {
+    const qk = normalizeActiveQuarter(m.period);
+    m.quarterStats[qk].ph = Number(m.sh) || 0;
+    m.quarterStats[qk].pa = Number(m.sa) || 0;
+  }
+
+  const sumFh = QT_KEYS.reduce((acc, k) => acc + (m.quarterStats[k].fh || 0), 0);
+  const sumFa = QT_KEYS.reduce((acc, k) => acc + (m.quarterStats[k].fa || 0), 0);
+  if (sumFh === 0 && sumFa === 0 && ((m.fh || 0) > 0 || (m.fa || 0) > 0)) {
+    const qk = normalizeActiveQuarter(m.period);
+    m.quarterStats[qk].fh = Number(m.fh) || 0;
+    m.quarterStats[qk].fa = Number(m.fa) || 0;
+  }
+
+  return m.quarterStats;
+}
+
+function hasRecordedQuarterStats(m) {
+  if (!m || !m.quarterStats) return false;
+  return QT_KEYS.some(k => {
+    const q = m.quarterStats[k];
+    return q && ((q.ph || 0) > 0 || (q.pa || 0) > 0 || (q.fh || 0) > 0 || (q.fa || 0) > 0);
+  });
+}
+
+function recomputeTotalsFromQuarters(m) {
+  const qs = ensureQuarterStats(m);
+  if (!qs) return;
+  m.sh = QT_KEYS.reduce((acc, k) => acc + (qs[k].ph || 0), 0);
+  m.sa = QT_KEYS.reduce((acc, k) => acc + (qs[k].pa || 0), 0);
+}
+
+// 1. Surcharger updateLivePoints pour comptabiliser les points & types de paniers (1/2/3 pts) par quart-temps
+window.updateLivePoints = function(id, side, delta) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  if (typeof stampMatchScorer === "function") stampMatchScorer(id);
+
+  m.status = "live";
+  m.liveTracking = true;
+  if (!m.period || m.period === "À venir" || m.period === "Terminé") {
+    m.period = "QT1";
+  }
+
+  const qs = ensureQuarterStats(m);
+  const qk = normalizeActiveQuarter(m.period);
+  const slot = qs[qk];
+
+  if (side === "home") {
+    const nextPh = Math.max(0, (slot.ph || 0) + delta);
+    const actualDelta = nextPh - (slot.ph || 0);
+    slot.ph = nextPh;
+    if (actualDelta === 1) slot.h1 = (slot.h1 || 0) + 1;
+    else if (actualDelta === 2) slot.h2 = (slot.h2 || 0) + 1;
+    else if (actualDelta === 3) slot.h3 = (slot.h3 || 0) + 1;
+    else if (actualDelta === -1) {
+      if ((slot.h1 || 0) > 0) slot.h1 -= 1;
+      else if ((slot.h2 || 0) > 0) { slot.h2 -= 1; slot.h1 = (slot.h1 || 0) + 1; }
+      else if ((slot.h3 || 0) > 0) { slot.h3 -= 1; slot.h2 = (slot.h2 || 0) + 1; }
+    }
+  } else {
+    const nextPa = Math.max(0, (slot.pa || 0) + delta);
+    const actualDelta = nextPa - (slot.pa || 0);
+    slot.pa = nextPa;
+    if (actualDelta === 1) slot.a1 = (slot.a1 || 0) + 1;
+    else if (actualDelta === 2) slot.a2 = (slot.a2 || 0) + 1;
+    else if (actualDelta === 3) slot.a3 = (slot.a3 || 0) + 1;
+    else if (actualDelta === -1) {
+      if ((slot.a1 || 0) > 0) slot.a1 -= 1;
+      else if ((slot.a2 || 0) > 0) { slot.a2 -= 1; slot.a1 = (slot.a1 || 0) + 1; }
+      else if ((slot.a3 || 0) > 0) { slot.a3 -= 1; slot.a2 = (slot.a2 || 0) + 1; }
+    }
+  }
+
+  recomputeTotalsFromQuarters(m);
+  saveState(true);
+  renderAll();
+};
+
+// 2. Surcharger updateLiveFouls pour comptabiliser les fautes par quart-temps (tout en conservant les fautes des QT précédents)
+window.updateLiveFouls = function(id, side, delta) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  if (typeof stampMatchScorer === "function") stampMatchScorer(id);
+
+  m.status = "live";
+  m.liveTracking = true;
+  if (!m.period || m.period === "À venir" || m.period === "Terminé") {
+    m.period = "QT1";
+  }
+
+  const qs = ensureQuarterStats(m);
+  const qk = normalizeActiveQuarter(m.period);
+  const slot = qs[qk];
+
+  if (side === "home") {
+    slot.fh = Math.max(0, Math.min(5, (slot.fh || 0) + delta));
+    m.fh = slot.fh;
+  } else {
+    slot.fa = Math.max(0, Math.min(5, (slot.fa || 0) + delta));
+    m.fa = slot.fa;
+  }
+
+  saveState(true);
+  renderAll();
+};
+
+// 3. Surcharger setLivePeriod : change de quart-temps, conserve l'historique et affiche les fautes du nouveau quart-temps
+window.setLivePeriod = function(id, period) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  const qs = ensureQuarterStats(m);
+  m.status = "live";
+  m.liveTracking = true;
+  m.period = period;
+
+  const qk = normalizeActiveQuarter(period);
+  m.fh = qs[qk].fh || 0;
+  m.fa = qs[qk].fa || 0;
+
+  saveState(true);
+  renderAll();
+};
+
+// 4. Surcharger finishCurrentAndLaunchNext et saveMatchScore pour conserver les stats par quart-temps après la fin du match
+const _prevFinishCurrentV29 = window.finishCurrentAndLaunchNext;
+window.finishCurrentAndLaunchNext = function(id) {
+  const m = state.matches.find(x => x.id === id);
+  if (m && hasRecordedQuarterStats(m)) {
+    recomputeTotalsFromQuarters(m);
+  }
+  _prevFinishCurrentV29(id);
+};
+
+const _prevSaveMatchScoreV29 = window.saveMatchScore;
+window.saveMatchScore = function(id, newStatus) {
+  const m = state.matches.find(x => x.id === id);
+  if (m && newStatus === "upcoming") {
+    m.quarterStats = null;
+    m.fh = 0;
+    m.fa = 0;
+  }
+  _prevSaveMatchScoreV29(id, newStatus);
+};
+
+// 5. Gestion de l'onglet [ 📊 Stats & QT ] sur le match sélectionné
+window.switchSelectedMatchTab = function(tabName) {
+  const validTab = ["match", "stats", "share"].includes(tabName) ? tabName : "match";
+  state.selectedMatchViewTab = validTab;
+
+  const btnMatch = document.getElementById("btnSbTabMatch");
+  const btnStats = document.getElementById("btnSbTabStats");
+  const btnShare = document.getElementById("btnSbTabShare");
+  const arenaWrap = document.getElementById("sbArenaMainWrap");
+  const statsWrap = document.getElementById("sbStatsTabWrap");
+  const shareWrap = document.getElementById("sbShareTabWrap");
+
+  if (btnMatch) btnMatch.classList.toggle("active", validTab === "match");
+  if (btnStats) btnStats.classList.toggle("active", validTab === "stats");
+  if (btnShare) btnShare.classList.toggle("active", validTab === "share");
+
+  if (arenaWrap) arenaWrap.style.display = validTab === "match" ? "flex" : "none";
+  if (statsWrap) {
+    statsWrap.style.display = validTab === "stats" ? "flex" : "none";
+    if (validTab === "stats") renderSelectedMatchStatsTab();
+  }
+  if (shareWrap) {
+    shareWrap.style.display = validTab === "share" ? "flex" : "none";
+    if (validTab === "share") renderSelectedMatchShareTab();
+  }
+};
+
+window.openStatsTabForMatch = function(matchId) {
+  state.selectedMatchId = matchId;
+  state.selectedMatchViewTab = "stats";
+  renderAll();
+  if (state.displayMode === "mobile") {
+    switchMobileTab("live");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  window.switchSelectedMatchTab("stats");
+};
+
+window.saveManualQuarterStats = function(matchId) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  const qs = ensureQuarterStats(m);
+  QT_KEYS.forEach(k => {
+    const phEl = document.getElementById(`inpQtPh_${k}`);
+    const paEl = document.getElementById(`inpQtPa_${k}`);
+    const fhEl = document.getElementById(`inpQtFh_${k}`);
+    const faEl = document.getElementById(`inpQtFa_${k}`);
+    if (phEl) qs[k].ph = Math.max(0, parseInt(phEl.value, 10) || 0);
+    if (paEl) qs[k].pa = Math.max(0, parseInt(paEl.value, 10) || 0);
+    if (fhEl) qs[k].fh = Math.max(0, Math.min(5, parseInt(fhEl.value, 10) || 0));
+    if (faEl) qs[k].fa = Math.max(0, Math.min(5, parseInt(faEl.value, 10) || 0));
+  });
+  recomputeTotalsFromQuarters(m);
+  const activeQk = normalizeActiveQuarter(m.period);
+  m.fh = qs[activeQk].fh || 0;
+  m.fa = qs[activeQk].fa || 0;
+  saveState(true);
+  renderAll();
+  renderSelectedMatchStatsTab();
+};
+
+window.copyMatchQuarterStatsText = function(matchId) {
+  const m = state.matches.find(x => x.id === matchId);
+  if (!m) return;
+  const qs = ensureQuarterStats(m);
+  const mt1H = (qs.QT1.ph || 0) + (qs.QT2.ph || 0);
+  const mt1A = (qs.QT1.pa || 0) + (qs.QT2.pa || 0);
+  const mt2H = (qs.QT3.ph || 0) + (qs.QT4.ph || 0);
+  const mt2A = (qs.QT3.pa || 0) + (qs.QT4.pa || 0);
+  const totFh = QT_KEYS.reduce((a, k) => a + (qs[k].fh || 0), 0);
+  const totFa = QT_KEYS.reduce((a, k) => a + (qs[k].fa || 0), 0);
+
+  const lines = [
+    `*FEUILLE DE STATS PAR QUART-TEMPS — LSBSC (${m.cat})*`,
+    `${m.home}  ${m.sh} - ${m.sa}  ${m.away}`,
+    `Date : ${m.date} à ${m.time}`,
+    ``,
+    `*Points par Quart-Temps :*`,
+    `• QT1 : ${qs.QT1.ph} - ${qs.QT1.pa}`,
+    `• QT2 : ${qs.QT2.ph} - ${qs.QT2.pa}  (Mi-Temps : ${mt1H} - ${mt1A})`,
+    `• QT3 : ${qs.QT3.ph} - ${qs.QT3.pa}`,
+    `• QT4 : ${qs.QT4.ph} - ${qs.QT4.pa}  (2e MT : ${mt2H} - ${mt2A})`
+  ];
+  if ((qs["Prol."].ph || 0) > 0 || (qs["Prol."].pa || 0) > 0) {
+    lines.push(`• Prol. : ${qs["Prol."].ph} - ${qs["Prol."].pa}`);
+  }
+  lines.push(
+    `• TOTAL : ${m.sh} - ${m.sa}`,
+    ``,
+    `*Fautes d'équipe par Quart-Temps :*`,
+    `• QT1 : ${qs.QT1.fh} - ${qs.QT1.fa} | QT2 : ${qs.QT2.fh} - ${qs.QT2.fa}`,
+    `• QT3 : ${qs.QT3.fh} - ${qs.QT3.fa} | QT4 : ${qs.QT4.fh} - ${qs.QT4.fa}`,
+    `• Total Fautes : ${totFh} - ${totFa}`
+  );
+
+  const txt = lines.join("\n");
+  const done = () => {
+    const b = document.getElementById("btnCopyQtStats");
+    if (b) {
+      b.textContent = "✅ Stats copiées !";
+      b.style.background = "#16A34A";
+      setTimeout(() => { renderSelectedMatchStatsTab(); }, 1600);
+    }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopyText(txt, done));
+  } else {
+    fallbackCopyText(txt, done);
+  }
+};
+
+function renderSelectedMatchStatsTab() {
+  const statsWrap = document.getElementById("sbStatsTabWrap");
+  if (!statsWrap) return;
+  const current = state.matches.find(m => m.id === state.selectedMatchId) || state.matches[0];
+  if (!current) return;
+
+  const hasData = hasRecordedQuarterStats(current);
+  const qs = ensureQuarterStats(current);
+  const homeUs = isLSBSC(current.home);
+  const awayUs = isLSBSC(current.away);
+
+  const hasOT = (qs["Prol."].ph || 0) > 0 || (qs["Prol."].pa || 0) > 0 || (qs["Prol."].fh || 0) > 0 || (qs["Prol."].fa || 0) > 0 || current.period === "Prol.";
+
+  const mt1H = (qs.QT1.ph || 0) + (qs.QT2.ph || 0);
+  const mt1A = (qs.QT1.pa || 0) + (qs.QT2.pa || 0);
+  const mt2H = (qs.QT3.ph || 0) + (qs.QT4.ph || 0);
+  const mt2A = (qs.QT3.pa || 0) + (qs.QT4.pa || 0);
+
+  const totPh = QT_KEYS.reduce((a, k) => a + (qs[k].ph || 0), 0);
+  const totPa = QT_KEYS.reduce((a, k) => a + (qs[k].pa || 0), 0);
+  const totFh = QT_KEYS.reduce((a, k) => a + (qs[k].fh || 0), 0);
+  const totFa = QT_KEYS.reduce((a, k) => a + (qs[k].fa || 0), 0);
+
+  // Calcul des indicateurs clés pour LSBSC
+  const regKeys = ["QT1", "QT2", "QT3", "QT4"];
+  let bestOffQt = "QT1", bestOffPts = -1;
+  let bestDefQt = "QT1", bestDefPts = 9999;
+  regKeys.forEach(k => {
+    const usPts = homeUs ? (qs[k].ph || 0) : (qs[k].pa || 0);
+    const oppPts = homeUs ? (qs[k].pa || 0) : (qs[k].ph || 0);
+    if (usPts > bestOffPts) { bestOffPts = usPts; bestOffQt = k; }
+    if (oppPts < bestDefPts) { bestDefPts = oppPts; bestDefQt = k; }
+  });
+
+  const us1 = QT_KEYS.reduce((a, k) => a + (homeUs ? (qs[k].h1 || 0) : (qs[k].a1 || 0)), 0);
+  const us2 = QT_KEYS.reduce((a, k) => a + (homeUs ? (qs[k].h2 || 0) : (qs[k].a2 || 0)), 0);
+  const us3 = QT_KEYS.reduce((a, k) => a + (homeUs ? (qs[k].h3 || 0) : (qs[k].a3 || 0)), 0);
+  const usTotalFouls = homeUs ? totFh : totFa;
+  const oppTotalFouls = homeUs ? totFa : totFh;
+
+  const shotsSummaryTxt = (us1 + us2 + us3) > 0
+    ? `${us1}×1pt • ${us2}×2pts • ${us3}×3pts`
+    : "Saisie globale (utiliser +1/+2/+3 en direct)";
+
+  const staffEditHtml = state.staffUnlocked ? `
+    <div class="qt-box-card" style="border-left-color:#EA580C;background:#FFF7ED;">
+      <div class="qt-box-header">
+        <strong>✏️ Édition Staff — Points & Fautes par Quart-Temps</strong>
+        <button type="button" class="btn-action-sm btn-save-score" onclick="saveManualQuarterStats(${current.id})">💾 Enregistrer QT</button>
+      </div>
+      <div class="qt-table-scroll">
+        <table class="qt-table">
+          <thead>
+            <tr>
+              <th>Quart-Temps</th>
+              <th>Pts ${current.home.slice(0, 12)}</th>
+              <th>Pts ${current.away.slice(0, 12)}</th>
+              <th>Fautes Loc.</th>
+              <th>Fautes Vis.</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${QT_KEYS.map(k => `
+              <tr>
+                <td><strong>${k}</strong></td>
+                <td><input type="number" id="inpQtPh_${k}" min="0" value="${qs[k].ph}" style="width:52px;padding:4px;text-align:center;font-weight:900;border:1px solid #93C5FD;border-radius:6px;"></td>
+                <td><input type="number" id="inpQtPa_${k}" min="0" value="${qs[k].pa}" style="width:52px;padding:4px;text-align:center;font-weight:900;border:1px solid #93C5FD;border-radius:6px;"></td>
+                <td><input type="number" id="inpQtFh_${k}" min="0" max="5" value="${qs[k].fh}" style="width:46px;padding:4px;text-align:center;font-weight:900;border:1px solid #FCA5A5;border-radius:6px;"></td>
+                <td><input type="number" id="inpQtFa_${k}" min="0" max="5" value="${qs[k].fa}" style="width:46px;padding:4px;text-align:center;font-weight:900;border:1px solid #FCA5A5;border-radius:6px;"></td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  ` : "";
+
+  statsWrap.innerHTML = `
+    <div class="qt-box-card">
+      <div class="qt-box-header">
+        <strong>📊 Points par Quart-Temps (${current.cat})</strong>
+        <button type="button" id="btnCopyQtStats" class="btn-action-sm" style="background:#1E3A8A;color:#FFF;" onclick="copyMatchQuarterStatsText(${current.id})">
+          📋 Copier Stats
+        </button>
+      </div>
+
+      ${!hasData ? `
+        <div style="background:#FEF3C7;border:1.5px solid #F59E0B;color:#92400E;padding:10px;border-radius:10px;font-size:0.82rem;font-weight:800;text-align:center;">
+          ℹ️ Aucun point ou faute enregistré en direct sur ce match pour le moment.<br>
+          Dès qu'un match est suivi via la <strong>Table Direct</strong>, les points et fautes de chaque quart-temps sont archivés ici !
+        </div>
+      ` : ""}
+
+      <div class="qt-table-scroll">
+        <table class="qt-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding-left:8px;">Équipe</th>
+              <th>QT1</th>
+              <th>QT2</th>
+              <th class="qt-col-half">MT1</th>
+              <th>QT3</th>
+              <th>QT4</th>
+              <th class="qt-col-half">MT2</th>
+              ${hasOT ? `<th>Prol.</th>` : ""}
+              <th class="qt-col-tot">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="${homeUs ? "is-lsbsc-row" : ""}">
+              <td class="qt-team-cell">${homeUs ? "🦁 " : ""}${current.home}</td>
+              <td>${qs.QT1.ph}</td>
+              <td>${qs.QT2.ph}</td>
+              <td class="qt-half-cell">${mt1H}</td>
+              <td>${qs.QT3.ph}</td>
+              <td>${qs.QT4.ph}</td>
+              <td class="qt-half-cell">${mt2H}</td>
+              ${hasOT ? `<td>${qs["Prol."].ph}</td>` : ""}
+              <td class="qt-tot-cell">${totPh}</td>
+            </tr>
+            <tr class="${awayUs ? "is-lsbsc-row" : ""}">
+              <td class="qt-team-cell">${awayUs ? "🦁 " : ""}${current.away}</td>
+              <td>${qs.QT1.pa}</td>
+              <td>${qs.QT2.pa}</td>
+              <td class="qt-half-cell">${mt1A}</td>
+              <td>${qs.QT3.pa}</td>
+              <td>${qs.QT4.pa}</td>
+              <td class="qt-half-cell">${mt2A}</td>
+              ${hasOT ? `<td>${qs["Prol."].pa}</td>` : ""}
+              <td class="qt-tot-cell">${totPa}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="qt-box-card" style="border-left-color:#DC2626;">
+      <div class="qt-box-header">
+        <strong style="color:#991B1B;">⚠️ Fautes d'Équipe par Quart-Temps (Bonus à 5)</strong>
+      </div>
+      <div class="qt-table-scroll">
+        <table class="qt-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding-left:8px;">Équipe</th>
+              <th>QT1</th>
+              <th>QT2</th>
+              <th>QT3</th>
+              <th>QT4</th>
+              ${hasOT ? `<th>Prol.</th>` : ""}
+              <th class="qt-col-tot">TOTAL FAUTES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="${homeUs ? "is-lsbsc-row" : ""}">
+              <td class="qt-team-cell">${homeUs ? "🦁 " : ""}${current.home}</td>
+              <td class="${qs.QT1.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT1.fh}</td>
+              <td class="${qs.QT2.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT2.fh}</td>
+              <td class="${qs.QT3.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT3.fh}</td>
+              <td class="${qs.QT4.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT4.fh}</td>
+              ${hasOT ? `<td class="${qs["Prol."].fh >= 5 ? "qt-foul-bonus" : ""}">${qs["Prol."].fh}</td>` : ""}
+              <td class="qt-tot-cell">${totFh}</td>
+            </tr>
+            <tr class="${awayUs ? "is-lsbsc-row" : ""}">
+              <td class="qt-team-cell">${awayUs ? "🦁 " : ""}${current.away}</td>
+              <td class="${qs.QT1.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT1.fa}</td>
+              <td class="${qs.QT2.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT2.fa}</td>
+              <td class="${qs.QT3.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT3.fa}</td>
+              <td class="${qs.QT4.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT4.fa}</td>
+              ${hasOT ? `<td class="${qs["Prol."].fa >= 5 ? "qt-foul-bonus" : ""}">${qs["Prol."].fa}</td>` : ""}
+              <td class="qt-tot-cell">${totFa}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    ${hasData ? `
+      <div class="qt-kpi-grid">
+        <div class="qt-kpi-tile best-off">
+          <span class="qt-kpi-lbl">🔥 Meilleur QT Offensif LSBSC</span>
+          <span class="qt-kpi-val">${bestOffQt} : ${bestOffPts} pts marqués</span>
+          <span class="qt-kpi-sub">1re MT : ${homeUs ? mt1H : mt1A} pts • 2e MT : ${homeUs ? mt2H : mt2A} pts</span>
+        </div>
+        <div class="qt-kpi-tile best-def">
+          <span class="qt-kpi-lbl">🛡️ Meilleur QT Défensif LSBSC</span>
+          <span class="qt-kpi-val">${bestDefQt} : ${bestDefPts} pts encaissés</span>
+          <span class="qt-kpi-sub">Total encaissé : ${homeUs ? totPa : totPh} pts</span>
+        </div>
+        <div class="qt-kpi-tile shots-tile">
+          <span class="qt-kpi-lbl">🎯 Répartition Paniers LSBSC</span>
+          <span class="qt-kpi-val">${shotsSummaryTxt}</span>
+          <span class="qt-kpi-sub">Total LSBSC : ${homeUs ? totPh : totPa} pts</span>
+        </div>
+        <div class="qt-kpi-tile fouls-tile">
+          <span class="qt-kpi-lbl">⚖️ Discipline & Fautes</span>
+          <span class="qt-kpi-val">LSBSC : ${usTotalFouls} fautes (${(usTotalFouls / 4).toFixed(1)}/QT)</span>
+          <span class="qt-kpi-sub">Adversaire : ${oppTotalFouls} fautes (${(oppTotalFouls / 4).toFixed(1)}/QT)</span>
+        </div>
+      </div>
+    ` : ""}
+
+    ${staffEditHtml}
+  `;
+}
+
+// 6. Afficher un aperçu cliquable des quarts-temps sur le scoreboard principal et rafraîchir l'onglet Stats
+const _prevRenderRightColumnV29 = renderRightColumn;
+renderRightColumn = function() {
+  _prevRenderRightColumnV29();
+  const current = state.matches.find(m => m.id === state.selectedMatchId);
+  const summaryBar = document.getElementById("sbMatchSummaryBar");
+  if (current && summaryBar && hasRecordedQuarterStats(current)) {
+    const qs = ensureQuarterStats(current);
+    const stripTxt = `QT1 ${qs.QT1.ph}-${qs.QT1.pa} • QT2 ${qs.QT2.ph}-${qs.QT2.pa} • QT3 ${qs.QT3.ph}-${qs.QT3.pa} • QT4 ${qs.QT4.ph}-${qs.QT4.pa}`;
+    if (!summaryBar.querySelector(".qt-inline-strip")) {
+      summaryBar.insertAdjacentHTML(
+        "beforeend",
+        `<button type="button" class="qt-inline-strip" onclick="switchSelectedMatchTab('stats')" title="Voir les stats détaillées par quart-temps">📊 ${stripTxt} (Détails ↗)</button>`
+      );
+    }
+  }
+  if (state.selectedMatchViewTab === "stats") {
+    renderSelectedMatchStatsTab();
+  }
+};
+
+// 7. Ajouter le bouton "📊 Stats QT" sur chaque tuile de match Mobile ayant des données enregistrées + Bilan cumulé par QT par équipe !
+const _prevRenderSingleMobileMatchTileV29 = renderSingleMobileMatchTile;
+renderSingleMobileMatchTile = function(m) {
+  let html = _prevRenderSingleMobileMatchTileV29(m);
+  if (hasRecordedQuarterStats(m) && !html.includes("openStatsTabForMatch")) {
+    const qs = ensureQuarterStats(m);
+    const statsBtnHtml = `<button type="button" class="m-address-sub" style="background:#EFF6FF;color:#1E3A8A;border-color:#93C5FD;cursor:pointer;" onclick="event.stopPropagation();openStatsTabForMatch(${m.id})">📊 Stats QT (${qs.QT1.ph}-${qs.QT1.pa} / ${qs.QT2.ph}-${qs.QT2.pa} / ${qs.QT3.ph}-${qs.QT3.pa} / ${qs.QT4.ph}-${qs.QT4.pa})</button>`;
+    html = html.replace("</div>\n      <div class=\"m-team away\">", `${statsBtnHtml}</div>\n      <div class=\"m-team away\">`);
+  }
+  return html;
+};
+
+const _prevRenderMobileTeamsSectionV29 = renderMobileTeamsSection;
+renderMobileTeamsSection = function() {
+  _prevRenderMobileTeamsSectionV29();
+  const container = document.getElementById("mobileTeamsViewContainer");
+  if (!container || !state.mobileSelectedTeamCat) return;
+
+  const teamLiveMatches = state.matches.filter(m => m.cat === state.mobileSelectedTeamCat && hasRecordedQuarterStats(m));
+  if (teamLiveMatches.length === 0) return;
+
+  const n = teamLiveMatches.length;
+  const agg = {
+    QT1: { usP: 0, oppP: 0, usF: 0, oppF: 0 },
+    QT2: { usP: 0, oppP: 0, usF: 0, oppF: 0 },
+    QT3: { usP: 0, oppP: 0, usF: 0, oppF: 0 },
+    QT4: { usP: 0, oppP: 0, usF: 0, oppF: 0 }
+  };
+  let tot1 = 0, tot2 = 0, tot3 = 0;
+
+  teamLiveMatches.forEach(m => {
+    const qs = ensureQuarterStats(m);
+    const homeUs = isLSBSC(m.home);
+    ["QT1", "QT2", "QT3", "QT4"].forEach(k => {
+      agg[k].usP += homeUs ? (qs[k].ph || 0) : (qs[k].pa || 0);
+      agg[k].oppP += homeUs ? (qs[k].pa || 0) : (qs[k].ph || 0);
+      agg[k].usF += homeUs ? (qs[k].fh || 0) : (qs[k].fa || 0);
+      agg[k].oppF += homeUs ? (qs[k].fa || 0) : (qs[k].fh || 0);
+    });
+    QT_KEYS.forEach(k => {
+      tot1 += homeUs ? (qs[k].h1 || 0) : (qs[k].a1 || 0);
+      tot2 += homeUs ? (qs[k].h2 || 0) : (qs[k].a2 || 0);
+      tot3 += homeUs ? (qs[k].h3 || 0) : (qs[k].a3 || 0);
+    });
+  });
+
+  const seasonCardHtml = `
+    <div class="team-season-qt-card">
+      <h4>📊 Moyennes par Quart-Temps — ${state.mobileSelectedTeamCat} (${n} match${n > 1 ? "s" : ""} suivi${n > 1 ? "s" : ""} en direct)</h4>
+      <div class="qt-table-scroll">
+        <table class="qt-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding-left:8px;">Indicateur (Moy. / Match)</th>
+              <th>QT1</th>
+              <th>QT2</th>
+              <th>QT3</th>
+              <th>QT4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="is-lsbsc-row">
+              <td class="qt-team-cell">🦁 Pts Marqués LSBSC</td>
+              <td>${(agg.QT1.usP / n).toFixed(1)}</td>
+              <td>${(agg.QT2.usP / n).toFixed(1)}</td>
+              <td>${(agg.QT3.usP / n).toFixed(1)}</td>
+              <td>${(agg.QT4.usP / n).toFixed(1)}</td>
+            </tr>
+            <tr>
+              <td class="qt-team-cell">🛡️ Pts Encaissés</td>
+              <td>${(agg.QT1.oppP / n).toFixed(1)}</td>
+              <td>${(agg.QT2.oppP / n).toFixed(1)}</td>
+              <td>${(agg.QT3.oppP / n).toFixed(1)}</td>
+              <td>${(agg.QT4.oppP / n).toFixed(1)}</td>
+            </tr>
+            <tr>
+              <td class="qt-team-cell">⚠️ Fautes LSBSC / QT</td>
+              <td>${(agg.QT1.usF / n).toFixed(1)}</td>
+              <td>${(agg.QT2.usF / n).toFixed(1)}</td>
+              <td>${(agg.QT3.usF / n).toFixed(1)}</td>
+              <td>${(agg.QT4.usF / n).toFixed(1)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      ${(tot1 + tot2 + tot3) > 0 ? `
+        <div style="font-size:0.84rem;font-weight:800;color:#1E3A8A;background:#EFF6FF;padding:0.55rem 0.75rem;border-radius:0.7rem;">
+          🎯 Paniers cumulés sur les matchs suivis : <strong>${tot1}</strong> LF (1 pt) • <strong>${tot2}</strong> paniers (2 pts) • <strong>${tot3}</strong> tirs (3 pts)
+        </div>
+      ` : ""}
+    </div>
+  `;
+
+  const banner = container.querySelector("#mobSelectedTeamAnchor");
+  if (banner) {
+    banner.insertAdjacentHTML("afterend", seasonCardHtml);
+  }
+};
+
+
+/* ================= EXTENSION V30 : DÉBLOCAGE GARANTI DE L'ÉCRAN DE CHOIX DE FORMAT ================= */
+
+function forceCloseFormatOverlay() {
+  const overlay = document.getElementById("formatSelectorOverlay");
+  if (overlay) {
+    overlay.classList.remove("open");
+    overlay.style.display = "none";
+  }
+}
+
+window.chooseDisplayMode = function(mode) {
+  const targetMode = mode === "mobile" ? "mobile" : "tv";
+  try {
+    const remember = document.getElementById("chkRememberFormat");
+    if (remember && remember.checked) {
+      localStorage.setItem("lsbsc_preferred_format", targetMode);
+    }
+  } catch (e) {}
+
+  forceCloseFormatOverlay();
+
+  try {
+    if (typeof applyDisplayMode === "function") {
+      applyDisplayMode(targetMode);
+    } else {
+      state.displayMode = targetMode;
+      document.body.classList.remove("mode-tv", "mode-mobile");
+      document.body.classList.add(targetMode === "mobile" ? "mode-mobile" : "mode-tv");
+    }
+  } catch (e) {}
+
+  try {
+    if (typeof renderAll === "function") {
+      renderAll();
+    }
+  } catch (e) {}
+};
+
+window.openFormatOverlay = function() {
+  try { localStorage.removeItem("lsbsc_preferred_format"); } catch (e) {}
+  const overlay = document.getElementById("formatSelectorOverlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    overlay.classList.add("open");
+  }
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const savedMode = localStorage.getItem("lsbsc_preferred_format");
+    if (savedMode === "tv" || savedMode === "mobile") {
+      forceCloseFormatOverlay();
+      if (typeof applyDisplayMode === "function") {
+        applyDisplayMode(savedMode);
+      }
+    }
+  } catch (e) {}
+
+  const choices = document.querySelectorAll("#formatSelectorOverlay .format-card-btn");
+  if (choices && choices.length >= 2) {
+    choices[0].addEventListener("click", () => window.chooseDisplayMode("tv"));
+    choices[1].addEventListener("click", () => window.chooseDisplayMode("mobile"));
+  }
+});
+
+
+/* ================= EXTENSION V31 : FERMETURE IMPÉRATIVE DU SÉLECTEUR DE FORMAT ================= */
+(function() {
+  function hideFormatOverlayNow() {
+    var ov = document.getElementById("formatSelectorOverlay");
+    if (ov) {
+      ov.classList.remove("open");
+      ov.style.setProperty("display", "none", "important");
+    }
+  }
+
+  var prevChoose = window.chooseDisplayMode;
+  window.chooseDisplayMode = function(mode) {
+    hideFormatOverlayNow();
+    if (typeof prevChoose === "function") {
+      try { prevChoose(mode); } catch (e) {}
+    }
+    hideFormatOverlayNow();
+  };
+
+  document.addEventListener("DOMContentLoaded", function() {
+    var btns = document.querySelectorAll("#formatSelectorOverlay .format-card-btn");
+    if (btns[0]) {
+      btns[0].addEventListener("click", function(ev) {
+        ev.preventDefault();
+        window.chooseDisplayMode("tv");
+      });
+    }
+    if (btns[1]) {
+      btns[1].addEventListener("click", function(ev) {
+        ev.preventDefault();
+        window.chooseDisplayMode("mobile");
+      });
+    }
+  });
+})();

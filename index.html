@@ -18,7 +18,8 @@
 
   <!-- ================= ÉCRAN DE SÉLECTION DU FORMAT AU CHARGEMENT ================= -->
   <div id="formatSelectorOverlay" class="format-overlay open">
-    <div class="format-box">
+    <div class="format-box" style="position:relative;">
+      <button type="button" aria-label="Fermer" onclick="if(window.chooseDisplayMode){window.chooseDisplayMode(window.innerWidth<=820?'mobile':'tv');}else{var o=document.getElementById('formatSelectorOverlay');if(o){o.classList.remove('open');o.style.display='none';}}" style="position:absolute;top:12px;right:12px;background:#F1F5F9;color:#0F172A;border:1.5px solid #CBD5E1;border-radius:8px;padding:5px 10px;font-weight:900;cursor:pointer;font-size:0.85rem;">✖</button>
       <div class="format-logos">
         <img id="splashLogoImg" src="assets/logo-lsbsc.png" alt="Logo LSBSC">
         <img id="splashMascotImg" src="assets/mascotte-lsbsc.png" alt="Mascotte LSBSC">
@@ -204,15 +205,21 @@
           </div>
         </div>
 
-        <!-- ONGLETS DU MATCH SÉLECTIONNÉ : [ 🏀 Match & Direct ] | [ 📤 Partager (Réseaux / SMS / Mail) ] -->
-        <div class="sb-view-tabs">
+        <!-- ONGLETS DU MATCH SÉLECTIONNÉ : [ 🏀 Match & Direct ] | [ 📊 Stats & QT ] | [ 📤 Partager ] -->
+        <div class="sb-view-tabs sb-view-tabs-3">
           <button type="button" id="btnSbTabMatch" class="sb-view-tab active" onclick="switchSelectedMatchTab('match')">
-            🏀 Match & Infos
+            🏀 Match & Direct
+          </button>
+          <button type="button" id="btnSbTabStats" class="sb-view-tab" onclick="switchSelectedMatchTab('stats')">
+            📊 Stats & QT
           </button>
           <button type="button" id="btnSbTabShare" class="sb-view-tab" onclick="switchSelectedMatchTab('share')">
-            📤 Partager (Réseaux / SMS / Mail)
+            📤 Partager
           </button>
         </div>
+
+        <!-- VUE ONGLET STATS PAR QUART-TEMPS DU MATCH SÉLECTIONNÉ -->
+        <div id="sbStatsTabWrap" class="sb-stats-tab-wrap" style="display:none;"></div>
 
         <!-- VUE ONGLET PARTAGE DU MATCH SÉLECTIONNÉ -->
         <div id="sbShareTabWrap" class="sb-share-tab-wrap" style="display:none;"></div>
