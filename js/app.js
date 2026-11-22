@@ -4183,3 +4183,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 })();
+
+
+/* ================= EXTENSION V32 : SYNCHRONISATION IMMÉDIATE AU CHARGEMENT & FIX PLEIN ÉCRAN ================= */
+(function() {
+  // 1. Corriger window.forceFullScreen pour éviter l'avertissement navigateur sans geste utilisateur
+  window.forceFullScreen = function() {
+    try {
+      const docEl = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (docEl.requestFullscreen) {
+          const p = docEl.requestFullscreen();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        }
+      }
+    } catch (e) {}
+  };
+
+  // 2. Forcer la récupération immédiate depuis Firebase dès l'ouverture (avant d'attendre 5s)
+  async function syncNowFromCloud(forceFullRead) {
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (!targetUrl) return;
+    try {
+      const res = await fetch(targetUrl + (targetUrl.includes("?") ? "&" : "?") + "_t=" + Date.now(), {
+        headers: { "Accept": "application/json" },
+        cache: "no-store"
+      });
+      if (!res.ok) {
+        const syncEl = document.getElementById("syncStatusBadge");
+        if (syncEl) syncEl.textContent = "⚠️ Erreur Sync (" + res.status + ")";
+        return;
+      }
+      const data = await res.json();
+      if (data && Array.isArray(data.matches) && data.matches.length > 0) {
+        const remoteTs = Number(data.updatedAt) || 0;
+        if (forceFullRead || remoteTs > state.lastUpdatedAt) {
+          state.lastUpdatedAt = remoteTs || Date.now();
+          state.matches = overlaySchedule(data.matches);
+          if (data.tickerText) state.tickerText = data.tickerText;
+          if (data.buvetteMenuText) state.buvetteMenuText = data.buvetteMenuText;
+          if (data.clubInfosText) state.clubInfosText = data.clubInfosText;
+          if (data.tvDurations) state.tvDurations = Object.assign(state.tvDurations, data.tvDurations);
+          if (Array.isArray(data.trustedPins)) state.trustedPins = data.trustedPins;
+          if (data.clubAssets) state.clubAssets = Object.assign(state.clubAssets, data.clubAssets);
+          persistLocalOnly();
+          renderAll();
+          const syncEl = document.getElementById("syncStatusBadge");
+          if (syncEl) syncEl.textContent = "● Direct Synchronisé";
+        }
+      }
+    } catch (err) {
+      const syncEl = document.getElementById("syncStatusBadge");
+      if (syncEl) syncEl.textContent = "⚠️ Hors-ligne / Sync";
+    }
+  }
+
+  window.forceSyncNow = function() {
+    syncNowFromCloud(true);
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => syncNowFromCloud(true), 250);
+  });
+})();
