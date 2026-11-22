@@ -3453,7 +3453,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ================= EXTENSION V29 : COMPTABILISATION & STATISTIQUES PAR QUART-TEMPS (POINTS, FAUTES, TIRS & BILAN ÉQUIPE) ================= */
 
-const QT_KEYS = ["QT1", "QT2", "QT3", "QT4", "Prol."];
+const QT_KEYS = ["QT1", "QT2", "QT3", "QT4", "Prol"];
 
 if (typeof DYNAMIC_FIELDS !== "undefined" && !DYNAMIC_FIELDS.includes("quarterStats")) {
   DYNAMIC_FIELDS.push("quarterStats");
@@ -3465,7 +3465,7 @@ function normalizeActiveQuarter(period) {
   if (p === "QT2" || p === "Mi-Temps") return "QT2";
   if (p === "QT3") return "QT3";
   if (p === "QT4") return "QT4";
-  if (p === "Prol.") return "Prol.";
+  if (p === "Prol." || p === "Prol") return "Prol";
   return "QT1";
 }
 
@@ -3727,8 +3727,8 @@ window.copyMatchQuarterStatsText = function(matchId) {
     `• QT3 : ${qs.QT3.ph} - ${qs.QT3.pa}`,
     `• QT4 : ${qs.QT4.ph} - ${qs.QT4.pa}  (2e MT : ${mt2H} - ${mt2A})`
   ];
-  if ((qs["Prol."].ph || 0) > 0 || (qs["Prol."].pa || 0) > 0) {
-    lines.push(`• Prol. : ${qs["Prol."].ph} - ${qs["Prol."].pa}`);
+  if ((qs["Prol"].ph || 0) > 0 || (qs["Prol"].pa || 0) > 0) {
+    lines.push(`• Prol. : ${qs["Prol"].ph} - ${qs["Prol"].pa}`);
   }
   lines.push(
     `• TOTAL : ${m.sh} - ${m.sa}`,
@@ -3766,7 +3766,7 @@ function renderSelectedMatchStatsTab() {
   const homeUs = isLSBSC(current.home);
   const awayUs = isLSBSC(current.away);
 
-  const hasOT = (qs["Prol."].ph || 0) > 0 || (qs["Prol."].pa || 0) > 0 || (qs["Prol."].fh || 0) > 0 || (qs["Prol."].fa || 0) > 0 || current.period === "Prol.";
+  const hasOT = (qs["Prol"].ph || 0) > 0 || (qs["Prol"].pa || 0) > 0 || (qs["Prol"].fh || 0) > 0 || (qs["Prol"].fa || 0) > 0 || current.period === "Prol.";
 
   const mt1H = (qs.QT1.ph || 0) + (qs.QT2.ph || 0);
   const mt1A = (qs.QT1.pa || 0) + (qs.QT2.pa || 0);
@@ -3872,7 +3872,7 @@ function renderSelectedMatchStatsTab() {
               <td>${qs.QT3.ph}</td>
               <td>${qs.QT4.ph}</td>
               <td class="qt-half-cell">${mt2H}</td>
-              ${hasOT ? `<td>${qs["Prol."].ph}</td>` : ""}
+              ${hasOT ? `<td>${qs["Prol"].ph}</td>` : ""}
               <td class="qt-tot-cell">${totPh}</td>
             </tr>
             <tr class="${awayUs ? "is-lsbsc-row" : ""}">
@@ -3883,7 +3883,7 @@ function renderSelectedMatchStatsTab() {
               <td>${qs.QT3.pa}</td>
               <td>${qs.QT4.pa}</td>
               <td class="qt-half-cell">${mt2A}</td>
-              ${hasOT ? `<td>${qs["Prol."].pa}</td>` : ""}
+              ${hasOT ? `<td>${qs["Prol"].pa}</td>` : ""}
               <td class="qt-tot-cell">${totPa}</td>
             </tr>
           </tbody>
@@ -3915,7 +3915,7 @@ function renderSelectedMatchStatsTab() {
               <td class="${qs.QT2.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT2.fh}</td>
               <td class="${qs.QT3.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT3.fh}</td>
               <td class="${qs.QT4.fh >= 5 ? "qt-foul-bonus" : ""}">${qs.QT4.fh}</td>
-              ${hasOT ? `<td class="${qs["Prol."].fh >= 5 ? "qt-foul-bonus" : ""}">${qs["Prol."].fh}</td>` : ""}
+              ${hasOT ? `<td class="${qs["Prol"].fh >= 5 ? "qt-foul-bonus" : ""}">${qs["Prol"].fh}</td>` : ""}
               <td class="qt-tot-cell">${totFh}</td>
             </tr>
             <tr class="${awayUs ? "is-lsbsc-row" : ""}">
@@ -3924,7 +3924,7 @@ function renderSelectedMatchStatsTab() {
               <td class="${qs.QT2.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT2.fa}</td>
               <td class="${qs.QT3.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT3.fa}</td>
               <td class="${qs.QT4.fa >= 5 ? "qt-foul-bonus" : ""}">${qs.QT4.fa}</td>
-              ${hasOT ? `<td class="${qs["Prol."].fa >= 5 ? "qt-foul-bonus" : ""}">${qs["Prol."].fa}</td>` : ""}
+              ${hasOT ? `<td class="${qs["Prol"].fa >= 5 ? "qt-foul-bonus" : ""}">${qs["Prol"].fa}</td>` : ""}
               <td class="qt-tot-cell">${totFa}</td>
             </tr>
           </tbody>
@@ -4246,5 +4246,91 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => syncNowFromCloud(true), 250);
+  });
+})();
+
+
+/* ================= EXTENSION V33 : SANITISATION CLÉS FIREBASE (SANS '.', '$', '#', '[', ']', '/') ================= */
+(function() {
+  function sanitizeFirebaseKeys(obj) {
+    if (Array.isArray(obj)) {
+      return obj.map(sanitizeFirebaseKeys);
+    }
+    if (obj && typeof obj === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(obj)) {
+        const cleanKey = String(k).replace(/[.$#\[\]\/]/g, "_");
+        out[cleanKey] = sanitizeFirebaseKeys(v);
+      }
+      return out;
+    }
+    return obj;
+  }
+
+  function normalizeQuarterStatsObj(m) {
+    if (!m || !m.quarterStats || typeof m.quarterStats !== "object") return;
+    if (m.quarterStats["Prol_"] && !m.quarterStats["Prol"]) {
+      m.quarterStats["Prol"] = m.quarterStats["Prol_"];
+    }
+    if (m.quarterStats["Prol."] && !m.quarterStats["Prol"]) {
+      m.quarterStats["Prol"] = m.quarterStats["Prol."];
+    }
+    if (typeof ensureQuarterStats === "function") {
+      ensureQuarterStats(m);
+    }
+  }
+
+  const _origSaveStateV33 = window.saveState;
+  window.saveState = function(pushCloud = true) {
+    if (Array.isArray(state.matches)) {
+      state.matches.forEach(normalizeQuarterStatsObj);
+    }
+    const now = Date.now();
+    state.lastUpdatedAt = now;
+    const rawPayload = {
+      matches: state.matches,
+      tickerText: state.tickerText,
+      clubAssets: state.clubAssets,
+      buvetteMenuText: state.buvetteMenuText,
+      clubInfosText: state.clubInfosText,
+      tvDurations: state.tvDurations,
+      trustedPins: state.trustedPins,
+      updatedAt: now
+    };
+    try {
+      localStorage.setItem("lsbsc_state_v4", JSON.stringify(rawPayload));
+    } catch (e) {}
+    if (bcChannel) {
+      try { bcChannel.postMessage(rawPayload); } catch (e) {}
+    }
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (pushCloud && targetUrl) {
+      const safePayload = sanitizeFirebaseKeys(rawPayload);
+      fetch(targetUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(safePayload)
+      }).then(async (res) => {
+        const syncEl = document.getElementById("syncStatusBadge");
+        if (res.ok) {
+          if (syncEl) syncEl.textContent = "● Direct Synchronisé";
+        } else {
+          let errTxt = "";
+          try { errTxt = await res.text(); } catch (e) {}
+          console.warn("Firebase PUT error:", res.status, errTxt);
+          if (syncEl) syncEl.textContent = "⚠️ Erreur Sync (" + res.status + ")";
+        }
+      }).catch((err) => {
+        console.warn("Firebase PUT network error:", err);
+        const syncEl = document.getElementById("syncStatusBadge");
+        if (syncEl) syncEl.textContent = "⚠️ Hors-ligne / Sync";
+      });
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (Array.isArray(state.matches)) {
+      state.matches.forEach(normalizeQuarterStatsObj);
+    }
   });
 })();
