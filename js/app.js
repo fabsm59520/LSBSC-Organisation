@@ -5175,7 +5175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
-/* ================= EXTENSION V37 : PAGE SYNTHÈSE SAISON PAR ÉQUIPE, STATS PAR MATCH & IMPORT/EXPORT ================= */
+/* ================= EXTENSION V39 : AGRÉGATION JOUEUSES PAR IDENTITÉ (NOM/PRÉNOM NORMALISÉ) + SYNCHRO FIREBASE ================= */
 (function() {
   const STORAGE_KEY_PDF_STATS = "lsbsc_imported_pdf_stats_v1";
 
@@ -5184,7 +5184,26 @@ document.addEventListener("DOMContentLoaded", () => {
     team: "ALL",
     viewMode: "season", // 'season' | 'match'
     selectedMatchId: null,
-    importedReports: {}
+    importedReports: {},
+    lastCloudStatsSyncAt: 0
+  };
+
+  // Normalise un nom/prénom de joueuse (accents, casse, ponctuation, ordre NOM Prénom vs Prénom NOM)
+  function normalizePlayerIdentity(rawName) {
+    const base = String(rawName || "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!base) return "joueuse";
+    const parts = base.split(" ").filter(Boolean).sort();
+    return parts.join("_");
+  }
+
+  window.getImportedStatsMap = function() {
+    return sspState.importedReports || {};
   };
 
   function loadImportedReports() {
@@ -5205,7 +5224,89 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {}
   }
 
-  // Permet de récupérer le rapport PDF (intégré dans le code ou importé via JSON/CSV) pour n'importe quel match
+  function showImportFeedback(msg, isError = false) {
+    const box = document.getElementById("sspImportFeedback");
+    if (!box) return;
+    box.style.display = "block";
+    box.style.background = isError ? "#FEE2E2" : "#DCFCE7";
+    box.style.borderColor = isError ? "#EF4444" : "#22C55E";
+    box.style.color = isError ? "#991B1B" : "#14532D";
+    box.textContent = msg;
+  }
+
+  // Envoie les statistiques importées vers Firebase (sur le nœud /imported_stats.json et /lsbsc.json)
+  window.pushImportedStatsToCloud = async function(silent = false) {
+    const rawUrl = (typeof state !== "undefined" && state.syncUrl)
+      ? state.syncUrl
+      : (typeof DEFAULT_CLOUD_SYNC_URL !== "undefined" ? DEFAULT_CLOUD_SYNC_URL : "");
+    if (!rawUrl) {
+      if (!silent) showImportFeedback("⚠️ Aucune URL Firebase configurée dans Réglages (⚙️).", true);
+      return false;
+    }
+
+    const now = Date.now();
+    const statsPayload = {
+      importedPdfReports: sspState.importedReports || {},
+      updatedAt: now
+    };
+
+    try {
+      const dedicatedUrl = rawUrl.replace(/\.json(\?.*)?$/, "/imported_stats.json$1");
+      await fetch(dedicatedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(statsPayload)
+      });
+
+      if (typeof saveState === "function") {
+        saveState(true);
+      }
+
+      sspState.lastCloudStatsSyncAt = now;
+      if (!silent) {
+        showImportFeedback(`☁️ Statistiques synchronisées sur Firebase (${Object.keys(sspState.importedReports || {}).length} fiche(s)) !`);
+      }
+      return true;
+    } catch (err) {
+      if (!silent) {
+        showImportFeedback("❌ Erreur de synchronisation Firebase : vérifiez la connexion ou les règles de la base.", true);
+      }
+      return false;
+    }
+  };
+
+  // Récupère les statistiques importées depuis Firebase sur les autres appareils
+  window.pullImportedStatsFromCloud = async function(forceRender = false) {
+    const rawUrl = (typeof state !== "undefined" && state.syncUrl)
+      ? state.syncUrl
+      : (typeof DEFAULT_CLOUD_SYNC_URL !== "undefined" ? DEFAULT_CLOUD_SYNC_URL : "");
+    if (!rawUrl) return;
+
+    try {
+      const dedicatedUrl = rawUrl.replace(/\.json(\?.*)?$/, "/imported_stats.json$1");
+      const res = await fetch(dedicatedUrl, { headers: { "Accept": "application/json" } });
+      if (!res.ok) return;
+      const cloudData = await res.json();
+      if (!cloudData || typeof cloudData !== "object") return;
+
+      const cloudReports = cloudData.importedPdfReports || (typeof cloudData === "object" && !cloudData.updatedAt ? cloudData : null);
+      if (cloudReports && typeof cloudReports === "object") {
+        const cloudTs = Number(cloudData.updatedAt) || 0;
+        const hasCloudEntries = Object.keys(cloudReports).length > 0;
+        if (hasCloudEntries && (cloudTs > sspState.lastCloudStatsSyncAt || Object.keys(sspState.importedReports).length === 0)) {
+          sspState.importedReports = Object.assign({}, sspState.importedReports, cloudReports);
+          if (cloudTs > sspState.lastCloudStatsSyncAt) {
+            sspState.lastCloudStatsSyncAt = cloudTs;
+          }
+          saveImportedReports();
+          if (forceRender && sspState.isOpen) {
+            renderSeasonStatsPage();
+          }
+        }
+      }
+    } catch (e) {}
+  };
+
   const _prevGetPdfReport = window.getPdfMatchReport;
   window.getPdfMatchReport = function(matchId) {
     const idNum = Number(matchId);
@@ -5213,6 +5314,43 @@ document.addEventListener("DOMContentLoaded", () => {
       return sspState.importedReports[idNum];
     }
     return typeof _prevGetPdfReport === "function" ? _prevGetPdfReport(idNum) : null;
+  };
+
+  const _origSaveStateV39 = window.saveState;
+  window.saveState = function(pushCloud = true) {
+    if (typeof _origSaveStateV39 === "function") {
+      _origSaveStateV39(pushCloud);
+    }
+    try {
+      const savedRaw = localStorage.getItem("lsbsc_state_v4");
+      if (savedRaw) {
+        const parsed = JSON.parse(savedRaw);
+        parsed.importedPdfReports = sspState.importedReports || {};
+        localStorage.setItem("lsbsc_state_v4", JSON.stringify(parsed));
+      }
+    } catch (e) {}
+  };
+
+  const _origPollCloudV39 = window.pollCloudSync;
+  window.pollCloudSync = async function() {
+    if (typeof _origPollCloudV39 === "function") {
+      await _origPollCloudV39();
+    }
+    try {
+      const savedRaw = localStorage.getItem("lsbsc_state_v4");
+      if (savedRaw) {
+        const parsed = JSON.parse(savedRaw);
+        if (parsed && parsed.importedPdfReports && typeof parsed.importedPdfReports === "object") {
+          const merged = Object.assign({}, sspState.importedReports, parsed.importedPdfReports);
+          if (JSON.stringify(merged) !== JSON.stringify(sspState.importedReports)) {
+            sspState.importedReports = merged;
+            saveImportedReports();
+            if (sspState.isOpen) renderSeasonStatsPage();
+          }
+        }
+      }
+    } catch (e) {}
+    await window.pullImportedStatsFromCloud(true);
   };
 
   function syncPrivateStatsButtonVisibility() {
@@ -5240,6 +5378,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const upcoming = matches.filter(m => m.status === "upcoming" || m.status === "live" || m.status === "postponed");
 
     let wins = 0, losses = 0, draws = 0, ptsFor = 0, ptsAgainst = 0, pdfCount = 0;
+    // Regroupement par identité normalisée du nom de la joueuse (et non par numéro de maillot)
     const playerAgg = new Map();
 
     matches.forEach(m => {
@@ -5260,10 +5399,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const sideKey = rep.lsbscSide === "home" ? "home" : "away";
         const plist = rep.players[sideKey] || [];
         plist.forEach(p => {
-          const key = `${p.num || ""}__${p.name || ""}`;
-          const cur = playerAgg.get(key) || {
-            num: p.num || "-",
-            name: p.name || "Joueuse",
+          const rawName = String(p.name || "Joueuse").trim();
+          const identityKey = normalizePlayerIdentity(rawName);
+          const numVal = String(p.num || "").replace(/^#/, "").trim();
+
+          const cur = playerAgg.get(identityKey) || {
+            name: rawName,
+            numsSet: new Set(),
             games: 0,
             pts: 0,
             fg: 0,
@@ -5271,13 +5413,14 @@ document.addEventListener("DOMContentLoaded", () => {
             ft: 0,
             fouls: 0
           };
+          if (numVal) cur.numsSet.add("#" + numVal);
           cur.games += 1;
           cur.pts += Number(p.pts) || 0;
           cur.fg += Number(p.fg) || 0;
           cur.p3 += Number(p.p3) || 0;
           cur.ft += Number(p.ft) || 0;
           cur.fouls += Number(p.fouls) || 0;
-          playerAgg.set(key, cur);
+          playerAgg.set(identityKey, cur);
         });
       }
     });
@@ -5287,7 +5430,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const avgAgainst = gp > 0 ? (ptsAgainst / gp).toFixed(1) : "0.0";
     const diff = ptsFor - ptsAgainst;
 
-    const topPlayers = Array.from(playerAgg.values()).sort((a, b) => b.pts - a.pts);
+    const topPlayers = Array.from(playerAgg.values())
+      .map(p => ({
+        name: p.name,
+        numsLabel: Array.from(p.numsSet).join(", ") || "-",
+        games: p.games,
+        pts: p.pts,
+        fg: p.fg,
+        p3: p.p3,
+        ft: p.ft,
+        fouls: p.fouls
+      }))
+      .sort((a, b) => b.pts - a.pts);
 
     return {
       cat: catCode,
@@ -5364,15 +5518,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const playersHtml = sum.topPlayers.length > 0 ? `
       <div class="ssp-panel">
         <div class="ssp-panel-title">
-          <h3>🏅 Cumul Joueuses LSBSC sur les feuilles PDF (${teamTitle})</h3>
+          <h3>🏅 Cumul Joueuses LSBSC par Nom (tous numéros confondus) — ${teamTitle}</h3>
           <span style="font-size:0.76rem;font-weight:800;color:#475569;">${sum.pdfCount} feuille(s) analysée(s)</span>
         </div>
         <div class="ssp-table-wrap">
           <table class="ssp-table">
             <thead>
               <tr>
-                <th>N°</th>
                 <th style="text-align:left;">Joueuse</th>
+                <th>N° portés</th>
                 <th>Matchs PDF</th>
                 <th>Pts</th>
                 <th>Moy. Pts</th>
@@ -5385,8 +5539,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <tbody>
               ${sum.topPlayers.map(p => `
                 <tr>
-                  <td><strong>#${p.num}</strong></td>
                   <td class="left">${p.name}</td>
+                  <td><span style="font-size:0.74rem;color:#475569;">${p.numsLabel}</span></td>
                   <td>${p.games}</td>
                   <td><strong>${p.pts}</strong></td>
                   <td>${p.games > 0 ? (p.pts / p.games).toFixed(1) : "0.0"}</td>
@@ -5521,8 +5675,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const renderRows = (arr) => arr.map(p => `
         <tr class="${p.starter ? "starter-row" : ""}">
-          <td><strong>#${p.num}</strong></td>
           <td class="left">${p.name}</td>
+          <td><strong>#${p.num}</strong></td>
           <td>${p.min && p.min !== "00:00" ? p.min : "-"}</td>
           <td><strong>${p.pts}</strong></td>
           <td>${p.fg}</td>
@@ -5546,8 +5700,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <table class="ssp-table">
               <thead>
                 <tr>
-                  <th>N°</th>
                   <th style="text-align:left;">Joueuse</th>
+                  <th>N° Match</th>
                   <th>Tps</th>
                   <th>Pts</th>
                   <th>Tirs</th>
@@ -5567,8 +5721,8 @@ document.addEventListener("DOMContentLoaded", () => {
             <table class="ssp-table">
               <thead>
                 <tr>
-                  <th>N°</th>
                   <th style="text-align:left;">Joueuse</th>
+                  <th>N° Match</th>
                   <th>Tps</th>
                   <th>Pts</th>
                   <th>Tirs</th>
@@ -5629,6 +5783,7 @@ document.addEventListener("DOMContentLoaded", () => {
       pageEl.setAttribute("aria-hidden", "false");
     }
     renderSeasonStatsPage();
+    window.pullImportedStatsFromCloud(true);
   };
 
   window.closeSeasonStatsPage = function() {
@@ -5667,16 +5822,6 @@ document.addEventListener("DOMContentLoaded", () => {
     sspState.selectedMatchId = Number(matchId) || matchId;
     window.setSspViewMode("match");
   };
-
-  function showImportFeedback(msg, isError = false) {
-    const box = document.getElementById("sspImportFeedback");
-    if (!box) return;
-    box.style.display = "block";
-    box.style.background = isError ? "#FEE2E2" : "#DCFCE7";
-    box.style.borderColor = isError ? "#EF4444" : "#22C55E";
-    box.style.color = isError ? "#991B1B" : "#14532D";
-    box.textContent = msg;
-  }
 
   window.exportSeasonStatsJson = function() {
     const payload = {
@@ -5761,7 +5906,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const file = ev.target.files && ev.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const txt = String(e.target.result || "");
       try {
         if (file.name.toLowerCase().endsWith(".json") || txt.trim().startsWith("{")) {
@@ -5778,13 +5923,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
           }
           saveImportedReports();
-          showImportFeedback(`✅ Import JSON réussi : ${added} fiche(s) de statistiques ajoutée(s).`);
           renderSeasonStatsPage();
+          const synced = await window.pushImportedStatsToCloud(true);
+          showImportFeedback(
+            synced
+              ? `✅ Import JSON réussi (${added} fiche(s)) et synchronisé avec Firebase !`
+              : `✅ Import JSON réussi (${added} fiche(s)) en local — vérifiez la synchro Firebase si besoin.`
+          );
         } else {
           const addedRows = parseCsvStatsText(txt);
           saveImportedReports();
-          showImportFeedback(`✅ Import CSV réussi : ${addedRows} ligne(s) de statistiques importée(s).`);
           renderSeasonStatsPage();
+          const synced = await window.pushImportedStatsToCloud(true);
+          showImportFeedback(
+            synced
+              ? `✅ Import CSV réussi (${addedRows} ligne(s)) et synchronisé avec Firebase !`
+              : `✅ Import CSV réussi (${addedRows} ligne(s)) en local — vérifiez la synchro Firebase si besoin.`
+          );
         }
       } catch (err) {
         showImportFeedback("❌ Fichier invalide : vérifiez le format JSON ou CSV.", true);
@@ -5794,9 +5949,9 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsText(file, "utf-8");
   };
 
-  const _prevRenderAllV37 = renderAll;
+  const _prevRenderAllV39 = renderAll;
   renderAll = function() {
-    _prevRenderAllV37();
+    _prevRenderAllV39();
     syncPrivateStatsButtonVisibility();
     if (sspState.isOpen) {
       renderSeasonStatsPage();
@@ -5806,5 +5961,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("DOMContentLoaded", () => {
     loadImportedReports();
     syncPrivateStatsButtonVisibility();
+    window.pullImportedStatsFromCloud(false);
+    setInterval(() => {
+      if (!document.hidden) window.pullImportedStatsFromCloud(true);
+    }, 8000);
   });
 })();
