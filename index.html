@@ -86,6 +86,7 @@
       <button id="btnSwitchFormat" class="btn-top btn-format" onclick="toggleDisplayMode()" title="Basculer entre TV Paysage et Téléphone Allégé">📱 Version Mobile</button>
 
       <!-- Outils visibles uniquement en mode Direct / Scores (PIN 9694) -->
+      <button id="btnOpenSeasonStatsPage" class="btn-top coach-only-page-btn" style="display:none;" onclick="openSeasonStatsPage()" title="Synthèse saison par équipe, stats par match & import/export (Privé)">📊 Stats Saison & Matchs</button>
       <button class="btn-top btn-youtube staff-only-tool" onclick="openVideoGalleryModal()" title="Directs et replays YouTube & Twitch">📺 Vidéos & Live</button>
       <button class="btn-top btn-logos staff-only-tool" onclick="openClubAddressesModal()" title="Gérer les adresses des clubs et salles">📍 Adresses</button>
       <button class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')">🛡️ Logos</button>
@@ -216,6 +217,9 @@
           <button type="button" id="btnSbTabShare" class="sb-view-tab" onclick="switchSelectedMatchTab('share')">
             📤 Partager
           </button>
+          <button type="button" id="btnSbTabCoachPdf" class="sb-view-tab coach-only-tab" style="display:none;" onclick="switchSelectedMatchTab('coach_pdf')">
+            📋 Feuille / Coach
+          </button>
         </div>
 
         <!-- VUE ONGLET STATS PAR QUART-TEMPS DU MATCH SÉLECTIONNÉ -->
@@ -223,6 +227,9 @@
 
         <!-- VUE ONGLET PARTAGE DU MATCH SÉLECTIONNÉ -->
         <div id="sbShareTabWrap" class="sb-share-tab-wrap" style="display:none;"></div>
+
+        <!-- VUE ONGLET FEUILLE DE MATCH / STATS COACH & ADMIN (ACCÈS RESTREINT) -->
+        <div id="sbCoachPdfTabWrap" class="sb-stats-tab-wrap" style="display:none;"></div>
 
         <div id="sbArenaMainWrap" class="sb-arena-wrap">
           <div class="sb-arena">
@@ -514,6 +521,61 @@
         <button class="btn-action-sm btn-reset-up" onclick="closeVideoModal()">✖ Fermer</button>
       </div>
       <div id="videoModalBody" class="video-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ================= PAGE PRIVÉE : SYNTHÈSE SAISON PAR ÉQUIPE, STATS PAR MATCH & IMPORT/EXPORT ================= -->
+  <div id="seasonStatsPageOverlay" class="season-stats-page" style="display:none;" aria-hidden="true">
+    <div class="ssp-topbar">
+      <div class="ssp-brand">
+        <span class="ssp-badge">🔐 ESPACE PRIVÉ ADMIN & COACHS</span>
+        <h2>📊 Synthèse Saison par Équipe & Statistiques par Match</h2>
+      </div>
+      <div class="ssp-top-actions">
+        <button type="button" class="ssp-btn ssp-btn-export" onclick="exportSeasonStatsJson()">⬇️ Exporter JSON</button>
+        <label class="ssp-btn ssp-btn-import" style="cursor:pointer;">
+          ⬆️ Importer Stats (JSON / CSV)
+          <input type="file" id="inpImportSeasonStatsFile" accept=".json,.csv,application/json,text/csv" style="display:none;" onchange="handleSeasonStatsFileImport(event)">
+        </label>
+        <button type="button" class="ssp-btn ssp-btn-close" onclick="closeSeasonStatsPage()">✖ Fermer la page</button>
+      </div>
+    </div>
+
+    <div class="ssp-body">
+      <!-- Contrôles : Sélecteur d'équipe + Mode d'affichage (Synthèse Saison / Détail par Match) + Sélecteur de match -->
+      <div class="ssp-controls-card">
+        <div class="ssp-control-group">
+          <label for="sspTeamSelect">🏀 Équipe LSBSC :</label>
+          <select id="sspTeamSelect" class="ssp-select" onchange="onSspTeamChange(this.value)">
+            <option value="ALL">Toutes les équipes LSBSC</option>
+            <option value="U9">U9 Mixte Mini-Poussins</option>
+            <option value="U11F">U11F Poussines</option>
+            <option value="U13F">U13F Benjamines</option>
+            <option value="U15F">U15F Minimes</option>
+            <option value="U15M">U15M Minimes Garçons</option>
+            <option value="U18F">U18F Cadettes</option>
+            <option value="U18M">U18M Cadets</option>
+            <option value="SM1">Seniors Masculins 1</option>
+            <option value="SM2">Seniors Masculins 2</option>
+          </select>
+        </div>
+
+        <div class="ssp-mode-switch">
+          <button type="button" id="sspModeBtnSeason" class="ssp-mode-btn active" onclick="setSspViewMode('season')">📈 Synthèse Saison</button>
+          <button type="button" id="sspModeBtnMatch" class="ssp-mode-btn" onclick="setSspViewMode('match')">🏀 Stats par Match</button>
+        </div>
+
+        <div id="sspMatchSelectorWrap" class="ssp-control-group" style="display:none;">
+          <label for="sspMatchSelect">📅 Match :</label>
+          <select id="sspMatchSelect" class="ssp-select" onchange="onSspMatchChange(this.value)"></select>
+        </div>
+      </div>
+
+      <!-- Zone d'import rapide / statut d'importation -->
+      <div id="sspImportFeedback" class="ssp-import-feedback" style="display:none;"></div>
+
+      <!-- Contenu dynamique de la page -->
+      <div id="sspDynamicContent" class="ssp-content-grid"></div>
     </div>
   </div>
 

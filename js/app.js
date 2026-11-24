@@ -4334,3 +4334,1477 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 })();
+
+
+/* ================= EXTENSION V34 : GÉNÉRATION DE CARTE VISUELLE (PNG) & PARTAGE IMAGE WHATSAPP ================= */
+(function() {
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    const rad = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rad, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rad);
+    ctx.arcTo(x + w, y + h, x, y + h, rad);
+    ctx.arcTo(x, y + h, x, y, rad);
+    ctx.arcTo(x, y, x + w, y, rad);
+    ctx.closePath();
+  }
+
+  function wrapCanvasLines(ctx, text, maxWidth, maxLines) {
+    const words = String(text || "").split(/\s+/).filter(Boolean);
+    const lines = [];
+    let current = "";
+    for (const w of words) {
+      const test = current ? (current + " " + w) : w;
+      if (ctx.measureText(test).width <= maxWidth) {
+        current = test;
+      } else {
+        if (current) lines.push(current);
+        current = w;
+        if (lines.length >= maxLines) break;
+      }
+    }
+    if (current && lines.length < maxLines) {
+      lines.push(current);
+    }
+    return lines.length > 0 ? lines : [""];
+  }
+
+  function loadImageSafe(src, fallbackSrc) {
+    return new Promise((resolve) => {
+      if (!src) {
+        resolve(null);
+        return;
+      }
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        if (fallbackSrc && fallbackSrc !== src) {
+          const fb = new Image();
+          fb.onload = () => resolve(fb);
+          fb.onerror = () => resolve(null);
+          fb.src = fallbackSrc;
+        } else {
+          resolve(null);
+        }
+      };
+      img.src = src;
+    });
+  }
+
+  async function renderMatchShareCardCanvas(m) {
+    const W = 1080;
+    const H = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    // 1. Fond dégradé sportif bleu nuit / ardoise
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, "#0F172A");
+    bgGrad.addColorStop(0.55, "#1E3A8A");
+    bgGrad.addColorStop(1, "#0F172A");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Halo décoratif orange & bleu
+    const glow1 = ctx.createRadialGradient(W * 0.85, H * 0.15, 20, W * 0.85, H * 0.15, 420);
+    glow1.addColorStop(0, "rgba(234, 88, 12, 0.28)");
+    glow1.addColorStop(1, "rgba(234, 88, 12, 0)");
+    ctx.fillStyle = glow1;
+    ctx.fillRect(0, 0, W, H);
+
+    // Cadre extérieur doré/orange
+    ctx.strokeStyle = "rgba(245, 158, 11, 0.75)";
+    ctx.lineWidth = 6;
+    drawRoundedRect(ctx, 28, 28, W - 56, H - 56, 36);
+    ctx.stroke();
+
+    // 2. En-tête Club LSBSC
+    const logoSrc = (state.clubAssets && state.clubAssets.logo) || FALLBACK_LOGO_B64;
+    const mascotSrc = (state.clubAssets && state.clubAssets.mascot) || FALLBACK_MASCOT_B64;
+    const homeBadgeSrc = getTeamBadgeSrc(m.home);
+    const awayBadgeSrc = getTeamBadgeSrc(m.away);
+
+    const [logoImg, mascotImg, homeImg, awayImg] = await Promise.all([
+      loadImageSafe(logoSrc, FALLBACK_LOGO_B64),
+      loadImageSafe(mascotSrc, FALLBACK_MASCOT_B64),
+      loadImageSafe(homeBadgeSrc, FALLBACK_LOGO_B64),
+      loadImageSafe(awayBadgeSrc, FALLBACK_LOGO_B64)
+    ]);
+
+    if (logoImg) {
+      ctx.drawImage(logoImg, 64, 56, 108, 108);
+    }
+    if (mascotImg) {
+      ctx.drawImage(mascotImg, W - 172, 56, 108, 108);
+    }
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "900 34px Arial, sans-serif";
+    ctx.fillText("LILLE SUD BASKETBALL", W / 2, 102);
+    ctx.fillStyle = "#FCD34D";
+    ctx.font = "800 24px Arial, sans-serif";
+    ctx.fillText("SPORTING CLUB • SOUTH LILLE", W / 2, 140);
+
+    // 3. Pastille Catégorie & Domicile/Extérieur
+    const homeUs = isLSBSC(m.home);
+    const locLabel = homeUs ? "DOMICILE • LILLE SUD" : "EXTÉRIEUR • DÉPLACEMENT";
+    const catBannerText = `${m.cat} (${m.comp || "Champ."})  •  ${locLabel}`;
+    ctx.font = "900 24px Arial, sans-serif";
+    const pillW = Math.min(W - 140, ctx.measureText(catBannerText).width + 64);
+    ctx.fillStyle = "#EA580C";
+    drawRoundedRect(ctx, (W - pillW) / 2, 186, pillW, 52, 26);
+    ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(catBannerText, W / 2, 220);
+
+    // 4. Carte Centrale Blanche (Équipes + Score ou Horaire)
+    ctx.fillStyle = "#FFFFFF";
+    drawRoundedRect(ctx, 56, 268, W - 112, 470, 32);
+    ctx.fill();
+
+    // Bandeau de statut en haut de la carte blanche
+    const outcome = computeMatchOutcome(m);
+    let statusBg = "#EFF6FF";
+    let statusFg = "#1E3A8A";
+    let statusTitle = `🕒 RENCONTRE À VENIR • ${m.date} À ${m.time}`;
+
+    if (m.status === "live") {
+      statusBg = "#FEF2F2";
+      statusFg = "#DC2626";
+      statusTitle = `🔴 EN DIRECT • ${m.period || "QT1"}`;
+    } else if (m.status === "finished") {
+      if (outcome === "win") {
+        statusBg = "#DCFCE7";
+        statusFg = "#15803D";
+        statusTitle = "🏆 VICTOIRE LSBSC • SCORE FINAL";
+      } else if (outcome === "loss") {
+        statusBg = "#FEE2E2";
+        statusFg = "#B91C1C";
+        statusTitle = "SCORE FINAL • MATCH TERMINÉ";
+      } else {
+        statusBg = "#F1F5F9";
+        statusFg = "#334155";
+        statusTitle = "🤝 ÉGALITÉ • SCORE FINAL";
+      }
+    } else if (m.status === "postponed") {
+      statusBg = "#F3E8FF";
+      statusFg = "#6B21A8";
+      statusTitle = "📅 MATCH REPORTÉ";
+    } else if (m.status === "forfeit") {
+      statusBg = "#FEF3C7";
+      statusFg = "#92400E";
+      statusTitle = "🚫 FORFAIT OFFICIEL";
+    }
+
+    ctx.fillStyle = statusBg;
+    drawRoundedRect(ctx, 84, 292, W - 168, 56, 18);
+    ctx.fill();
+    ctx.fillStyle = statusFg;
+    ctx.font = "900 25px Arial, sans-serif";
+    ctx.fillText(statusTitle, W / 2, 329);
+
+    // Logos Équipes (Domicile à gauche, Extérieur à droite)
+    const leftX = 240;
+    const rightX = W - 240;
+    const badgeY = 382;
+    const badgeSize = 156;
+
+    if (homeImg) {
+      ctx.drawImage(homeImg, leftX - badgeSize / 2, badgeY, badgeSize, badgeSize);
+    }
+    if (awayImg) {
+      ctx.drawImage(awayImg, rightX - badgeSize / 2, badgeY, badgeSize, badgeSize);
+    }
+
+    // Centre : Score ou Horaire + VS
+    ctx.textAlign = "center";
+    if (m.status === "live" || m.status === "finished") {
+      ctx.fillStyle = "#0F172A";
+      drawRoundedRect(ctx, W / 2 - 165, 396, 330, 114, 24);
+      ctx.fill();
+
+      ctx.fillStyle = m.status === "live" ? "#F97316" : "#FFFFFF";
+      ctx.font = "900 68px Arial, sans-serif";
+      ctx.fillText(`${m.sh} - ${m.sa}`, W / 2, 476);
+    } else if (m.status === "postponed" || m.status === "forfeit") {
+      ctx.fillStyle = statusFg;
+      ctx.font = "900 36px Arial, sans-serif";
+      ctx.fillText(m.status === "postponed" ? "REPORTÉ" : "FORFAIT", W / 2, 466);
+    } else {
+      ctx.fillStyle = "#EA580C";
+      ctx.font = "900 54px Arial, sans-serif";
+      ctx.fillText("VS", W / 2, 452);
+      ctx.fillStyle = "#1E3A8A";
+      ctx.font = "900 32px Arial, sans-serif";
+      ctx.fillText(m.time || "", W / 2, 496);
+    }
+
+    // Noms des équipes (sur 2 lignes max)
+    ctx.font = "900 26px Arial, sans-serif";
+    ctx.fillStyle = homeUs ? "#EA580C" : "#0F172A";
+    const homeLines = wrapCanvasLines(ctx, m.home, 360, 2);
+    homeLines.forEach((line, idx) => {
+      ctx.fillText(line, leftX, 586 + idx * 34);
+    });
+
+    ctx.fillStyle = isLSBSC(m.away) ? "#EA580C" : "#0F172A";
+    const awayLines = wrapCanvasLines(ctx, m.away, 360, 2);
+    awayLines.forEach((line, idx) => {
+      ctx.fillText(line, rightX, 586 + idx * 34);
+    });
+
+    // Détail par quart-temps si disponible
+    if (typeof hasRecordedQuarterStats === "function" && hasRecordedQuarterStats(m)) {
+      const qs = ensureQuarterStats(m);
+      const qtLine = `QT1 ${qs.QT1.ph}-${qs.QT1.pa}  •  QT2 ${qs.QT2.ph}-${qs.QT2.pa}  •  QT3 ${qs.QT3.ph}-${qs.QT3.pa}  •  QT4 ${qs.QT4.ph}-${qs.QT4.pa}`;
+      ctx.fillStyle = "#EFF6FF";
+      drawRoundedRect(ctx, 110, 668, W - 220, 44, 14);
+      ctx.fill();
+      ctx.fillStyle = "#1E3A8A";
+      ctx.font = "800 21px Arial, sans-serif";
+      ctx.fillText(qtLine, W / 2, 697);
+    } else {
+      ctx.fillStyle = "#64748B";
+      ctx.font = "800 22px Arial, sans-serif";
+      ctx.fillText(`${m.wkLabel || ""}`, W / 2, 696);
+    }
+
+    // 5. Bloc Infos Pratiques (Date, Salle) sans adresse exacte
+    const info = getMatchVenueInfo(m);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+    drawRoundedRect(ctx, 56, 766, W - 112, 168, 26);
+    ctx.strokeStyle = "rgba(147, 197, 253, 0.45)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fill();
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "800 26px Arial, sans-serif";
+    ctx.fillText(`📅 ${m.date} à ${m.time}   •   🏟️ ${info.salle}`, W / 2, 822);
+
+    if (info.precision) {
+      ctx.fillStyle = "#FDE68A";
+      ctx.font = "700 22px Arial, sans-serif";
+      ctx.fillText(`📌 ${info.precision}`, W / 2, 864);
+      ctx.fillStyle = "#93C5FD";
+      ctx.font = "700 21px Arial, sans-serif";
+      ctx.fillText("📲 Suivez le direct & l'itinéraire GPS sur l'appli LSBSC", W / 2, 906);
+    } else {
+      ctx.fillStyle = "#93C5FD";
+      ctx.font = "800 23px Arial, sans-serif";
+      ctx.fillText("📲 Suivez le direct & l'itinéraire GPS sur l'appli LSBSC", W / 2, 874);
+    }
+
+    // 6. Pied de carte
+    ctx.fillStyle = "#F59E0B";
+    ctx.font = "900 22px Arial, sans-serif";
+    ctx.fillText("ALLEZ LES LIONS DU LSBSC ! 🦁🏀", W / 2, 992);
+
+    return canvas;
+  }
+
+  function canvasToPngBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      try {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("toBlob null"));
+        }, "image/png");
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  window.shareMatchAsImage = async function(matchId) {
+    const m = state.matches.find(x => x.id === matchId) || state.matches.find(x => x.id === state.selectedMatchId);
+    if (!m) return;
+
+    const btn = document.getElementById("btnShareImageTile");
+    const origHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+      btn.innerHTML = `<span class="share-tile-ico">⏳</span><span>Création de l'image...</span>`;
+    }
+
+    try {
+      const canvas = await renderMatchShareCardCanvas(m);
+      const blob = await canvasToPngBlob(canvas);
+      const safeCat = (m.cat || "LSBSC").replace(/[^a-zA-Z0-9_-]/g, "");
+      const fileName = `LSBSC-${safeCat}-match-${m.id}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+      const payload = buildMatchSharePayload(m);
+
+      // Partage natif avec fichier image (ouvre directement WhatsApp / Messagerie sur téléphone)
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: payload.subject,
+          text: `${m.home} vs ${m.away} (${m.date} à ${m.time}) — Direct & GPS : ${payload.appUrl}`
+        });
+        if (btn) btn.innerHTML = origHtml;
+        return;
+      }
+
+      // Secours PC / navigateur sans partage de fichiers : téléchargement automatique du PNG
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+      if (btn) {
+        btn.innerHTML = `<span class="share-tile-ico">✅</span><span>Image PNG téléchargée !</span>`;
+        setTimeout(() => { if (btn) btn.innerHTML = origHtml; }, 2200);
+      }
+    } catch (err) {
+      if (btn) btn.innerHTML = origHtml;
+      if (err && err.name === "AbortError") return;
+      alert("Impossible de générer l'image sur ce navigateur.");
+    }
+  };
+
+  window.downloadMatchShareImage = async function(matchId) {
+    const m = state.matches.find(x => x.id === matchId) || state.matches.find(x => x.id === state.selectedMatchId);
+    if (!m) return;
+    try {
+      const canvas = await renderMatchShareCardCanvas(m);
+      const blob = await canvasToPngBlob(canvas);
+      const safeCat = (m.cat || "LSBSC").replace(/[^a-zA-Z0-9_-]/g, "");
+      const fileName = `LSBSC-${safeCat}-match-${m.id}.png`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (e) {
+      alert("Erreur lors du téléchargement de l'image.");
+    }
+  };
+
+  // Enrichir l'onglet Partage avec l'aperçu de la carte image + bouton "Partager en Image (WhatsApp)" + "Télécharger Image"
+  const _prevRenderSelectedMatchShareTabV34 = renderSelectedMatchShareTab;
+  renderSelectedMatchShareTab = function() {
+    _prevRenderSelectedMatchShareTabV34();
+    const shareWrap = document.getElementById("sbShareTabWrap");
+    if (!shareWrap) return;
+    const current = state.matches.find(m => m.id === state.selectedMatchId) || state.matches[0];
+    if (!current) return;
+
+    const tilesGrid = shareWrap.querySelector(".share-tiles-grid");
+    if (tilesGrid && !document.getElementById("btnShareImageTile")) {
+      tilesGrid.insertAdjacentHTML(
+        "afterbegin",
+        `
+        <button type="button" id="btnShareImageTile" class="share-tile-btn" style="background:linear-gradient(135deg,#16A34A,#15803D);color:#FFFFFF;grid-column:1 / -1;" onclick="shareMatchAsImage(${current.id})">
+          <span class="share-tile-ico">🖼️</span>
+          <span>Partager en Image PNG (WhatsApp / Réseaux)</span>
+        </button>
+        <button type="button" class="share-tile-btn" style="background:#0F172A;color:#FCD34D;" onclick="downloadMatchShareImage(${current.id})">
+          <span class="share-tile-ico">⬇️</span>
+          <span>Télécharger l'Image</span>
+        </button>
+        `
+      );
+    }
+  };
+})();
+
+
+/* ================= EXTENSION V36 : FICHES MATCHS PDF (DONNÉES JOUEUSES & RATIOS) RÉSERVÉES ADMIN & COACHS ================= */
+(function() {
+  const PDF_MATCH_REPORTS = {
+    3: {
+      matchRef: "Rencontre N° 6110 • DFU18 Poule D",
+      dateLabel: "12/09/26 à 18:30 • LILLE",
+      arbitres: "BORIGHEM C • DUFAY P",
+      homeTeam: "LILLE-EST BASKET-1",
+      awayTeam: "LILLE SUD BASKET-BALL SPORTING CLUB",
+      lsbscSide: "away",
+      finalScore: { home: 66, away: 21 },
+      halves: {
+        home: { h1: 29, h2: 37, ot: 0, total: 66, foulsH1: 11, foulsH2: 5, foulsTot: 16 },
+        away: { h1: 11, h2: 10, ot: 0, total: 21, foulsH1: 12, foulsH2: 6, foulsTot: 18 }
+      },
+      ratios: {
+        home: { maxLead: 45, maxRun: 15, benchPts: 28, ties: 0, leadTime: "39:30" },
+        away: { maxLead: 0, maxRun: 4, benchPts: 7, ties: 0, leadTime: "00:00" }
+      },
+      players: {
+        home: [
+          { num: "4",  name: "GARATE LERGA, Eider", starter: false, min: "34:06", pts: 11, fg: 4, p3: 0, p2in: 4, p2out: 0, ft: 3, fouls: 1 },
+          { num: "5",  name: "Defoe, Annaelle", starter: true,  min: "34:28", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 1 },
+          { num: "6",  name: "Medahi, Hind", starter: false, min: "33:46", pts: 7,  fg: 3, p3: 0, p2in: 3, p2out: 0, ft: 1, fouls: 3 },
+          { num: "7",  name: "Idrissi, Inaya", starter: false, min: "32:16", pts: 4,  fg: 2, p3: 0, p2in: 1, p2out: 1, ft: 0, fouls: 1 },
+          { num: "8",  name: "Tandji, Assil", starter: true,  min: "33:27", pts: 5,  fg: 1, p3: 1, p2in: 0, p2out: 0, ft: 2, fouls: 3 },
+          { num: "9",  name: "Nempont, Jeanne", starter: true,  min: "36:48", pts: 10, fg: 4, p3: 0, p2in: 4, p2out: 0, ft: 2, fouls: 1 },
+          { num: "10", name: "DENIS, Sofia", starter: false, min: "35:36", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 3 },
+          { num: "12", name: "NAELS, Erine", starter: false, min: "34:35", pts: 4,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 0, fouls: 0 },
+          { num: "13", name: "Tchako Touabou Kadji, Axelle", starter: true, min: "35:17", pts: 19, fg: 9, p3: 0, p2in: 9, p2out: 0, ft: 1, fouls: 2 },
+          { num: "14", name: "GARATE LERGA, Amets", starter: true,  min: "34:57", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 1 }
+        ],
+        away: [
+          { num: "4",  name: "AIT MOHA, Chaima", starter: false, min: "36:51", pts: 2, fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 0 },
+          { num: "5",  name: "Fouad, Zéïna", starter: true,  min: "37:09", pts: 5, fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 1, fouls: 0 },
+          { num: "7",  name: "Keita, Marieme", starter: false, min: "33:21", pts: 2, fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 1 },
+          { num: "8",  name: "AOLAD AISSA, Maissa", starter: true,  min: "39:32", pts: 2, fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 2 },
+          { num: "9",  name: "MESSO FOIRESTIER, Melodie", starter: true,  min: "34:58", pts: 0, fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 },
+          { num: "10", name: "VENDEVILLE, Samia", starter: false, min: "34:05", pts: 3, fg: 1, p3: 1, p2in: 0, p2out: 0, ft: 0, fouls: 2 },
+          { num: "11", name: "Pognon-sabir, Lila", starter: true,  min: "35:42", pts: 2, fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 3 },
+          { num: "12", name: "LOUAIL, Nour", starter: false, min: "29:31", pts: 0, fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 },
+          { num: "14", name: "OUCHEN, Israh", starter: true,  min: "32:12", pts: 5, fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 3, fouls: 4 },
+          { num: "15", name: "KOLAI, Tasnime", starter: false, min: "31:54", pts: 0, fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 4 }
+        ]
+      }
+    },
+    7: {
+      matchRef: "Rencontre N° 6132 • DFU18 Poule D",
+      dateLabel: "19/09/26 à 18:30 • LILLE",
+      arbitres: "JAUMOUILLE L • EN-NABBADI N",
+      homeTeam: "LILLE SUD BASKET-BALL SPORTING CLUB",
+      awayTeam: "WATTRELOS BC",
+      lsbscSide: "home",
+      finalScore: { home: 55, away: 44 },
+      halves: {
+        home: { h1: 29, h2: 26, ot: 0, total: 55, foulsH1: 12, foulsH2: 18, foulsTot: 30 },
+        away: { h1: 9,  h2: 35, ot: 0, total: 44, foulsH1: 9,  foulsH2: 9,  foulsTot: 18 }
+      },
+      ratios: {
+        home: { maxLead: 22, maxRun: 11, benchPts: 13, ties: 0, leadTime: "14:51" },
+        away: { maxLead: 0,  maxRun: 10, benchPts: 3,  ties: 0, leadTime: "00:00" }
+      },
+      players: {
+        home: [
+          { num: "4",  name: "ABOU CHAAYA, Sila", starter: false, min: "13:39", pts: 2,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 2, fouls: 0 },
+          { num: "5",  name: "Fouad, Zéïna", starter: true,  min: "20:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 5 },
+          { num: "7",  name: "Keita, Marieme", starter: false, min: "19:50", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 },
+          { num: "8",  name: "AOLAD AISSA, Maissa", starter: true,  min: "29:11", pts: 14, fg: 4, p3: 2, p2in: 2, p2out: 0, ft: 4, fouls: 2 },
+          { num: "9",  name: "MESSO FOIRESTIER, Melodie", starter: false, min: "18:03", pts: 7,  fg: 3, p3: 1, p2in: 1, p2out: 1, ft: 0, fouls: 5 },
+          { num: "10", name: "VENDEVILLE, Samia", starter: true,  min: "31:17", pts: 11, fg: 4, p3: 2, p2in: 2, p2out: 0, ft: 1, fouls: 3 },
+          { num: "11", name: "Pognon-sabir, Lila", starter: false, min: "18:34", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 4 },
+          { num: "12", name: "LOUAIL, Nour", starter: false, min: "07:37", pts: 2,  fg: 1, p3: 0, p2in: 0, p2out: 1, ft: 0, fouls: 2 },
+          { num: "14", name: "OUCHEN, Israh", starter: true,  min: "30:11", pts: 13, fg: 6, p3: 1, p2in: 5, p2out: 0, ft: 0, fouls: 4 },
+          { num: "15", name: "KOLAI, Tasnime", starter: true,  min: "23:00", pts: 2,  fg: 1, p3: 0, p2in: 0, p2out: 1, ft: 0, fouls: 4 }
+        ],
+        away: [
+          { num: "4",  name: "BAYART, Selene", starter: false, min: "11:09", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 2 },
+          { num: "6",  name: "LECLERCQ, Zelie", starter: true,  min: "22:13", pts: 1,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 1, fouls: 4 },
+          { num: "7",  name: "SKENDER, Lilya", starter: true,  min: "28:59", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 4 },
+          { num: "8",  name: "RENAUX, Zélie", starter: true,  min: "37:59", pts: 28, fg: 9, p3: 1, p2in: 7, p2out: 1, ft: 9, fouls: 1 },
+          { num: "11", name: "PREVOST, Jannah", starter: false, min: "18:58", pts: 3,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 1, fouls: 4 },
+          { num: "13", name: "ADAM, Emma", starter: true,  min: "34:35", pts: 8,  fg: 3, p3: 0, p2in: 3, p2out: 0, ft: 2, fouls: 1 },
+          { num: "15", name: "CUDEAUX, Leane", starter: false, min: "19:12", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "23", name: "BARBENSON, Mya", starter: true,  min: "27:04", pts: 4,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 0, fouls: 2 }
+        ]
+      }
+    },
+    15: {
+      matchRef: "Rencontre N° 6154 • DFU18 Poule D",
+      dateLabel: "26/09/26 à 18:30 • WAMBRECHIES",
+      arbitres: "HUCKEN A • WAMBRE M",
+      homeTeam: "WAMBRECHIES J",
+      awayTeam: "LILLE SUD BASKET-BALL SPORTING CLUB",
+      lsbscSide: "away",
+      finalScore: { home: 40, away: 32 },
+      halves: {
+        home: { h1: 20, h2: 20, ot: 0, total: 40, foulsH1: 6, foulsH2: 14, foulsTot: 20 },
+        away: { h1: 14, h2: 18, ot: 0, total: 32, foulsH1: 7, foulsH2: 7,  foulsTot: 14 }
+      },
+      ratios: {
+        home: { maxLead: 12, maxRun: 6, benchPts: 15, ties: 1, leadTime: "40:00" },
+        away: { maxLead: 0,  maxRun: 5, benchPts: 2,  ties: 1, leadTime: "00:00" }
+      },
+      players: {
+        home: [
+          { num: "4",  name: "BROUCQSAULT, Marine", starter: true,  min: "09:45", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 4 },
+          { num: "5",  name: "DE PONTON D AMECOURT, Ellie", starter: true, min: "02:12", pts: 0, fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 },
+          { num: "6",  name: "COUSTENOBLE, Jeanne", starter: false, min: "00:00", pts: 0, fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "7",  name: "BILLARD-GUILLOT, Amarante", starter: true, min: "10:00", pts: 9, fg: 4, p3: 0, p2in: 3, p2out: 1, ft: 1, fouls: 4 },
+          { num: "8",  name: "PLEUX, Jade", starter: false, min: "07:48", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "9",  name: "REYNS, Laly", starter: false, min: "00:15", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 4 },
+          { num: "10", name: "LEGRAND, Juline", starter: false, min: "07:33", pts: 3,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 1, fouls: 1 },
+          { num: "11", name: "LECOUTRE, Chloe", starter: true,  min: "02:27", pts: 6,  fg: 3, p3: 0, p2in: 3, p2out: 0, ft: 0, fouls: 2 },
+          { num: "12", name: "HENSGEN, Lise", starter: true,  min: "02:12", pts: 8,  fg: 4, p3: 0, p2in: 3, p2out: 1, ft: 0, fouls: 4 },
+          { num: "13", name: "Levant, Lola", starter: false, min: "07:48", pts: 10, fg: 5, p3: 0, p2in: 5, p2out: 0, ft: 0, fouls: 0 }
+        ],
+        away: [
+          { num: "4",  name: "ABOU CHAAYA, Sila", starter: false, min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 0 },
+          { num: "5",  name: "Fouad, Zéïna", starter: true,  min: "02:27", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 1 },
+          { num: "7",  name: "Keita, Marieme", starter: false, min: "07:33", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 },
+          { num: "8",  name: "AOLAD AISSA, Maissa", starter: true,  min: "02:12", pts: 5,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 1, fouls: 4 },
+          { num: "9",  name: "MESSO FOIRESTIER, Melodie", starter: true,  min: "02:12", pts: 5,  fg: 2, p3: 1, p2in: 1, p2out: 0, ft: 0, fouls: 1 },
+          { num: "10", name: "VENDEVILLE, Samia", starter: false, min: "07:48", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 3 },
+          { num: "11", name: "Pognon-sabir, Lila", starter: false, min: "07:48", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "12", name: "AIT MOHA, Chaima", starter: false, min: "07:48", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 },
+          { num: "14", name: "OUCHEN, Israh", starter: true,  min: "10:00", pts: 14, fg: 6, p3: 0, p2in: 6, p2out: 0, ft: 2, fouls: 1 },
+          { num: "15", name: "KOLAI, Tasnime", starter: true,  min: "02:12", pts: 4,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 0, fouls: 2 }
+        ]
+      }
+    },
+    22: {
+      matchRef: "Rencontre N° 6174 • DFU18 Poule D",
+      dateLabel: "03/10/26 à 17:00 • LILLE",
+      arbitres: "EN-NABBADI N • RICHARD M",
+      homeTeam: "LILLE SUD BASKET-BALL SPORTING CLUB",
+      awayTeam: "MARCQ EN BAROEUL ASJ",
+      lsbscSide: "home",
+      finalScore: { home: 37, away: 70 },
+      halves: {
+        home: { h1: 16, h2: 21, ot: 0, total: 37, foulsH1: 11, foulsH2: 13, foulsTot: 24 },
+        away: { h1: 33, h2: 37, ot: 0, total: 70, foulsH1: 15, foulsH2: 6,  foulsTot: 21 }
+      },
+      ratios: {
+        home: { maxLead: 0,  maxRun: 6,  benchPts: 10, ties: 0, leadTime: "00:00" },
+        away: { maxLead: 34, maxRun: 12, benchPts: 24, ties: 0, leadTime: "40:00" }
+      },
+      players: {
+        home: [
+          { num: "4",  name: "AIT MOHA, Chaima", starter: false, min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 0 },
+          { num: "5",  name: "Fouad, Zéïna", starter: true,  min: "00:00", pts: 8,  fg: 4, p3: 0, p2in: 3, p2out: 1, ft: 0, fouls: 4 },
+          { num: "7",  name: "Keita, Marieme", starter: false, min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 0 },
+          { num: "8",  name: "AOLAD AISSA, Maissa", starter: true,  min: "00:00", pts: 11, fg: 3, p3: 1, p2in: 2, p2out: 0, ft: 4, fouls: 4 },
+          { num: "9",  name: "MESSO FOIRESTIER, Melodie", starter: true,  min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 1 },
+          { num: "10", name: "VENDEVILLE, Samia", starter: false, min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 3 },
+          { num: "11", name: "Pognon-sabir, Lila", starter: false, min: "00:00", pts: 4,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 0, fouls: 3 },
+          { num: "12", name: "KOLAI, Tasnime", starter: true,  min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 5 },
+          { num: "14", name: "OUCHEN, Israh", starter: true,  min: "00:00", pts: 4,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 0, fouls: 3 },
+          { num: "15", name: "ABOU CHAAYA, Sila", starter: false, min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 1 }
+        ],
+        away: [
+          { num: "6",  name: "COULIER, Jade", starter: false, min: "00:00", pts: 7,  fg: 3, p3: 0, p2in: 3, p2out: 0, ft: 1, fouls: 0 },
+          { num: "9",  name: "WIKRZAK LECOCQ, Rosalie", starter: false, min: "00:00", pts: 2, fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 2, fouls: 3 },
+          { num: "11", name: "LEGRAND, Anaelle", starter: true,  min: "00:00", pts: 7,  fg: 3, p3: 0, p2in: 3, p2out: 0, ft: 1, fouls: 3 },
+          { num: "13", name: "VANBESIEN, Lily", starter: false, min: "00:00", pts: 8,  fg: 4, p3: 0, p2in: 3, p2out: 1, ft: 0, fouls: 4 },
+          { num: "14", name: "VASSEUR, Hanaë", starter: true,  min: "00:00", pts: 6,  fg: 3, p3: 0, p2in: 3, p2out: 0, ft: 0, fouls: 3 },
+          { num: "19", name: "HEYDARZADEH TAHERI, Dayana", starter: true, min: "00:00", pts: 10, fg: 5, p3: 0, p2in: 5, p2out: 0, ft: 0, fouls: 3 },
+          { num: "22", name: "PECHON, Lilas", starter: false, min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 1 },
+          { num: "23", name: "VERMEERSCH, Kaelia", starter: true,  min: "00:00", pts: 11, fg: 5, p3: 1, p2in: 3, p2out: 1, ft: 0, fouls: 2 },
+          { num: "24", name: "RENARD, Lilou", starter: true,  min: "00:00", pts: 12, fg: 5, p3: 0, p2in: 5, p2out: 0, ft: 2, fouls: 2 },
+          { num: "34", name: "COMMEYNE, Naomi", starter: false, min: "00:00", pts: 5,  fg: 2, p3: 0, p2in: 1, p2out: 1, ft: 1, fouls: 0 }
+        ]
+      }
+    },
+    32: {
+      matchRef: "Rencontre N° 6195 • DFU18 Poule D",
+      dateLabel: "10/10/26 à 18:30 • LILLE",
+      arbitres: "DECOTTIGNIES • NUTTENS R • LEMAITRE N",
+      homeTeam: "LILLE SUD BASKET-BALL SPORTING CLUB",
+      awayTeam: "LOOSSOIS BASKET CLUB",
+      lsbscSide: "home",
+      finalScore: { home: 61, away: 23 },
+      halves: {
+        home: { h1: 24, h2: 37, ot: 0, total: 61, foulsH1: 8, foulsH2: 5, foulsTot: 13 },
+        away: { h1: 12, h2: 11, ot: 0, total: 23, foulsH1: 5, foulsH2: 8, foulsTot: 13 }
+      },
+      ratios: {
+        home: { maxLead: 38, maxRun: 16, benchPts: 28, ties: 1, leadTime: "40:00" },
+        away: { maxLead: 2,  maxRun: 4,  benchPts: 3,  ties: 1, leadTime: "00:00" }
+      },
+      players: {
+        home: [
+          { num: "4",  name: "ABOU CHAAYA, Sila", starter: false, min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "5",  name: "Fouad, Zéïna", starter: true,  min: "00:00", pts: 5,  fg: 2, p3: 0, p2in: 2, p2out: 0, ft: 1, fouls: 3 },
+          { num: "7",  name: "Keita, Marieme", starter: false, min: "00:00", pts: 1,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 1, fouls: 2 },
+          { num: "8",  name: "AOLAD AISSA, Maissa", starter: true,  min: "00:00", pts: 11, fg: 4, p3: 2, p2in: 1, p2out: 1, ft: 1, fouls: 2 },
+          { num: "9",  name: "MESSO FOIRESTIER, Melodie", starter: false, min: "00:00", pts: 7,  fg: 3, p3: 1, p2in: 2, p2out: 0, ft: 0, fouls: 1 },
+          { num: "10", name: "VENDEVILLE, Samia", starter: true,  min: "00:00", pts: 9,  fg: 4, p3: 1, p2in: 3, p2out: 0, ft: 0, fouls: 1 },
+          { num: "11", name: "KOLAI, Tasnime", starter: true,  min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 2 },
+          { num: "12", name: "LOUAIL, Nour", starter: false, min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "14", name: "OUCHEN, Israh", starter: false, min: "00:00", pts: 20, fg: 8, p3: 2, p2in: 4, p2out: 2, ft: 2, fouls: 2 },
+          { num: "15", name: "AIT MOHA, Chaima", starter: true,  min: "00:00", pts: 8,  fg: 4, p3: 0, p2in: 4, p2out: 0, ft: 0, fouls: 0 }
+        ],
+        away: [
+          { num: "1",  name: "Zahraoui, Noha", starter: true,  min: "00:00", pts: 2,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 0, fouls: 4 },
+          { num: "2",  name: "ANTONIOL, Josephine", starter: false, min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 },
+          { num: "3",  name: "DONGO, Noémie", starter: true,  min: "00:00", pts: 11, fg: 5, p3: 0, p2in: 4, p2out: 1, ft: 1, fouls: 4 },
+          { num: "4",  name: "PAMART, Rosalie", starter: true,  min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 4 },
+          { num: "5",  name: "NIANGANE, Médina", starter: true,  min: "00:00", pts: 3,  fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 1, fouls: 1 },
+          { num: "6",  name: "AKAKPO, Maëlle", starter: true,  min: "00:00", pts: 4,  fg: 2, p3: 0, p2in: 1, p2out: 1, ft: 0, fouls: 0 },
+          { num: "7",  name: "POIGNANT DE GUBERNATIS, Soléane", starter: false, min: "00:00", pts: 3, fg: 1, p3: 0, p2in: 1, p2out: 0, ft: 1, fouls: 0 },
+          { num: "8",  name: "QUESTIER, Ines", starter: false, min: "00:00", pts: 0,  fg: 0, p3: 0, p2in: 0, p2out: 0, ft: 0, fouls: 0 }
+        ]
+      }
+    }
+  };
+
+  window.getPdfMatchReport = function(matchId) {
+    return PDF_MATCH_REPORTS[Number(matchId)] || null;
+  };
+
+  function syncCoachTabVisibility() {
+    const tabBtn = document.getElementById("btnSbTabCoachPdf");
+    const coachWrap = document.getElementById("sbCoachPdfTabWrap");
+    const unlocked = Boolean(state.staffUnlocked);
+
+    if (tabBtn) {
+      tabBtn.style.display = unlocked ? "inline-flex" : "none";
+    }
+    if (!unlocked) {
+      if (coachWrap) coachWrap.style.display = "none";
+      if (state.selectedMatchViewTab === "coach_pdf") {
+        state.selectedMatchViewTab = "match";
+        const arenaWrap = document.getElementById("sbArenaMainWrap");
+        const btnMatch = document.getElementById("btnSbTabMatch");
+        if (arenaWrap) arenaWrap.style.display = "flex";
+        if (btnMatch) btnMatch.classList.add("active");
+        if (tabBtn) tabBtn.classList.remove("active");
+      }
+    }
+  }
+
+  function renderPlayerRows(list) {
+    return (list || []).map(p => `
+      <tr class="${p.starter ? "starter-row" : ""}">
+        <td><strong>#${p.num}</strong></td>
+        <td class="p-name">${p.name}</td>
+        <td>${p.min && p.min !== "00:00" ? p.min : "-"}</td>
+        <td><strong>${p.pts}</strong></td>
+        <td>${p.fg}</td>
+        <td>${p.p3}</td>
+        <td>${p.p2in}</td>
+        <td>${p.p2out}</td>
+        <td>${p.ft}</td>
+        <td class="${p.fouls >= 5 ? "qt-foul-bonus" : ""}">${p.fouls}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderCoachPdfTab() {
+    const coachWrap = document.getElementById("sbCoachPdfTabWrap");
+    if (!coachWrap) return;
+
+    if (!state.staffUnlocked) {
+      coachWrap.style.display = "none";
+      return;
+    }
+
+    const current = state.matches.find(m => m.id === state.selectedMatchId) || state.matches[0];
+    const report = current ? getPdfMatchReport(current.id) : null;
+    const roleLabel = state.activeStaffName ? `${state.activeStaffName}` : "Staff / Coach";
+
+    if (!report) {
+      coachWrap.innerHTML = `
+        <div class="coach-stats-banner">
+          <div>
+            <h4>📋 Feuille de Match & Stats Coach (${current ? current.cat : ""})</h4>
+            <p>Accès réservé Admin & Coachs • Connecté : ${roleLabel}</p>
+          </div>
+          <span class="coach-lock-pill">🔐 Privé Coach / Admin</span>
+        </div>
+        <div class="qt-box-card">
+          <div style="font-size:0.84rem;font-weight:800;color:#475569;text-align:center;padding:12px;">
+            Aucune feuille de match PDF importée pour cette rencontre pour le moment.<br>
+            <span style="font-size:0.76rem;color:#64748B;">Transmettez le PDF de la rencontre pour l'ajouter à cette fiche.</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const lsbscIsHome = report.lsbscSide === "home";
+    const oppSide = lsbscIsHome ? "away" : "home";
+    const rLsbsc = report.ratios[report.lsbscSide];
+    const rOpp = report.ratios[oppSide];
+    const hLsbsc = report.halves[report.lsbscSide];
+    const hOpp = report.halves[oppSide];
+    const oppTeamName = lsbscIsHome ? report.awayTeam : report.homeTeam;
+    const lsbscLocTag = lsbscIsHome ? "Domicile" : "Extérieur";
+    const oppLocTag = lsbscIsHome ? "Visiteurs" : "Locaux";
+
+    coachWrap.innerHTML = `
+      <div class="coach-stats-banner">
+        <div>
+          <h4>📋 ${report.matchRef} — Analyse PDF</h4>
+          <p>${report.dateLabel} • Arbitres : ${report.arbitres} • Vue : ${roleLabel}</p>
+        </div>
+        <span class="coach-lock-pill">🔐 Réservé Admin & Coachs</span>
+      </div>
+
+      <div class="qt-box-card">
+        <div class="qt-box-header">
+          <strong>📈 Mi-Temps & Ratios (${report.homeTeam} ${report.finalScore.home} - ${report.finalScore.away} ${report.awayTeam})</strong>
+        </div>
+        <div class="coach-ratios-grid">
+          <div class="coach-ratio-tile">
+            <span>Mi-temps LSBSC (${lsbscLocTag})</span>
+            <strong>1re MT : ${hLsbsc.h1} • 2e MT : ${hLsbsc.h2}</strong>
+          </div>
+          <div class="coach-ratio-tile">
+            <span>Avantage max LSBSC</span>
+            <strong>+${rLsbsc.maxLead} pts (${rLsbsc.leadTime})</strong>
+          </div>
+          <div class="coach-ratio-tile">
+            <span>Série / Banc LSBSC</span>
+            <strong>Série ${rLsbsc.maxRun} • Banc ${rLsbsc.benchPts} pts</strong>
+          </div>
+          <div class="coach-ratio-tile">
+            <span>Mi-temps Adversaire</span>
+            <strong>1re MT : ${hOpp.h1} • 2e MT : ${hOpp.h2}</strong>
+          </div>
+          <div class="coach-ratio-tile">
+            <span>Avantage max Adversaire</span>
+            <strong>+${rOpp.maxLead} pts (${rOpp.leadTime})</strong>
+          </div>
+          <div class="coach-ratio-tile">
+            <span>Série / Banc Adversaire</span>
+            <strong>Série ${rOpp.maxRun} • Banc ${rOpp.benchPts} pts</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="qt-box-card" style="border-left-color:#EA580C;">
+        <div class="qt-box-header">
+          <strong style="color:#9A3412;">🦁 Joueuses LSBSC (${lsbscLocTag}) — Total : ${hLsbsc.total} pts • ${hLsbsc.foulsTot} fautes (1re MT: ${hLsbsc.foulsH1}, 2e MT: ${hLsbsc.foulsH2})</strong>
+        </div>
+        <div class="qt-table-scroll">
+          <table class="coach-players-table">
+            <thead>
+              <tr>
+                <th>N°</th>
+                <th style="text-align:left;">Joueuse</th>
+                <th>Tps</th>
+                <th>Pts</th>
+                <th>Tirs</th>
+                <th>3pts</th>
+                <th>2Int</th>
+                <th>2Ext</th>
+                <th>LF</th>
+                <th>Ftes</th>
+              </tr>
+            </thead>
+            <tbody>${renderPlayerRows(report.players[report.lsbscSide])}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="qt-box-card">
+        <div class="qt-box-header">
+          <strong>🏀 Joueuses Adverses — ${oppTeamName} (${oppLocTag}) — Total : ${hOpp.total} pts • ${hOpp.foulsTot} fautes</strong>
+        </div>
+        <div class="qt-table-scroll">
+          <table class="coach-players-table">
+            <thead>
+              <tr>
+                <th>N°</th>
+                <th style="text-align:left;">Joueuse</th>
+                <th>Tps</th>
+                <th>Pts</th>
+                <th>Tirs</th>
+                <th>3pts</th>
+                <th>2Int</th>
+                <th>2Ext</th>
+                <th>LF</th>
+                <th>Ftes</th>
+              </tr>
+            </thead>
+            <tbody>${renderPlayerRows(report.players[oppSide])}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  window.switchSelectedMatchTab = function(tabName) {
+    if (tabName === "coach_pdf" && !state.staffUnlocked) {
+      if (typeof requestPinAccess === "function") requestPinAccess("staff");
+      return;
+    }
+    const validTab = ["match", "stats", "share", "coach_pdf"].includes(tabName) ? tabName : "match";
+    state.selectedMatchViewTab = validTab;
+
+    const btnMatch = document.getElementById("btnSbTabMatch");
+    const btnStats = document.getElementById("btnSbTabStats");
+    const btnShare = document.getElementById("btnSbTabShare");
+    const btnCoach = document.getElementById("btnSbTabCoachPdf");
+    const arenaWrap = document.getElementById("sbArenaMainWrap");
+    const statsWrap = document.getElementById("sbStatsTabWrap");
+    const shareWrap = document.getElementById("sbShareTabWrap");
+    const coachWrap = document.getElementById("sbCoachPdfTabWrap");
+
+    if (btnMatch) btnMatch.classList.toggle("active", validTab === "match");
+    if (btnStats) btnStats.classList.toggle("active", validTab === "stats");
+    if (btnShare) btnShare.classList.toggle("active", validTab === "share");
+    if (btnCoach) btnCoach.classList.toggle("active", validTab === "coach_pdf");
+
+    if (arenaWrap) arenaWrap.style.display = validTab === "match" ? "flex" : "none";
+    if (statsWrap) {
+      statsWrap.style.display = validTab === "stats" ? "flex" : "none";
+      if (validTab === "stats" && typeof renderSelectedMatchStatsTab === "function") renderSelectedMatchStatsTab();
+    }
+    if (shareWrap) {
+      shareWrap.style.display = validTab === "share" ? "flex" : "none";
+      if (validTab === "share" && typeof renderSelectedMatchShareTab === "function") renderSelectedMatchShareTab();
+    }
+    if (coachWrap) {
+      coachWrap.style.display = (validTab === "coach_pdf" && state.staffUnlocked) ? "flex" : "none";
+      if (validTab === "coach_pdf" && state.staffUnlocked) renderCoachPdfTab();
+    }
+  };
+
+  const _prevRenderRightV36 = renderRightColumn;
+  renderRightColumn = function() {
+    _prevRenderRightV36();
+    syncCoachTabVisibility();
+    if (state.selectedMatchViewTab === "coach_pdf" && state.staffUnlocked) {
+      const arenaWrap = document.getElementById("sbArenaMainWrap");
+      const statsWrap = document.getElementById("sbStatsTabWrap");
+      const shareWrap = document.getElementById("sbShareTabWrap");
+      const coachWrap = document.getElementById("sbCoachPdfTabWrap");
+      if (arenaWrap) arenaWrap.style.display = "none";
+      if (statsWrap) statsWrap.style.display = "none";
+      if (shareWrap) shareWrap.style.display = "none";
+      if (coachWrap) {
+        coachWrap.style.display = "flex";
+        renderCoachPdfTab();
+      }
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    syncCoachTabVisibility();
+  });
+})();
+
+
+/* ================= EXTENSION V37 : PAGE SYNTHÈSE SAISON PAR ÉQUIPE, STATS PAR MATCH & IMPORT/EXPORT ================= */
+(function() {
+  const STORAGE_KEY_PDF_STATS = "lsbsc_imported_pdf_stats_v1";
+
+  const sspState = {
+    isOpen: false,
+    team: "ALL",
+    viewMode: "season", // 'season' | 'match'
+    selectedMatchId: null,
+    importedReports: {}
+  };
+
+  function loadImportedReports() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_PDF_STATS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          sspState.importedReports = parsed;
+        }
+      }
+    } catch (e) {}
+  }
+
+  function saveImportedReports() {
+    try {
+      localStorage.setItem(STORAGE_KEY_PDF_STATS, JSON.stringify(sspState.importedReports));
+    } catch (e) {}
+  }
+
+  // Permet de récupérer le rapport PDF (intégré dans le code ou importé via JSON/CSV) pour n'importe quel match
+  const _prevGetPdfReport = window.getPdfMatchReport;
+  window.getPdfMatchReport = function(matchId) {
+    const idNum = Number(matchId);
+    if (sspState.importedReports && sspState.importedReports[idNum]) {
+      return sspState.importedReports[idNum];
+    }
+    return typeof _prevGetPdfReport === "function" ? _prevGetPdfReport(idNum) : null;
+  };
+
+  function syncPrivateStatsButtonVisibility() {
+    const btn = document.getElementById("btnOpenSeasonStatsPage");
+    const unlocked = Boolean(state.staffUnlocked);
+    if (btn) {
+      btn.style.display = unlocked ? "inline-flex" : "none";
+    }
+    if (!unlocked && sspState.isOpen) {
+      window.closeSeasonStatsPage();
+    }
+  }
+
+  function getLsbscScoreForMatch(m) {
+    const homeIsUs = isLSBSC(m.home);
+    const awayIsUs = isLSBSC(m.away);
+    if (homeIsUs) return { us: Number(m.sh) || 0, opp: Number(m.sa) || 0, loc: "Domicile" };
+    if (awayIsUs) return { us: Number(m.sa) || 0, opp: Number(m.sh) || 0, loc: "Extérieur" };
+    return { us: Number(m.sh) || 0, opp: Number(m.sa) || 0, loc: "Club" };
+  }
+
+  function getTeamSeasonSummary(catCode) {
+    const matches = (state.matches || []).filter(m => catCode === "ALL" || m.cat === catCode);
+    const played = matches.filter(m => m.status === "finished" || m.status === "forfeit");
+    const upcoming = matches.filter(m => m.status === "upcoming" || m.status === "live" || m.status === "postponed");
+
+    let wins = 0, losses = 0, draws = 0, ptsFor = 0, ptsAgainst = 0, pdfCount = 0;
+    const playerAgg = new Map();
+
+    matches.forEach(m => {
+      const rep = window.getPdfMatchReport(m.id);
+      if (rep) pdfCount++;
+
+      if (m.status === "finished" || m.status === "forfeit") {
+        const sc = getLsbscScoreForMatch(m);
+        ptsFor += sc.us;
+        ptsAgainst += sc.opp;
+        const out = computeMatchOutcome(m);
+        if (out === "win") wins++;
+        else if (out === "loss") losses++;
+        else if (out === "draw") draws++;
+      }
+
+      if (rep && rep.players) {
+        const sideKey = rep.lsbscSide === "home" ? "home" : "away";
+        const plist = rep.players[sideKey] || [];
+        plist.forEach(p => {
+          const key = `${p.num || ""}__${p.name || ""}`;
+          const cur = playerAgg.get(key) || {
+            num: p.num || "-",
+            name: p.name || "Joueuse",
+            games: 0,
+            pts: 0,
+            fg: 0,
+            p3: 0,
+            ft: 0,
+            fouls: 0
+          };
+          cur.games += 1;
+          cur.pts += Number(p.pts) || 0;
+          cur.fg += Number(p.fg) || 0;
+          cur.p3 += Number(p.p3) || 0;
+          cur.ft += Number(p.ft) || 0;
+          cur.fouls += Number(p.fouls) || 0;
+          playerAgg.set(key, cur);
+        });
+      }
+    });
+
+    const gp = played.length;
+    const avgFor = gp > 0 ? (ptsFor / gp).toFixed(1) : "0.0";
+    const avgAgainst = gp > 0 ? (ptsAgainst / gp).toFixed(1) : "0.0";
+    const diff = ptsFor - ptsAgainst;
+
+    const topPlayers = Array.from(playerAgg.values()).sort((a, b) => b.pts - a.pts);
+
+    return {
+      cat: catCode,
+      totalMatches: matches.length,
+      playedCount: gp,
+      upcomingCount: upcoming.length,
+      wins,
+      losses,
+      draws,
+      ptsFor,
+      ptsAgainst,
+      avgFor,
+      avgAgainst,
+      diff,
+      pdfCount,
+      matches,
+      topPlayers
+    };
+  }
+
+  function populateMatchSelector() {
+    const sel = document.getElementById("sspMatchSelect");
+    if (!sel) return;
+    const list = (state.matches || []).filter(m => sspState.team === "ALL" || m.cat === sspState.team);
+    if (list.length === 0) {
+      sel.innerHTML = `<option value="">Aucun match disponible</option>`;
+      sspState.selectedMatchId = null;
+      return;
+    }
+    if (!list.some(m => String(m.id) === String(sspState.selectedMatchId))) {
+      sspState.selectedMatchId = list[0].id;
+    }
+    sel.innerHTML = list.map(m => {
+      const hasPdf = window.getPdfMatchReport(m.id) ? " [PDF]" : "";
+      const scoreTxt = (m.status === "finished" || m.status === "live") ? ` (${m.sh}-${m.sa})` : ` (${m.time})`;
+      return `<option value="${m.id}" ${String(m.id) === String(sspState.selectedMatchId) ? "selected" : ""}>${m.date} • ${m.cat} • ${m.home} vs ${m.away}${scoreTxt}${hasPdf}</option>`;
+    }).join("");
+  }
+
+  function renderSeasonSummaryView() {
+    const contentEl = document.getElementById("sspDynamicContent");
+    if (!contentEl) return;
+
+    const sum = getTeamSeasonSummary(sspState.team);
+    const teamTitle = sspState.team === "ALL" ? "Toutes les équipes LSBSC" : `Équipe ${sspState.team}`;
+
+    const matchRowsHtml = sum.matches.map(m => {
+      const sc = getLsbscScoreForMatch(m);
+      const out = computeMatchOutcome(m);
+      let resBadge = "🕒 À venir";
+      if (m.status === "live") resBadge = "🔴 En direct";
+      else if (m.status === "postponed") resBadge = "📅 Reporté";
+      else if (m.status === "forfeit") resBadge = "🚫 Forfait";
+      else if (m.status === "finished") {
+        resBadge = out === "win" ? "✅ Victoire" : (out === "loss" ? "❌ Défaite" : "🤝 Nul");
+      }
+      const rep = window.getPdfMatchReport(m.id);
+      return `
+        <tr>
+          <td>${m.date}</td>
+          <td><strong>${m.cat}</strong></td>
+          <td class="left">${m.home} vs ${m.away}</td>
+          <td>${sc.loc}</td>
+          <td><strong>${m.status === "upcoming" ? m.time : `${m.sh} - ${m.sa}`}</strong></td>
+          <td>${resBadge}</td>
+          <td>${rep ? `<span style="color:#15803D;font-weight:900;">✓ ${rep.matchRef || "PDF"}</span>` : `<span style="color:#94A3B8;">—</span>`}</td>
+          <td>
+            <button type="button" class="ssp-btn-open-match" onclick="openSingleMatchInStatsPage(${m.id})">Voir stats</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    const playersHtml = sum.topPlayers.length > 0 ? `
+      <div class="ssp-panel">
+        <div class="ssp-panel-title">
+          <h3>🏅 Cumul Joueuses LSBSC sur les feuilles PDF (${teamTitle})</h3>
+          <span style="font-size:0.76rem;font-weight:800;color:#475569;">${sum.pdfCount} feuille(s) analysée(s)</span>
+        </div>
+        <div class="ssp-table-wrap">
+          <table class="ssp-table">
+            <thead>
+              <tr>
+                <th>N°</th>
+                <th style="text-align:left;">Joueuse</th>
+                <th>Matchs PDF</th>
+                <th>Pts</th>
+                <th>Moy. Pts</th>
+                <th>Tirs</th>
+                <th>3pts</th>
+                <th>LF</th>
+                <th>Fautes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sum.topPlayers.map(p => `
+                <tr>
+                  <td><strong>#${p.num}</strong></td>
+                  <td class="left">${p.name}</td>
+                  <td>${p.games}</td>
+                  <td><strong>${p.pts}</strong></td>
+                  <td>${p.games > 0 ? (p.pts / p.games).toFixed(1) : "0.0"}</td>
+                  <td>${p.fg}</td>
+                  <td>${p.p3}</td>
+                  <td>${p.ft}</td>
+                  <td>${p.fouls}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : "";
+
+    contentEl.innerHTML = `
+      <div class="ssp-kpi-row">
+        <div class="ssp-kpi-card">
+          <span>Bilan (${teamTitle})</span>
+          <strong>${sum.wins}V - ${sum.losses}D${sum.draws ? ` - ${sum.draws}N` : ""}</strong>
+          <small>${sum.playedCount} joué(s) / ${sum.totalMatches} programmé(s)</small>
+        </div>
+        <div class="ssp-kpi-card orange">
+          <span>Points Marqués LSBSC</span>
+          <strong>${sum.ptsFor} pts</strong>
+          <small>Moyenne : ${sum.avgFor} pts / match</small>
+        </div>
+        <div class="ssp-kpi-card">
+          <span>Points Encaissés</span>
+          <strong>${sum.ptsAgainst} pts</strong>
+          <small>Moyenne : ${sum.avgAgainst} pts / match</small>
+        </div>
+        <div class="ssp-kpi-card green">
+          <span>Différentiel</span>
+          <strong>${sum.diff >= 0 ? `+${sum.diff}` : sum.diff}</strong>
+          <small>Écart global saison</small>
+        </div>
+        <div class="ssp-kpi-card gold">
+          <span>Feuilles Stats PDF</span>
+          <strong>${sum.pdfCount}</strong>
+          <small>Disponibles en détail</small>
+        </div>
+      </div>
+
+      ${playersHtml}
+
+      <div class="ssp-panel">
+        <div class="ssp-panel-title">
+          <h3>📅 Tous les matchs (${teamTitle}) — Sélection rapide des stats par match</h3>
+        </div>
+        <div class="ssp-table-wrap">
+          <table class="ssp-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Cat.</th>
+                <th style="text-align:left;">Rencontre</th>
+                <th>Lieu</th>
+                <th>Score / Heure</th>
+                <th>Statut</th>
+                <th>Feuille PDF</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>${matchRowsHtml}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMatchDetailInSeasonPage() {
+    const contentEl = document.getElementById("sspDynamicContent");
+    if (!contentEl) return;
+
+    const m = (state.matches || []).find(x => String(x.id) === String(sspState.selectedMatchId));
+    if (!m) {
+      contentEl.innerHTML = `<div class="ssp-panel"><p style="font-weight:800;color:#475569;">Sélectionnez un match dans la liste ci-dessus.</p></div>`;
+      return;
+    }
+
+    const rep = window.getPdfMatchReport(m.id);
+    const hasQt = typeof hasRecordedQuarterStats === "function" && hasRecordedQuarterStats(m);
+    const qs = typeof ensureQuarterStats === "function" ? ensureQuarterStats(m) : null;
+
+    const qtBlockHtml = (hasQt && qs) ? `
+      <div class="ssp-panel">
+        <div class="ssp-panel-title">
+          <h3>⏱️ Points & Fautes par Quart-Temps (Table Direct)</h3>
+        </div>
+        <div class="ssp-table-wrap">
+          <table class="ssp-table">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Ligne</th>
+                <th>QT1</th>
+                <th>QT2</th>
+                <th>QT3</th>
+                <th>QT4</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="left">Pts ${m.home}</td>
+                <td>${qs.QT1.ph}</td>
+                <td>${qs.QT2.ph}</td>
+                <td>${qs.QT3.ph}</td>
+                <td>${qs.QT4.ph}</td>
+                <td><strong>${m.sh}</strong></td>
+              </tr>
+              <tr>
+                <td class="left">Pts ${m.away}</td>
+                <td>${qs.QT1.pa}</td>
+                <td>${qs.QT2.pa}</td>
+                <td>${qs.QT3.pa}</td>
+                <td>${qs.QT4.pa}</td>
+                <td><strong>${m.sa}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : "";
+
+    let pdfBlockHtml = "";
+    if (rep) {
+      const lsbscIsHome = rep.lsbscSide === "home";
+      const oppSide = lsbscIsHome ? "away" : "home";
+      const lsbscPlayers = (rep.players && rep.players[rep.lsbscSide]) || [];
+      const oppPlayers = (rep.players && rep.players[oppSide]) || [];
+
+      const renderRows = (arr) => arr.map(p => `
+        <tr class="${p.starter ? "starter-row" : ""}">
+          <td><strong>#${p.num}</strong></td>
+          <td class="left">${p.name}</td>
+          <td>${p.min && p.min !== "00:00" ? p.min : "-"}</td>
+          <td><strong>${p.pts}</strong></td>
+          <td>${p.fg}</td>
+          <td>${p.p3}</td>
+          <td>${p.p2in}</td>
+          <td>${p.p2out}</td>
+          <td>${p.ft}</td>
+          <td>${p.fouls}</td>
+        </tr>
+      `).join("");
+
+      pdfBlockHtml = `
+        <div class="ssp-panel">
+          <div class="ssp-panel-title">
+            <h3>📋 ${rep.matchRef || "Feuille de match"} — ${rep.dateLabel || m.date}</h3>
+            <span style="font-size:0.78rem;font-weight:800;color:#1E3A8A;">Score : ${rep.finalScore ? `${rep.finalScore.home} - ${rep.finalScore.away}` : `${m.sh} - ${m.sa}`}</span>
+          </div>
+
+          <h4 style="font-size:0.86rem;font-weight:900;color:#9A3412;margin-top:4px;">🦁 Joueuses LSBSC</h4>
+          <div class="ssp-table-wrap">
+            <table class="ssp-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th style="text-align:left;">Joueuse</th>
+                  <th>Tps</th>
+                  <th>Pts</th>
+                  <th>Tirs</th>
+                  <th>3pts</th>
+                  <th>2Int</th>
+                  <th>2Ext</th>
+                  <th>LF</th>
+                  <th>Ftes</th>
+                </tr>
+              </thead>
+              <tbody>${renderRows(lsbscPlayers)}</tbody>
+            </table>
+          </div>
+
+          <h4 style="font-size:0.86rem;font-weight:900;color:#1E3A8A;margin-top:10px;">🏀 Joueuses Adverses</h4>
+          <div class="ssp-table-wrap">
+            <table class="ssp-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th style="text-align:left;">Joueuse</th>
+                  <th>Tps</th>
+                  <th>Pts</th>
+                  <th>Tirs</th>
+                  <th>3pts</th>
+                  <th>2Int</th>
+                  <th>2Ext</th>
+                  <th>LF</th>
+                  <th>Ftes</th>
+                </tr>
+              </thead>
+              <tbody>${renderRows(oppPlayers)}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    } else {
+      pdfBlockHtml = `
+        <div class="ssp-panel">
+          <p style="font-size:0.86rem;font-weight:800;color:#475569;text-align:center;padding:10px;">
+            Aucune feuille de match détaillée enregistrée pour ce match (${m.date} • ${m.home} vs ${m.away} • Score : ${m.sh} - ${m.sa}).<br>
+            <span style="font-size:0.76rem;color:#64748B;">Vous pouvez importer un fichier JSON ou CSV de statistiques via le bouton « ⬆️ Importer Stats » en haut à droite.</span>
+          </p>
+        </div>
+      `;
+    }
+
+    contentEl.innerHTML = `
+      <div class="ssp-panel" style="border-left:6px solid #EA580C;">
+        <div class="ssp-panel-title">
+          <h3>🏀 ${m.cat} • ${m.home} vs ${m.away}</h3>
+          <span style="font-size:0.84rem;font-weight:900;color:#15803D;">${m.date} à ${m.time} • Score : ${m.sh} - ${m.sa}</span>
+        </div>
+      </div>
+      ${qtBlockHtml}
+      ${pdfBlockHtml}
+    `;
+  }
+
+  function renderSeasonStatsPage() {
+    if (!sspState.isOpen) return;
+    populateMatchSelector();
+    if (sspState.viewMode === "match") {
+      renderMatchDetailInSeasonPage();
+    } else {
+      renderSeasonSummaryView();
+    }
+  }
+
+  window.openSeasonStatsPage = function() {
+    if (!state.staffUnlocked) {
+      if (typeof requestPinAccess === "function") requestPinAccess("staff");
+      return;
+    }
+    sspState.isOpen = true;
+    const pageEl = document.getElementById("seasonStatsPageOverlay");
+    if (pageEl) {
+      pageEl.style.display = "flex";
+      pageEl.setAttribute("aria-hidden", "false");
+    }
+    renderSeasonStatsPage();
+  };
+
+  window.closeSeasonStatsPage = function() {
+    sspState.isOpen = false;
+    const pageEl = document.getElementById("seasonStatsPageOverlay");
+    if (pageEl) {
+      pageEl.style.display = "none";
+      pageEl.setAttribute("aria-hidden", "true");
+    }
+  };
+
+  window.onSspTeamChange = function(val) {
+    sspState.team = val || "ALL";
+    renderSeasonStatsPage();
+  };
+
+  window.setSspViewMode = function(mode) {
+    sspState.viewMode = mode === "match" ? "match" : "season";
+    const bSeason = document.getElementById("sspModeBtnSeason");
+    const bMatch = document.getElementById("sspModeBtnMatch");
+    const matchSelWrap = document.getElementById("sspMatchSelectorWrap");
+
+    if (bSeason) bSeason.classList.toggle("active", sspState.viewMode === "season");
+    if (bMatch) bMatch.classList.toggle("active", sspState.viewMode === "match");
+    if (matchSelWrap) matchSelWrap.style.display = sspState.viewMode === "match" ? "flex" : "none";
+
+    renderSeasonStatsPage();
+  };
+
+  window.onSspMatchChange = function(matchIdStr) {
+    sspState.selectedMatchId = Number(matchIdStr) || matchIdStr;
+    renderSeasonStatsPage();
+  };
+
+  window.openSingleMatchInStatsPage = function(matchId) {
+    sspState.selectedMatchId = Number(matchId) || matchId;
+    window.setSspViewMode("match");
+  };
+
+  function showImportFeedback(msg, isError = false) {
+    const box = document.getElementById("sspImportFeedback");
+    if (!box) return;
+    box.style.display = "block";
+    box.style.background = isError ? "#FEE2E2" : "#DCFCE7";
+    box.style.borderColor = isError ? "#EF4444" : "#22C55E";
+    box.style.color = isError ? "#991B1B" : "#14532D";
+    box.textContent = msg;
+  }
+
+  window.exportSeasonStatsJson = function() {
+    const payload = {
+      club: "LSBSC",
+      exportedAt: new Date().toISOString(),
+      teamFilter: sspState.team,
+      summary: getTeamSeasonSummary(sspState.team),
+      importedPdfReports: sspState.importedReports
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lsbsc-stats-${sspState.team.toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    showImportFeedback(`✅ Export JSON téléchargé (lsbsc-stats-${sspState.team.toLowerCase()}.json).`);
+  };
+
+  function parseCsvStatsText(csvText) {
+    const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) return 0;
+    const sep = lines[0].includes(";") ? ";" : ",";
+    const headers = lines[0].split(sep).map(h => h.trim().toLowerCase());
+    const idxMatchId = headers.findIndex(h => h === "match_id" || h === "id");
+    const idxNum = headers.findIndex(h => h === "num" || h === "maillot");
+    const idxName = headers.findIndex(h => h === "name" || h === "nom" || h === "joueuse");
+    const idxPts = headers.findIndex(h => h === "pts" || h === "points");
+    const idxFouls = headers.findIndex(h => h === "fouls" || h === "ftes" || h === "fautes");
+
+    let count = 0;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(sep).map(c => c.trim());
+      const mid = idxMatchId !== -1 ? Number(cols[idxMatchId]) : Number(sspState.selectedMatchId);
+      if (!mid) continue;
+      const mObj = (state.matches || []).find(x => Number(x.id) === mid);
+      if (!mObj) continue;
+
+      if (!sspState.importedReports[mid]) {
+        sspState.importedReports[mid] = {
+          matchRef: `Import CSV • Match #${mid}`,
+          dateLabel: mObj.date || "",
+          arbitres: "Import CSV",
+          homeTeam: mObj.home || "",
+          awayTeam: mObj.away || "",
+          lsbscSide: isLSBSC(mObj.home) ? "home" : "away",
+          finalScore: { home: Number(mObj.sh) || 0, away: Number(mObj.sa) || 0 },
+          halves: {
+            home: { h1: 0, h2: 0, ot: 0, total: Number(mObj.sh) || 0, foulsH1: 0, foulsH2: 0, foulsTot: 0 },
+            away: { h1: 0, h2: 0, ot: 0, total: Number(mObj.sa) || 0, foulsH1: 0, foulsH2: 0, foulsTot: 0 }
+          },
+          ratios: {
+            home: { maxLead: 0, maxRun: 0, benchPts: 0, ties: 0, leadTime: "00:00" },
+            away: { maxLead: 0, maxRun: 0, benchPts: 0, ties: 0, leadTime: "00:00" }
+          },
+          players: { home: [], away: [] }
+        };
+      }
+
+      const sideKey = sspState.importedReports[mid].lsbscSide === "home" ? "home" : "away";
+      sspState.importedReports[mid].players[sideKey].push({
+        num: idxNum !== -1 ? cols[idxNum] : "",
+        name: idxName !== -1 ? cols[idxName] : `Joueuse ${i}`,
+        starter: false,
+        min: "-",
+        pts: idxPts !== -1 ? (Number(cols[idxPts]) || 0) : 0,
+        fg: 0,
+        p3: 0,
+        p2in: 0,
+        p2out: 0,
+        ft: 0,
+        fouls: idxFouls !== -1 ? (Number(cols[idxFouls]) || 0) : 0
+      });
+      count++;
+    }
+    return count;
+  }
+
+  window.handleSeasonStatsFileImport = function(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const txt = String(e.target.result || "");
+      try {
+        if (file.name.toLowerCase().endsWith(".json") || txt.trim().startsWith("{")) {
+          const parsed = JSON.parse(txt);
+          const reportsMap = parsed.importedPdfReports || parsed.reports || parsed;
+          let added = 0;
+          if (reportsMap && typeof reportsMap === "object") {
+            Object.entries(reportsMap).forEach(([k, v]) => {
+              const numId = Number(k);
+              if (numId && v && typeof v === "object") {
+                sspState.importedReports[numId] = v;
+                added++;
+              }
+            });
+          }
+          saveImportedReports();
+          showImportFeedback(`✅ Import JSON réussi : ${added} fiche(s) de statistiques ajoutée(s).`);
+          renderSeasonStatsPage();
+        } else {
+          const addedRows = parseCsvStatsText(txt);
+          saveImportedReports();
+          showImportFeedback(`✅ Import CSV réussi : ${addedRows} ligne(s) de statistiques importée(s).`);
+          renderSeasonStatsPage();
+        }
+      } catch (err) {
+        showImportFeedback("❌ Fichier invalide : vérifiez le format JSON ou CSV.", true);
+      }
+      ev.target.value = "";
+    };
+    reader.readAsText(file, "utf-8");
+  };
+
+  const _prevRenderAllV37 = renderAll;
+  renderAll = function() {
+    _prevRenderAllV37();
+    syncPrivateStatsButtonVisibility();
+    if (sspState.isOpen) {
+      renderSeasonStatsPage();
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadImportedReports();
+    syncPrivateStatsButtonVisibility();
+  });
+})();

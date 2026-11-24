@@ -4829,3 +4829,393 @@ body.mode-mobile .qt-kpi-val {
 body.mode-mobile .qt-kpi-sub {
   font-size: 0.85rem !important;
 }
+
+
+/* ================= FEUILLE DE MATCH FFBB / STATS COACH & ADMIN (ACCÈS RESTREINT) ================= */
+.sb-view-tab.coach-only-tab {
+  background: #FEF3C7;
+  color: #92400E;
+  border-color: #F59E0B;
+  font-weight: 900;
+}
+.sb-view-tab.coach-only-tab.active {
+  background: #EA580C;
+  color: #FFFFFF;
+  border-color: #EA580C;
+}
+.coach-stats-banner {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+  color: #FFFFFF;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-left: 5px solid #F59E0B;
+}
+.coach-stats-banner h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+.coach-stats-banner p {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: #BFDBFE;
+  font-weight: 700;
+}
+.coach-lock-pill {
+  background: #FDE68A;
+  color: #0F172A;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+.coach-ratios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+}
+.coach-ratio-tile {
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.coach-ratio-tile span:first-child {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #475569;
+}
+.coach-ratio-tile strong {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0F172A;
+}
+.coach-players-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+.coach-players-table th,
+.coach-players-table td {
+  padding: 6px 5px;
+  border-bottom: 1px solid #E2E8F0;
+  text-align: center;
+  white-space: nowrap;
+}
+.coach-players-table th {
+  background: #EFF6FF;
+  color: #1E3A8A;
+  font-weight: 900;
+}
+.coach-players-table td.p-name {
+  text-align: left;
+  font-weight: 800;
+  color: #0F172A;
+}
+.coach-players-table tr.starter-row td.p-name::after {
+  content: " • 5";
+  color: #EA580C;
+  font-weight: 900;
+}
+
+
+/* ================= PAGE PRIVÉE : SYNTHÈSE SAISON & STATS PAR MATCH ================= */
+.coach-only-page-btn {
+  background: linear-gradient(135deg, #EA580C 0%, #D97706 100%);
+  color: #FFFFFF;
+  border: 1.5px solid #FDE68A;
+  font-weight: 900;
+}
+
+.season-stats-page {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: #0F172A;
+  color: #0F172A;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+}
+
+.ssp-topbar {
+  background: linear-gradient(90deg, #0F172A 0%, #1E3A8A 65%, #0F172A 100%);
+  color: #FFFFFF;
+  padding: 12px 18px;
+  border-bottom: 3px solid #F59E0B;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.ssp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ssp-badge {
+  background: #F59E0B;
+  color: #0F172A;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.ssp-brand h2 {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.ssp-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ssp-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ssp-btn-export {
+  background: #16A34A;
+  color: #FFFFFF;
+}
+
+.ssp-btn-import {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.ssp-btn-close {
+  background: #DC2626;
+  color: #FFFFFF;
+}
+
+.ssp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 28px;
+  background: #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ssp-controls-card {
+  background: #FFFFFF;
+  border: 2px solid #93C5FD;
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ssp-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ssp-control-group label {
+  font-size: 0.84rem;
+  font-weight: 900;
+  color: #1E3A8A;
+}
+
+.ssp-select {
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1.5px solid #93C5FD;
+  background: #F8FAFC;
+  color: #0F172A;
+  font-size: 0.84rem;
+  font-weight: 800;
+  min-width: 190px;
+}
+
+.ssp-mode-switch {
+  display: flex;
+  gap: 6px;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid #CBD5E1;
+}
+
+.ssp-mode-btn {
+  border: none;
+  background: transparent;
+  color: #334155;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ssp-mode-btn.active {
+  background: #1E3A8A;
+  color: #FFFFFF;
+}
+
+.ssp-import-feedback {
+  background: #DCFCE7;
+  border: 2px solid #22C55E;
+  color: #14532D;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.ssp-content-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ssp-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.ssp-kpi-card {
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-top: 5px solid #1E3A8A;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ssp-kpi-card.orange { border-top-color: #EA580C; }
+.ssp-kpi-card.green  { border-top-color: #16A34A; }
+.ssp-kpi-card.gold   { border-top-color: #D97706; }
+
+.ssp-kpi-card span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #475569;
+  text-transform: uppercase;
+}
+
+.ssp-kpi-card strong {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.ssp-kpi-card small {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #64748B;
+}
+
+.ssp-panel {
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ssp-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid #F1F5F9;
+  padding-bottom: 8px;
+}
+
+.ssp-panel-title h3 {
+  font-size: 0.96rem;
+  font-weight: 900;
+  color: #0F172A;
+  margin: 0;
+}
+
+.ssp-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.ssp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ssp-table th {
+  background: #0F172A;
+  color: #FDE68A;
+  padding: 8px 7px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ssp-table td {
+  padding: 8px 7px;
+  border-bottom: 1px solid #E2E8F0;
+  font-weight: 700;
+  color: #0F172A;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ssp-table td.left {
+  text-align: left;
+  font-weight: 900;
+}
+
+.ssp-table tr:hover td {
+  background: #EFF6FF;
+}
+
+.ssp-btn-open-match {
+  background: #1E3A8A;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+}
