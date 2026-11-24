@@ -5175,7 +5175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
-/* ================= EXTENSION V39 : AGRÉGATION JOUEUSES PAR IDENTITÉ (NOM/PRÉNOM NORMALISÉ) + SYNCHRO FIREBASE ================= */
+/* ================= EXTENSION V41 : LECTURE FIABLE DE /imported_stats.json SUR TOUS LES APPAREILS + AGRÉGATION PAR NOM ================= */
 (function() {
   const STORAGE_KEY_PDF_STATS = "lsbsc_imported_pdf_stats_v1";
 
@@ -5188,11 +5188,10 @@ document.addEventListener("DOMContentLoaded", () => {
     lastCloudStatsSyncAt: 0
   };
 
-  // Normalise un nom/prénom de joueuse (accents, casse, ponctuation, ordre NOM Prénom vs Prénom NOM)
   function normalizePlayerIdentity(rawName) {
     const base = String(rawName || "")
       .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, " ")
       .replace(/\s+/g, " ")
@@ -5200,6 +5199,26 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!base) return "joueuse";
     const parts = base.split(" ").filter(Boolean).sort();
     return parts.join("_");
+  }
+
+  function getFirebaseStatsNodeUrl() {
+    const rawUrl = (typeof state !== "undefined" && state.syncUrl)
+      ? String(state.syncUrl).trim()
+      : (typeof DEFAULT_CLOUD_SYNC_URL !== "undefined" ? String(DEFAULT_CLOUD_SYNC_URL).trim() : "");
+    if (!rawUrl) return "";
+
+    try {
+      const u = new URL(rawUrl);
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (parts.length > 0 && parts[parts.length - 1].endsWith(".json")) {
+        parts.pop();
+      }
+      parts.push("imported_stats.json");
+      u.pathname = "/" + parts.join("/");
+      return u.toString();
+    } catch (e) {
+      return rawUrl.replace(/\.json(\?.*)?$/, "/imported_stats.json$1");
+    }
   }
 
   window.getImportedStatsMap = function() {
@@ -5234,12 +5253,10 @@ document.addEventListener("DOMContentLoaded", () => {
     box.textContent = msg;
   }
 
-  // Envoie les statistiques importées vers Firebase (sur le nœud /imported_stats.json et /lsbsc.json)
+  // Envoie uniquement /imported_stats.json vers Firebase
   window.pushImportedStatsToCloud = async function(silent = false) {
-    const rawUrl = (typeof state !== "undefined" && state.syncUrl)
-      ? state.syncUrl
-      : (typeof DEFAULT_CLOUD_SYNC_URL !== "undefined" ? DEFAULT_CLOUD_SYNC_URL : "");
-    if (!rawUrl) {
+    const statsUrl = getFirebaseStatsNodeUrl();
+    if (!statsUrl) {
       if (!silent) showImportFeedback("⚠️ Aucune URL Firebase configurée dans Réglages (⚙️).", true);
       return false;
     }
@@ -5251,56 +5268,57 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const dedicatedUrl = rawUrl.replace(/\.json(\?.*)?$/, "/imported_stats.json$1");
-      await fetch(dedicatedUrl, {
+      const res = await fetch(statsUrl, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify(statsPayload)
       });
-
-      if (typeof saveState === "function") {
-        saveState(true);
+      if (!res.ok) {
+        const errTxt = await res.text().catch(() => "");
+        if (!silent) {
+          showImportFeedback(`❌ Firebase a refusé l'écriture (${res.status}) : ${errTxt.slice(0, 120)}`, true);
+        }
+        return false;
       }
 
       sspState.lastCloudStatsSyncAt = now;
       if (!silent) {
-        showImportFeedback(`☁️ Statistiques synchronisées sur Firebase (${Object.keys(sspState.importedReports || {}).length} fiche(s)) !`);
+        showImportFeedback(`☁️ Statistiques envoyées sur Firebase (${Object.keys(sspState.importedReports || {}).length} fiche(s)) !`);
       }
       return true;
     } catch (err) {
       if (!silent) {
-        showImportFeedback("❌ Erreur de synchronisation Firebase : vérifiez la connexion ou les règles de la base.", true);
+        showImportFeedback("❌ Erreur réseau lors de l'envoi vers Firebase.", true);
       }
       return false;
     }
   };
 
-  // Récupère les statistiques importées depuis Firebase sur les autres appareils
+  // Récupère /imported_stats.json depuis Firebase sur les autres appareils (même sans updatedAt ou avec timestamp plus récent)
   window.pullImportedStatsFromCloud = async function(forceRender = false) {
-    const rawUrl = (typeof state !== "undefined" && state.syncUrl)
-      ? state.syncUrl
-      : (typeof DEFAULT_CLOUD_SYNC_URL !== "undefined" ? DEFAULT_CLOUD_SYNC_URL : "");
-    if (!rawUrl) return;
+    const statsUrl = getFirebaseStatsNodeUrl();
+    if (!statsUrl) return;
 
     try {
-      const dedicatedUrl = rawUrl.replace(/\.json(\?.*)?$/, "/imported_stats.json$1");
-      const res = await fetch(dedicatedUrl, { headers: { "Accept": "application/json" } });
+      const sep = statsUrl.includes("?") ? "&" : "?";
+      const fetchUrl = `${statsUrl}${sep}_t=${Date.now()}`;
+      const res = await fetch(fetchUrl, { headers: { "Accept": "application/json" }, cache: "no-store" });
       if (!res.ok) return;
       const cloudData = await res.json();
       if (!cloudData || typeof cloudData !== "object") return;
 
-      const cloudReports = cloudData.importedPdfReports || (typeof cloudData === "object" && !cloudData.updatedAt ? cloudData : null);
+      const cloudReports = cloudData.importedPdfReports || (!cloudData.updatedAt ? cloudData : null);
       if (cloudReports && typeof cloudReports === "object") {
-        const cloudTs = Number(cloudData.updatedAt) || 0;
         const hasCloudEntries = Object.keys(cloudReports).length > 0;
-        if (hasCloudEntries && (cloudTs > sspState.lastCloudStatsSyncAt || Object.keys(sspState.importedReports).length === 0)) {
-          sspState.importedReports = Object.assign({}, sspState.importedReports, cloudReports);
-          if (cloudTs > sspState.lastCloudStatsSyncAt) {
-            sspState.lastCloudStatsSyncAt = cloudTs;
-          }
-          saveImportedReports();
-          if (forceRender && sspState.isOpen) {
-            renderSeasonStatsPage();
+        if (hasCloudEntries) {
+          const merged = Object.assign({}, sspState.importedReports, cloudReports);
+          const changed = JSON.stringify(merged) !== JSON.stringify(sspState.importedReports);
+          if (changed) {
+            sspState.importedReports = merged;
+            saveImportedReports();
+            if (forceRender && sspState.isOpen) {
+              renderSeasonStatsPage();
+            }
           }
         }
       }
@@ -5316,40 +5334,11 @@ document.addEventListener("DOMContentLoaded", () => {
     return typeof _prevGetPdfReport === "function" ? _prevGetPdfReport(idNum) : null;
   };
 
-  const _origSaveStateV39 = window.saveState;
-  window.saveState = function(pushCloud = true) {
-    if (typeof _origSaveStateV39 === "function") {
-      _origSaveStateV39(pushCloud);
-    }
-    try {
-      const savedRaw = localStorage.getItem("lsbsc_state_v4");
-      if (savedRaw) {
-        const parsed = JSON.parse(savedRaw);
-        parsed.importedPdfReports = sspState.importedReports || {};
-        localStorage.setItem("lsbsc_state_v4", JSON.stringify(parsed));
-      }
-    } catch (e) {}
-  };
-
-  const _origPollCloudV39 = window.pollCloudSync;
+  const _origPollCloudV41 = window.pollCloudSync;
   window.pollCloudSync = async function() {
-    if (typeof _origPollCloudV39 === "function") {
-      await _origPollCloudV39();
+    if (typeof _origPollCloudV41 === "function") {
+      await _origPollCloudV41();
     }
-    try {
-      const savedRaw = localStorage.getItem("lsbsc_state_v4");
-      if (savedRaw) {
-        const parsed = JSON.parse(savedRaw);
-        if (parsed && parsed.importedPdfReports && typeof parsed.importedPdfReports === "object") {
-          const merged = Object.assign({}, sspState.importedReports, parsed.importedPdfReports);
-          if (JSON.stringify(merged) !== JSON.stringify(sspState.importedReports)) {
-            sspState.importedReports = merged;
-            saveImportedReports();
-            if (sspState.isOpen) renderSeasonStatsPage();
-          }
-        }
-      }
-    } catch (e) {}
     await window.pullImportedStatsFromCloud(true);
   };
 
@@ -5378,7 +5367,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const upcoming = matches.filter(m => m.status === "upcoming" || m.status === "live" || m.status === "postponed");
 
     let wins = 0, losses = 0, draws = 0, ptsFor = 0, ptsAgainst = 0, pdfCount = 0;
-    // Regroupement par identité normalisée du nom de la joueuse (et non par numéro de maillot)
     const playerAgg = new Map();
 
     matches.forEach(m => {
@@ -5927,8 +5915,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const synced = await window.pushImportedStatsToCloud(true);
           showImportFeedback(
             synced
-              ? `✅ Import JSON réussi (${added} fiche(s)) et synchronisé avec Firebase !`
-              : `✅ Import JSON réussi (${added} fiche(s)) en local — vérifiez la synchro Firebase si besoin.`
+              ? `✅ Import JSON réussi (${added} fiche(s)) et envoyé sur Firebase (/imported_stats.json) !`
+              : `✅ Import JSON réussi (${added} fiche(s)) en local — vérifiez les règles Firebase pour la synchro cloud.`
           );
         } else {
           const addedRows = parseCsvStatsText(txt);
@@ -5937,8 +5925,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const synced = await window.pushImportedStatsToCloud(true);
           showImportFeedback(
             synced
-              ? `✅ Import CSV réussi (${addedRows} ligne(s)) et synchronisé avec Firebase !`
-              : `✅ Import CSV réussi (${addedRows} ligne(s)) en local — vérifiez la synchro Firebase si besoin.`
+              ? `✅ Import CSV réussi (${addedRows} ligne(s)) et envoyé sur Firebase (/imported_stats.json) !`
+              : `✅ Import CSV réussi (${addedRows} ligne(s)) en local — vérifiez les règles Firebase pour la synchro cloud.`
           );
         }
       } catch (err) {
@@ -5949,9 +5937,9 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsText(file, "utf-8");
   };
 
-  const _prevRenderAllV39 = renderAll;
+  const _prevRenderAllV41 = renderAll;
   renderAll = function() {
-    _prevRenderAllV39();
+    _prevRenderAllV41();
     syncPrivateStatsButtonVisibility();
     if (sspState.isOpen) {
       renderSeasonStatsPage();
@@ -5964,6 +5952,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.pullImportedStatsFromCloud(false);
     setInterval(() => {
       if (!document.hidden) window.pullImportedStatsFromCloud(true);
-    }, 8000);
+    }, 6000);
   });
 })();
