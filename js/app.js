@@ -7272,7 +7272,7 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
-/* ================= EXTENSION V45 : INTÉGRATION E-MARQUE TOURNOI & FEUILLE DE MARQUE + SYNCHRO FIREBASE ================= */
+/* ================= EXTENSION V45/V48 : TOURNOI & E-MARQUE (SÉLECTION CLUBS/LOGOS FIREBASE, SAISIE LIBRE & VERROUILLAGE ADMIN/COACH) ================= */
 (function() {
   const EMARK_STORAGE_KEY = "lsbsc_emark_tournament_v1";
   const EMARK_PHT = ["", "Phase 1 · Matchs de poule", "Phase 2 · Matchs à élimination croisés", "Phase 3 · Finale et petites finales"];
@@ -7293,6 +7293,71 @@ document.addEventListener("DOMContentLoaded", () => {
     TO: "Temps mort", C: "Faute technique entraîneur", B: "Faute technique banc"
   };
 
+  function canEditEmarkTournament() {
+    return Boolean(state.isAdminUser || state.coachUnlocked);
+  }
+
+  function getFirebaseAvailableClubs() {
+    const map = new Map();
+    // 1. Toujours inclure LSBSC avec le logo officiel du club
+    map.set("LSBSC", {
+      key: "LSBSC",
+      label: "LSBSC (Lille Sud)",
+      logo: (state.clubAssets && state.clubAssets.logo) || FALLBACK_LOGO_B64
+    });
+
+    // 2. Tous les clubs adverses présents dans les matchs (synchronisés Firebase) ou les logos personnalisés
+    (state.matches || []).forEach(m => {
+      [m.home, m.away].forEach(rawName => {
+        if (!rawName) return;
+        const key = normalizeClubKey(rawName);
+        if (!map.has(key)) {
+          map.set(key, {
+            key,
+            label: key,
+            logo: getTeamBadgeSrc(key)
+          });
+        }
+      });
+    });
+
+    if (state.clubAssets && state.clubAssets.customBadges) {
+      Object.keys(state.clubAssets.customBadges).forEach(k => {
+        const up = String(k || "").trim().toUpperCase();
+        if (up && !map.has(up)) {
+          map.set(up, {
+            key: up,
+            label: up,
+            logo: state.clubAssets.customBadges[k]
+          });
+        }
+      });
+    }
+
+    const list = Array.from(map.values());
+    const lsbscItem = list.find(x => x.key === "LSBSC");
+    const others = list.filter(x => x.key !== "LSBSC").sort((a, b) => a.label.localeCompare(b.label, "fr"));
+    return lsbscItem ? [lsbscItem, ...others] : others;
+  }
+
+  function resolveTournamentTeamLogo(teamName, explicitLogo) {
+    if (explicitLogo && typeof explicitLogo === "string" && explicitLogo.trim()) {
+      return explicitLogo;
+    }
+    const clean = String(teamName || "").trim();
+    if (!clean) return FALLBACK_LOGO_B64;
+    if (isLSBSC(clean)) {
+      return (state.clubAssets && state.clubAssets.logo) || FALLBACK_LOGO_B64;
+    }
+    const clubs = getFirebaseAvailableClubs();
+    const up = clean.toUpperCase();
+    const exact = clubs.find(c => c.key === up || c.label.toUpperCase() === up);
+    if (exact && exact.logo) return exact.logo;
+    const partial = clubs.find(c => c.key !== "LSBSC" && (up.includes(c.key) || c.key.includes(up)));
+    if (partial && partial.logo) return partial.logo;
+    return getTeamBadgeSrc(clean);
+  }
+
   function mkDefaultPlayers() {
     return Array.from({ length: 10 }, (_, i) => ({ n: String(i + 4), name: "" }));
   }
@@ -7301,8 +7366,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return {
       info: { num: "", date: "", salle: "ANTOINE BLONDIN A 790M2", arb1: "", arb2: "", marq: "" },
       teams: [
-        { name: "Équipe A", coach: "", players: mkDefaultPlayers(), on: [] },
-        { name: "Équipe B", coach: "", players: mkDefaultPlayers(), on: [] }
+        { name: "Équipe A", logo: "", coach: "", players: mkDefaultPlayers(), on: [] },
+        { name: "Équipe B", logo: "", coach: "", players: mkDefaultPlayers(), on: [] }
       ],
       period: 1,
       ms: 600000,
@@ -7322,6 +7387,7 @@ document.addEventListener("DOMContentLoaded", () => {
       start: "09:00",
       org: "Lille Sud Basketball Sporting Club",
       names: Array.from({ length: 8 }, (_, i) => "Équipe " + (i + 1)),
+      logos: Array.from({ length: 8 }, () => ""),
       sc: {}
     };
   }
@@ -7335,12 +7401,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const start = (typeof src.start === "string" && /^\d{1,2}:\d{2}$/.test(src.start)) ? src.start : "09:00";
     const org = (typeof src.org === "string") ? src.org : base.org;
     const rawNames = Array.isArray(src.names) ? src.names : [];
+    const rawLogos = Array.isArray(src.logos) ? src.logos : [];
     const names = Array.from({ length: 8 }, (_, i) => {
       const v = rawNames[i];
       return (typeof v === "string" && v.trim()) ? v : ("Équipe " + (i + 1));
     });
+    const logos = Array.from({ length: 8 }, (_, i) => {
+      const lg = rawLogos[i];
+      return (typeof lg === "string") ? lg : "";
+    });
     const sc = (src.sc && typeof src.sc === "object") ? src.sc : {};
-    return { n, courts, dur, start, org, names, sc };
+    return { n, courts, dur, start, org, names, logos, sc };
   }
 
   function sanitizeMatchObj(raw) {
@@ -7353,6 +7424,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : mkDefaultPlayers();
       return {
         name: String(tSrc.name || (idx ? "Équipe B" : "Équipe A")),
+        logo: String(tSrc.logo || ""),
         coach: String(tSrc.coach || ""),
         players,
         on: Array.isArray(tSrc.on) ? tSrc.on : []
@@ -7427,6 +7499,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveEmarkState(pushCloud = true) {
+    if (!canEditEmarkTournament()) return;
     state.emark.updatedAt = Date.now();
     try {
       localStorage.setItem(EMARK_STORAGE_KEY, JSON.stringify({
@@ -7608,6 +7681,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  window.requestEmarkUnlock = function() {
+    if (canEditEmarkTournament()) return;
+    if (typeof window.requestPinAccess === "function") {
+      window.requestPinAccess("emark_unlock");
+    }
+  };
+
   window.setEmarkView = function(viewName) {
     state.emark.view = ["tournoi", "match", "public", "results"].includes(viewName) ? viewName : "tournoi";
     ["tournoi", "match", "public", "results"].forEach(v => {
@@ -7653,17 +7733,32 @@ document.addEventListener("DOMContentLoaded", () => {
       state.emark.tn = sanitizeTournamentObj(state.emark.tn);
       state.emark.match = sanitizeMatchObj(state.emark.match);
 
+      const canEdit = canEditEmarkTournament();
+      const disAttr = canEdit ? "" : "disabled";
+      const firebaseClubs = getFirebaseAvailableClubs();
+
       const { T, L } = emarkCalc();
       const S = state.emark.match;
       const TN = state.emark.tn;
       S.teams.forEach(t => { t.on = t.on || []; });
+
+      const roleBannerHtml = canEdit
+        ? `<div style="background:#DCFCE7;border:1.5px solid #22C55E;color:#14532D;padding:8px 14px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-weight:800;font-size:0.84rem;">
+            <span>🔓 Mode Édition Actif (${state.isAdminUser ? "Admin Maître" : emarkEsc(state.activeCoachName || "Coach")}) — Toutes les modifications sont synchronisées sur Firebase</span>
+          </div>`
+        : `<div style="background:#FEF3C7;border:1.5px solid #F59E0B;color:#92400E;padding:8px 14px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-weight:800;font-size:0.84rem;">
+            <span>🔒 Mode Lecture Seule (Public) — Seuls l'Admin ou un Coach connecté peuvent modifier le tournoi, les équipes et la feuille de marque.</span>
+            <button type="button" class="btn-action-sm" style="background:#1E3A8A;color:#FFF;" onclick="requestEmarkUnlock()">🔑 Déverrouiller (PIN Admin / Coach)</button>
+          </div>`;
 
       if (pubEl && state.emark.view === "public") {
         const g = emarkGrp(S.period);
         const tTxt = emarkFmt(Math.ceil(emarkRem() / 1000));
         const sideHtml = idx => {
           const d = T[idx], tf = d.tf[S.period] || 0;
+          const lg = resolveTournamentTeamLogo(S.teams[idx].name, S.teams[idx].logo);
           return `<div>
+            <img src="${lg}" onerror="this.src=FALLBACK_LOGO_B64" alt="" style="width:76px;height:76px;object-fit:contain;margin-bottom:8px;">
             <div style="font-size:2rem;font-weight:900;color:${idx ? "#FF86A3" : "#7AA5FF"};">${emarkEsc(S.teams[idx].name)}</div>
             <div style="font-size:6.5rem;font-weight:900;line-height:1;color:#FBBF24;">${d.s}</div>
             <div style="margin-top:8px;">Fautes : ${tf}${tf >= 5 ? " · BONUS" : ""}</div>
@@ -7681,7 +7776,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const P = emarkPlan();
+      const getLogoForIdx = i => resolveTournamentTeamLogo(TN.names[i], TN.logos[i]);
       const nm = i => emarkEsc(TN.names[i] || ("Équipe " + (i + 1)));
+      const nmWithLogo = i => {
+        const lg = getLogoForIdx(i);
+        return `<span style="display:inline-flex;align-items:center;gap:6px;"><img src="${lg}" onerror="this.src=FALLBACK_LOGO_B64" alt="" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:#FFF;"><span>${nm(i)}</span></span>`;
+      };
       const pd = id => { const s = TN.sc[id]; return !!s && s[0] != null && s[1] != null && s[0] !== "" && s[1] !== ""; };
       const st = P.G.map((g, gi) => emarkStand(P, gi));
       const ok = P.G.every((g, gi) => P.M.filter(m => m.g == gi).every(m => pd(m.id)));
@@ -7714,7 +7814,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const cards = s.map((m, ci) => {
           const r = ref[m.id] || [], a = m.ph == 1 ? m.a : r[0], b = m.ph == 1 ? m.b : r[1];
           const sc = TN.sc[m.id] || [], w = pd(m.id) ? (+sc[0] > +sc[1] ? 0 : 1) : -1;
-          const nn = (i, k) => i != null ? nm(i) : EMARK_PH[m.id][k];
+          const nn = (i, k) => i != null ? nmWithLogo(i) : `<span>${EMARK_PH[m.id][k]}</span>`;
           const cls = m.ph == 1 ? "g" + "AB"[m.g] : m.id == "f" ? "fin" : "ko";
           return `<div class="emark-mc ${cls}">
             <div style="display:flex;justify-content:space-between;font-size:0.74rem;font-weight:800;color:#64748B;">
@@ -7722,57 +7822,81 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="emark-mb">
               <span class="tA ${w == 0 ? "w" : ""}">${nn(a, 0)}</span>
-              <input type="number" min="0" value="${sc[0] ?? ""}" onchange="emarkUpdateMatchScore('${m.id}', 0, this.value)">
+              <input type="number" min="0" ${disAttr} value="${sc[0] ?? ""}" onchange="emarkUpdateMatchScore('${m.id}', 0, this.value)">
               <span>–</span>
-              <input type="number" min="0" value="${sc[1] ?? ""}" onchange="emarkUpdateMatchScore('${m.id}', 1, this.value)">
+              <input type="number" min="0" ${disAttr} value="${sc[1] ?? ""}" onchange="emarkUpdateMatchScore('${m.id}', 1, this.value)">
               <span class="${w == 1 ? "w" : ""}">${nn(b, 1)}</span>
             </div>
-            ${a != null && b != null ? `<button type="button" class="btn-action-sm" style="background:#EFF6FF;color:#1E3A8A;width:100%;" onclick="emarkOpenMatchFromTournament('${m.id}', ${a}, ${b})">📋 Ouvrir la feuille de marque</button>` : ""}
+            ${a != null && b != null ? `<button type="button" class="btn-action-sm" style="background:#EFF6FF;color:#1E3A8A;width:100%;" onclick="emarkOpenMatchFromTournament('${m.id}', ${a}, ${b})">${canEdit ? "📋 Ouvrir la feuille de marque" : "👁️ Consulter la feuille de marque"}</button>` : ""}
           </div>`;
         }).join("");
         return `${hd}<div class="emark-slot"><div class="emark-slot-tm">${emarkTt(t0 + si * TN.dur)}</div><div class="emark-slot-matches">${cards}</div></div>`;
       }).join("");
 
-      const namesGrid = g => P.G[g].map(i => `
-        <label style="display:flex;align-items:center;gap:6px;margin:4px 0;font-weight:800;">
-          <span style="background:#1E3A8A;color:#FFF;border-radius:999px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;">${i + 1}</span>
-          <input value="${emarkEsc(TN.names[i])}" onchange="emarkUpdateTeamName(${i}, this.value)" style="flex:1;padding:5px 8px;border:1px solid #CBD5E1;border-radius:7px;font-weight:800;">
-        </label>
-      `).join("");
+      const namesGrid = g => P.G[g].map(i => {
+        const curName = TN.names[i] || "";
+        const curLogo = getLogoForIdx(i);
+        const matchedClub = firebaseClubs.find(c => c.key === curName.trim().toUpperCase() || c.label.toUpperCase() === curName.trim().toUpperCase());
+        const selectVal = matchedClub ? matchedClub.key : "__FREE__";
+
+        return `
+        <div style="display:flex;flex-direction:column;gap:5px;padding:7px 8px;margin:5px 0;background:#FFFFFF;border:1px solid #CBD5E1;border-radius:10px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <span style="background:#1E3A8A;color:#FFF;border-radius:999px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:900;flex-shrink:0;">${i + 1}</span>
+            <img src="${curLogo}" onerror="this.src=FALLBACK_LOGO_B64" alt="Logo" style="width:32px;height:32px;object-fit:contain;border-radius:6px;background:#F8FAFC;border:1px solid #E2E8F0;flex-shrink:0;">
+            ${canEdit ? `
+              <select onchange="emarkSelectFirebaseClub(${i}, this.value)" style="flex:1;padding:5px 7px;border:1px solid #93C5FD;border-radius:7px;font-weight:800;font-size:0.8rem;background:#EFF6FF;color:#1E3A8A;">
+                <option value="__FREE__" ${selectVal === "__FREE__" ? "selected" : ""}>✍️ Saisie libre (équipe personnalisée)...</option>
+                ${firebaseClubs.map(c => `<option value="${emarkEsc(c.key)}" ${selectVal === c.key ? "selected" : ""}>🏀 ${emarkEsc(c.label)}</option>`).join("")}
+              </select>
+            ` : `<strong style="font-size:0.88rem;color:#0F172A;">${emarkEsc(curName)}</strong>`}
+          </div>
+          ${canEdit ? `
+            <div style="display:flex;align-items:center;gap:6px;padding-left:29px;">
+              <input value="${emarkEsc(curName)}" placeholder="Nom de l'équipe (saisie libre)" onchange="emarkUpdateTeamName(${i}, this.value)" style="flex:1;padding:5px 8px;border:1px solid #CBD5E1;border-radius:7px;font-weight:800;font-size:0.82rem;">
+              <label class="btn-action-sm" style="background:#F1F5F9;color:#1E3A8A;border:1px solid #CBD5E1;cursor:pointer;white-space:nowrap;" title="Importer un logo personnalisé pour cette équipe">
+                🖼️ Logo
+                <input type="file" accept="image/*" style="display:none;" onchange="emarkUploadCustomTeamLogo(${i}, event)">
+              </label>
+            </div>
+          ` : ""}
+        </div>`;
+      }).join("");
 
       const standingsTabs = st.map((r, gi) => `
         <div class="emark-poule-card ${"AB"[gi]}">
           <h4 style="margin:0 0 6px;font-weight:900;">Poule ${"AB"[gi]}</h4>
           <table>
             <tr><th>Équipe</th><th>J</th><th>V</th><th>+/-</th><th>Pts</th></tr>
-            ${r.map((o, k) => `<tr class="${k < 2 ? "q" : ""}"><td style="color:#0F172A;">${k + 1}. ${nm(o.t)}</td><td style="color:#0F172A;">${o.j}</td><td style="color:#0F172A;">${o.v}</td><td style="color:#0F172A;">${o.pf - o.pa}</td><td style="color:#0F172A;"><b>${o.pts}</b></td></tr>`).join("")}
+            ${r.map((o, k) => `<tr class="${k < 2 ? "q" : ""}"><td style="color:#0F172A;">${k + 1}. ${nmWithLogo(o.t)}</td><td style="color:#0F172A;">${o.j}</td><td style="color:#0F172A;">${o.v}</td><td style="color:#0F172A;">${o.pf - o.pa}</td><td style="color:#0F172A;"><b>${o.pts}</b></td></tr>`).join("")}
           </table>
         </div>
       `).join("");
 
       if (tournoiEl) {
         tournoiEl.innerHTML = `
+          ${roleBannerHtml}
           <div class="emark-card">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
               <strong style="font-size:1rem;color:#1E3A8A;">⚙️ Paramètres du Tournoi (Synchronisé Firebase)</strong>
               <div style="display:flex;gap:6px;flex-wrap:wrap;">
                 ${fin ? `<button type="button" class="btn-action-sm btn-save-score" onclick="setEmarkView('results')">🏆 Voir Page Résultats</button>` : ""}
-                <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#B91C1C;" onclick="emarkResetTournament()">🔄 Réinitialiser tournoi</button>
+                ${canEdit ? `<button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#B91C1C;" onclick="emarkResetTournament()">🔄 Réinitialiser tournoi</button>` : ""}
               </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:0.84rem;font-weight:800;">
               <label>Équipes :
-                <select onchange="emarkUpdateTnCfg('n', +this.value)">
+                <select ${disAttr} onchange="emarkUpdateTnCfg('n', +this.value)">
                   ${[4, 5, 6, 7, 8].map(k => `<option value="${k}" ${k == Math.max(4, TN.n) ? "selected" : ""}>${k}</option>`).join("")}
                 </select>
               </label>
-              <label>Organisateur : <input value="${emarkEsc(TN.org || "")}" onchange="emarkUpdateTnCfg('org', this.value)" style="width:210px;"></label>
+              <label>Organisateur : <input ${disAttr} value="${emarkEsc(TN.org || "")}" onchange="emarkUpdateTnCfg('org', this.value)" style="width:210px;"></label>
               <label>Terrains :
-                <button type="button" class="btn-action-sm ${TN.courts == 1 ? "btn-save-score" : ""}" onclick="emarkUpdateTnCfg('courts', 1)">1</button>
-                <button type="button" class="btn-action-sm ${TN.courts == 2 ? "btn-save-score" : ""}" onclick="emarkUpdateTnCfg('courts', 2)">2</button>
+                <button type="button" ${disAttr} class="btn-action-sm ${TN.courts == 1 ? "btn-save-score" : ""}" onclick="emarkUpdateTnCfg('courts', 1)">1</button>
+                <button type="button" ${disAttr} class="btn-action-sm ${TN.courts == 2 ? "btn-save-score" : ""}" onclick="emarkUpdateTnCfg('courts', 2)">2</button>
               </label>
-              <label>Début : <input type="time" value="${emarkEsc(TN.start || "09:00")}" onchange="emarkUpdateTnCfg('start', this.value)"></label>
-              <label>Durée (min) : <input type="number" min="5" value="${TN.dur || 20}" onchange="emarkUpdateTnCfg('dur', Math.max(5, +this.value || 20))" style="width:65px;"></label>
+              <label>Début : <input type="time" ${disAttr} value="${emarkEsc(TN.start || "09:00")}" onchange="emarkUpdateTnCfg('start', this.value)"></label>
+              <label>Durée (min) : <input type="number" min="5" ${disAttr} value="${TN.dur || 20}" onchange="emarkUpdateTnCfg('dur', Math.max(5, +this.value || 20))" style="width:65px;"></label>
             </div>
             <p style="margin-top:8px;font-size:0.78rem;color:#475569;font-weight:700;">
               ${allM.length} matchs · ${P.slots.length} créneaux · fin prévue à ${emarkTt(t0 + P.slots.length * TN.dur)}. Victoire = 2 pts, défaite = 1 pt.
@@ -7780,8 +7904,8 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div class="emark-grid-2">
-            <div class="emark-poule-card A"><h4 style="margin:0 0 6px;color:#1D4ED8;font-weight:900;">Poule A</h4>${namesGrid(0)}</div>
-            <div class="emark-poule-card B"><h4 style="margin:0 0 6px;color:#BE123C;font-weight:900;">Poule B</h4>${namesGrid(1)}</div>
+            <div class="emark-poule-card A"><h4 style="margin:0 0 6px;color:#1D4ED8;font-weight:900;">Poule A (Sélection Firebase ou Saisie Libre)</h4>${namesGrid(0)}</div>
+            <div class="emark-poule-card B"><h4 style="margin:0 0 6px;color:#BE123C;font-weight:900;">Poule B (Sélection Firebase ou Saisie Libre)</h4>${namesGrid(1)}</div>
           </div>
 
           <div class="emark-card">
@@ -7795,65 +7919,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (matchEl) {
         const periodsHtml = [1, 2, 3, 4, 5, 6].map(p =>
-          `<button type="button" class="btn-action-sm ${S.period == p ? "btn-set-live" : ""}" onclick="emarkSetPeriod(${p})">${emarkPl(p)}</button>`
+          `<button type="button" ${disAttr} class="btn-action-sm ${S.period == p ? "btn-set-live" : ""}" onclick="emarkSetPeriod(${p})">${emarkPl(p)}</button>`
         ).join("");
 
         const savedTeamKeys = Object.keys(state.emark.savedTeams || {});
         const teamsCardsHtml = S.teams.map((tm, i) => {
           const d = T[i], g = emarkGrp(S.period), used = d.to[g] || 0, mx = emarkMaxTO(g), tf = d.tf[S.period] || 0;
+          const tmLogo = resolveTournamentTeamLogo(tm.name, tm.logo);
           const playerRows = tm.players.map((p, j) => {
             const f = d.fl[j] || [], out = emarkIsOut(f);
-            const evBtn = (k, l) => `<button type="button" class="btn-action-sm" style="padding:4px 7px;" ${out ? "disabled" : ""} onclick="emarkPlayerEvent(${i}, ${j}, '${k}')">${l}</button>`;
+            const evBtn = (k, l) => `<button type="button" class="btn-action-sm" style="padding:4px 7px;" ${(out || !canEdit) ? "disabled" : ""} onclick="emarkPlayerEvent(${i}, ${j}, '${k}')">${l}</button>`;
             return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 4px;border-top:1px solid #E2E8F0;${out ? "background:#FEE2E2;border-radius:6px;" : ""}">
               <strong style="min-width:28px;color:#1E3A8A;">#${emarkEsc(p.n)}</strong>
-              <input value="${emarkEsc(p.name)}" placeholder="Nom joueur/joueuse" onchange="emarkUpdatePlayerName(${i}, ${j}, this.value)" style="flex:1;min-width:120px;padding:4px 7px;border:1px solid #CBD5E1;border-radius:6px;font-weight:700;">
+              <input ${disAttr} value="${emarkEsc(p.name)}" placeholder="Nom joueur/joueuse" onchange="emarkUpdatePlayerName(${i}, ${j}, this.value)" style="flex:1;min-width:120px;padding:4px 7px;border:1px solid #CBD5E1;border-radius:6px;font-weight:700;">
               <span style="font-weight:900;min-width:36px;text-align:right;">${d.pts[j]} pt</span>
               <span style="font-size:0.75rem;font-weight:800;color:#991B1B;">Ftes: ${f.join("") || "—"}</span>
-              <div style="display:flex;gap:3px;flex-wrap:wrap;width:100%;">
+              ${canEdit ? `<div style="display:flex;gap:3px;flex-wrap:wrap;width:100%;">
                 ${evBtn("1", "+1")}${evBtn("2", "+2")}${evBtn("3", "+3")}
                 ${evBtn("P", "P")}${evBtn("T", "T")}${evBtn("U", "U")}${evBtn("D", "D")}
-              </div>
+              </div>` : ""}
             </div>`;
           }).join("");
 
           return `<div class="emark-poule-card ${i ? "B" : "A"}">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-              <input value="${emarkEsc(tm.name)}" onchange="emarkUpdateMatchTeamField(${i}, 'name', this.value)" style="flex:1;font-weight:900;font-size:1rem;padding:6px 8px;border:1.5px solid #94A3B8;border-radius:8px;">
-              <button type="button" class="btn-action-sm btn-save-score" onclick="emarkSaveRoster(${i})" title="Mémoriser l'effectif dans Firebase">💾 Mémoriser</button>
-              <select onchange="emarkLoadRoster(${i}, this.value)" style="max-width:130px;font-weight:800;">
-                <option value="">Charger…</option>
-                ${savedTeamKeys.map(k => `<option value="${emarkEsc(k)}">${emarkEsc(k)}</option>`).join("")}
-              </select>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+              <img src="${tmLogo}" onerror="this.src=FALLBACK_LOGO_B64" alt="Logo" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#FFF;border:1px solid #CBD5E1;">
+              <input ${disAttr} value="${emarkEsc(tm.name)}" onchange="emarkUpdateMatchTeamField(${i}, 'name', this.value)" style="flex:1;min-width:120px;font-weight:900;font-size:1rem;padding:6px 8px;border:1.5px solid #94A3B8;border-radius:8px;">
+              ${canEdit ? `
+                <button type="button" class="btn-action-sm btn-save-score" onclick="emarkSaveRoster(${i})" title="Mémoriser l'effectif dans Firebase">💾 Mémoriser</button>
+                <select onchange="emarkLoadRoster(${i}, this.value)" style="max-width:130px;font-weight:800;">
+                  <option value="">Charger…</option>
+                  ${savedTeamKeys.map(k => `<option value="${emarkEsc(k)}">${emarkEsc(k)}</option>`).join("")}
+                </select>
+              ` : ""}
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:0.8rem;font-weight:800;margin-bottom:8px;">
-              <span>Coach : <input value="${emarkEsc(tm.coach || "")}" onchange="emarkUpdateMatchTeamField(${i}, 'coach', this.value)" style="width:130px;"></span>
-              <button type="button" class="btn-action-sm" style="background:#EFF6FF;color:#1E3A8A;" ${used >= mx ? "disabled" : ""} onclick="emarkTimeout(${i})">Temps mort (${mx - used}/${mx})</button>
+              <span>Coach : <input ${disAttr} value="${emarkEsc(tm.coach || "")}" onchange="emarkUpdateMatchTeamField(${i}, 'coach', this.value)" style="width:130px;"></span>
+              <button type="button" class="btn-action-sm" style="background:#EFF6FF;color:#1E3A8A;" ${(used >= mx || !canEdit) ? "disabled" : ""} onclick="emarkTimeout(${i})">Temps mort (${mx - used}/${mx})</button>
               <span>Fautes ${emarkPl(S.period)} : <b>${tf}</b>${tf >= 5 ? " · BONUS" : ""}</span>
-              <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#92400E;" onclick="emarkCoachFoul(${i}, 'C')">+C</button>
-              <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#92400E;" onclick="emarkCoachFoul(${i}, 'B')">+B</button>
+              ${canEdit ? `
+                <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#92400E;" onclick="emarkCoachFoul(${i}, 'C')">+C</button>
+                <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#92400E;" onclick="emarkCoachFoul(${i}, 'B')">+B</button>
+              ` : ""}
               <span>${(d.cf || []).join(" ")}${emarkCoachOut(d.cf || []) ? " · exclu" : ""}</span>
             </div>
             ${playerRows}
           </div>`;
         }).join("");
 
+        const logo0 = resolveTournamentTeamLogo(S.teams[0].name, S.teams[0].logo);
+        const logo1 = resolveTournamentTeamLogo(S.teams[1].name, S.teams[1].logo);
+
         matchEl.innerHTML = `
+          ${roleBannerHtml}
           <div class="emark-card">
             <div class="emark-sb">
-              <span class="tn">${emarkEsc(S.teams[0].name)}</span>
+              <span class="tn" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;"><img src="${logo0}" onerror="this.src=FALLBACK_LOGO_B64" alt="" style="width:36px;height:36px;object-fit:contain;">${emarkEsc(S.teams[0].name)}</span>
               <span class="n">${T[0].s}</span>
               <span style="font-size:1.5rem;font-weight:900;color:#FBBF24;">–</span>
               <span class="n">${T[1].s}</span>
-              <span class="tn">${emarkEsc(S.teams[1].name)}</span>
+              <span class="tn" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;"><img src="${logo1}" onerror="this.src=FALLBACK_LOGO_B64" alt="" style="width:36px;height:36px;object-fit:contain;">${emarkEsc(S.teams[1].name)}</span>
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:10px;">
               ${periodsHtml}
               <span id="emarkClockDisplay" style="font-size:1.4rem;font-weight:900;color:#1E3A8A;margin:0 6px;font-variant-numeric:tabular-nums;">${emarkFmt(Math.ceil(emarkRem() / 1000))}</span>
-              <button type="button" class="btn-action-sm btn-save-score" onclick="emarkToggleClock()">${S.run ? "⏸ Arrêter" : "▶ Démarrer"}</button>
-              <button type="button" class="btn-action-sm" style="background:#E2E8F0;color:#0F172A;" onclick="emarkTogglePoss()">Poss : ${S.pos == null ? "—" : emarkEsc(S.teams[S.pos].name)}</button>
-              <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#991B1B;" onclick="emarkUndo()">↩ Annuler</button>
-              <button type="button" class="btn-action-sm btn-reset-up" onclick="emarkResetMatch()">Nouveau match</button>
-              ${S.tm != null ? `<button type="button" class="btn-action-sm btn-set-live" onclick="emarkValidateTournamentScore()">✅ Valider au tournoi</button>` : ""}
+              ${canEdit ? `
+                <button type="button" class="btn-action-sm btn-save-score" onclick="emarkToggleClock()">${S.run ? "⏸ Arrêter" : "▶ Démarrer"}</button>
+                <button type="button" class="btn-action-sm" style="background:#E2E8F0;color:#0F172A;" onclick="emarkTogglePoss()">Poss : ${S.pos == null ? "—" : emarkEsc(S.teams[S.pos].name)}</button>
+                <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#991B1B;" onclick="emarkUndo()">↩ Annuler</button>
+                <button type="button" class="btn-action-sm btn-reset-up" onclick="emarkResetMatch()">Nouveau match</button>
+                ${S.tm != null ? `<button type="button" class="btn-action-sm btn-set-live" onclick="emarkValidateTournamentScore()">✅ Valider au tournoi</button>` : ""}
+              ` : ""}
             </div>
           </div>
 
@@ -7886,12 +8022,12 @@ document.addEventListener("DOMContentLoaded", () => {
             <h3 style="margin:4px 0;font-size:1.8rem;font-weight:900;color:#0F172A;">Résultats & Classement Final</h3>
             <p style="color:#64748B;font-weight:700;">${emarkEsc(TN.org || "LSBSC")}</p>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0;">
-              <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px;">🥈<br><strong>${nm(fin[1])}</strong></div>
-              <div style="background:#FEF3C7;border:2px solid #D97706;border-radius:10px;padding:14px;">🥇<br><strong>${nm(fin[0])}</strong></div>
-              <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px;">🥉<br><strong>${nm(fin[2])}</strong></div>
+              <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px;">🥈<br><strong>${nmWithLogo(fin[1])}</strong></div>
+              <div style="background:#FEF3C7;border:2px solid #D97706;border-radius:10px;padding:14px;">🥇<br><strong>${nmWithLogo(fin[0])}</strong></div>
+              <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px;">🥉<br><strong>${nmWithLogo(fin[2])}</strong></div>
             </div>
-            <ol style="text-align:left;max-width:420px;margin:0 auto;padding-left:22px;font-weight:800;">
-              ${fin.map(i => `<li style="padding:4px 0;">${nm(i)} <span style="color:#64748B;font-size:0.78rem;">(Poule ${P.G[0].includes(i) ? "A" : "B"})</span></li>`).join("")}
+            <ol style="text-align:left;max-width:440px;margin:0 auto;padding-left:22px;font-weight:800;">
+              ${fin.map(i => `<li style="padding:4px 0;">${nmWithLogo(i)} <span style="color:#64748B;font-size:0.78rem;">(Poule ${P.G[0].includes(i) ? "A" : "B"})</span></li>`).join("")}
             </ol>
           </div>`;
         }
@@ -7901,13 +8037,45 @@ document.addEventListener("DOMContentLoaded", () => {
         tournoiEl.innerHTML = `<div class="emark-card" style="color:#991B1B;background:#FEF2F2;border-color:#FCA5A5;">
           <strong>⚠️ Affichage de secours du tournoi</strong>
           <p style="font-size:0.82rem;">${emarkEsc(err && err.message ? err.message : String(err))}</p>
-          <button type="button" class="btn-action-sm btn-save-score" onclick="emarkResetTournament()">Réinitialiser les données du tournoi</button>
+          ${canEdit ? `<button type="button" class="btn-action-sm btn-save-score" onclick="emarkResetTournament()">Réinitialiser les données du tournoi</button>` : ""}
         </div>`;
       }
     }
   }
 
+  window.emarkSelectFirebaseClub = function(idx, clubKey) {
+    if (!canEditEmarkTournament()) { renderEmarkAll(); return; }
+    if (clubKey === "__FREE__") {
+      state.emark.tn.logos[idx] = "";
+      saveEmarkState(true);
+      renderEmarkAll();
+      return;
+    }
+    const clubs = getFirebaseAvailableClubs();
+    const found = clubs.find(c => c.key === clubKey);
+    if (found) {
+      state.emark.tn.names[idx] = found.label;
+      state.emark.tn.logos[idx] = found.logo || "";
+      saveEmarkState(true);
+      renderEmarkAll();
+    }
+  };
+
+  window.emarkUploadCustomTeamLogo = function(idx, ev) {
+    if (!canEditEmarkTournament()) return;
+    const file = ev && ev.target && ev.target.files ? ev.target.files[0] : null;
+    if (!file) return;
+    if (typeof resizeImageFile === "function") {
+      resizeImageFile(file, 160, dataUrl => {
+        state.emark.tn.logos[idx] = dataUrl;
+        saveEmarkState(true);
+        renderEmarkAll();
+      });
+    }
+  };
+
   window.emarkUpdateTnCfg = function(key, val) {
+    if (!canEditEmarkTournament()) { renderEmarkAll(); return; }
     state.emark.tn[key] = val;
     state.emark.tn = sanitizeTournamentObj(state.emark.tn);
     saveEmarkState(true);
@@ -7915,12 +8083,23 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkUpdateTeamName = function(idx, val) {
-    state.emark.tn.names[idx] = val;
+    if (!canEditEmarkTournament()) { renderEmarkAll(); return; }
+    const clean = String(val || "").trim() || ("Équipe " + (idx + 1));
+    state.emark.tn.names[idx] = clean;
+    // Mettre à jour automatiquement le logo si ce nom correspond à un club déjà enregistré dans Firebase
+    const clubs = getFirebaseAvailableClubs();
+    const found = clubs.find(c => c.key === clean.toUpperCase() || c.label.toUpperCase() === clean.toUpperCase());
+    if (found && found.logo) {
+      state.emark.tn.logos[idx] = found.logo;
+    } else if (!state.emark.tn.logos[idx]) {
+      state.emark.tn.logos[idx] = "";
+    }
     saveEmarkState(true);
     renderEmarkAll();
   };
 
   window.emarkUpdateMatchScore = function(matchId, sideIdx, rawVal) {
+    if (!canEditEmarkTournament()) { renderEmarkAll(); return; }
     const s = state.emark.tn.sc[matchId] || [null, null];
     s[sideIdx] = rawVal === "" ? null : Math.max(0, parseInt(rawVal, 10) || 0);
     state.emark.tn.sc[matchId] = s;
@@ -7929,6 +8108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkResetTournament = function() {
+    if (!canEditEmarkTournament()) return;
     if (!confirm("Réinitialiser le tournoi et effacer les scores du tournoi ?")) return;
     state.emark.tn = mkDefaultTournament();
     saveEmarkState(true);
@@ -7936,11 +8116,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkOpenMatchFromTournament = function(matchId, idxA, idxB) {
+    if (!canEditEmarkTournament()) {
+      window.setEmarkView("match");
+      return;
+    }
     const TN = state.emark.tn;
     const fresh = mkDefaultMatchSheet();
     [idxA, idxB].forEach((ti, k) => {
       const nme = TN.names[ti] || ("Équipe " + (ti + 1));
       fresh.teams[k].name = nme;
+      fresh.teams[k].logo = resolveTournamentTeamLogo(nme, TN.logos[ti]);
       const sv = state.emark.savedTeams && state.emark.savedTeams[nme];
       if (sv) {
         fresh.teams[k].coach = sv.coach || "";
@@ -7954,6 +8139,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkValidateTournamentScore = function() {
+    if (!canEditEmarkTournament()) return;
     const S = state.emark.match;
     if (S.tm == null) return;
     const { T } = emarkCalc();
@@ -7967,6 +8153,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkSetPeriod = function(p) {
+    if (!canEditEmarkTournament()) return;
     emarkStop();
     state.emark.match.period = p;
     state.emark.match.ms = p <= 4 ? 600000 : 300000;
@@ -7975,6 +8162,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkToggleClock = function() {
+    if (!canEditEmarkTournament()) return;
     const S = state.emark.match;
     if (S.run) {
       emarkStop();
@@ -7988,6 +8176,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkTogglePoss = function() {
+    if (!canEditEmarkTournament()) return;
     const S = state.emark.match;
     S.pos = S.pos == null ? 0 : 1 - S.pos;
     saveEmarkState(true);
@@ -7995,12 +8184,14 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkUndo = function() {
+    if (!canEditEmarkTournament()) return;
     state.emark.match.log.pop();
     saveEmarkState(true);
     renderEmarkAll();
   };
 
   window.emarkResetMatch = function() {
+    if (!canEditEmarkTournament()) return;
     if (!confirm("Démarrer une nouvelle feuille de marque ?")) return;
     state.emark.match = mkDefaultMatchSheet();
     saveEmarkState(true);
@@ -8008,12 +8199,14 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkPlayerEvent = function(tIdx, pIdx, k) {
+    if (!canEditEmarkTournament()) return;
     emarkPush({ t: tIdx, p: pIdx, k });
     saveEmarkState(true);
     renderEmarkAll();
   };
 
   window.emarkTimeout = function(tIdx) {
+    if (!canEditEmarkTournament()) return;
     emarkStop();
     emarkPush({ t: tIdx, p: -1, k: "TO" });
     saveEmarkState(true);
@@ -8021,27 +8214,34 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkCoachFoul = function(tIdx, k) {
+    if (!canEditEmarkTournament()) return;
     emarkPush({ t: tIdx, p: -1, k });
     saveEmarkState(true);
     renderEmarkAll();
   };
 
   window.emarkUpdateMatchTeamField = function(tIdx, field, val) {
+    if (!canEditEmarkTournament()) { renderEmarkAll(); return; }
     state.emark.match.teams[tIdx][field] = val;
+    if (field === "name") {
+      state.emark.match.teams[tIdx].logo = resolveTournamentTeamLogo(val, "");
+    }
     saveEmarkState(true);
     renderEmarkAll();
   };
 
   window.emarkUpdatePlayerName = function(tIdx, pIdx, val) {
+    if (!canEditEmarkTournament()) { renderEmarkAll(); return; }
     state.emark.match.teams[tIdx].players[pIdx].name = val;
-    saveEmarkState(true);
   };
 
   window.emarkSaveRoster = function(tIdx) {
+    if (!canEditEmarkTournament()) return;
     const tm = state.emark.match.teams[tIdx];
     if (!tm || !tm.name) return;
     state.emark.savedTeams[tm.name] = {
       coach: tm.coach || "",
+      logo: resolveTournamentTeamLogo(tm.name, tm.logo),
       players: (tm.players || []).map(p => ({ ...p }))
     };
     saveEmarkState(true);
@@ -8050,14 +8250,95 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   window.emarkLoadRoster = function(tIdx, name) {
+    if (!canEditEmarkTournament()) return;
     if (!name || !state.emark.savedTeams || !state.emark.savedTeams[name]) return;
     const sv = state.emark.savedTeams[name];
     state.emark.match.teams[tIdx].name = name;
+    state.emark.match.teams[tIdx].logo = resolveTournamentTeamLogo(name, sv.logo);
     state.emark.match.teams[tIdx].coach = sv.coach || "";
     state.emark.match.teams[tIdx].players = (sv.players || mkDefaultPlayers()).map(p => ({ ...p }));
     saveEmarkState(true);
     renderEmarkAll();
   };
+
+  // Hook dans le pavé PIN (requestPinAccess / pressPinDigit) pour le déverrouillage Admin ou Coach depuis le tournoi
+  const _prevRequestPinV48 = window.requestPinAccess;
+  window.requestPinAccess = function(target) {
+    if (target === "emark_unlock") {
+      state.pinTarget = "emark_unlock";
+      state.pinBuffer = "";
+      const titleEl = document.getElementById("pinModalTitle");
+      if (titleEl) titleEl.textContent = "🔑 Déverrouiller Tournoi & e-Marque (PIN Admin ou Coach)";
+      const box = document.getElementById("pinDisplayBox");
+      if (box) box.textContent = "";
+      const modal = document.getElementById("pinModal");
+      if (modal) modal.classList.add("open");
+      return;
+    }
+    if (_prevRequestPinV48) _prevRequestPinV48(target);
+  };
+
+  const _prevPressPinDigitV48 = window.pressPinDigit;
+  window.pressPinDigit = function(d) {
+    if (state.pinTarget === "emark_unlock") {
+      if (d === "C") {
+        state.pinBuffer = "";
+      } else if (d === "OK") {
+        verifyEmarkUnlockPin();
+        return;
+      } else if (state.pinBuffer.length < 6) {
+        state.pinBuffer += String(d);
+      }
+      const box = document.getElementById("pinDisplayBox");
+      if (box) box.textContent = "•".repeat(state.pinBuffer.length);
+
+      const code = state.pinBuffer;
+      const isMaster = code === (state.pinMaster || "9694");
+      const isCoach = (state.coachProfiles || []).some(c => String(c.pin || "").trim() === code);
+      if (isMaster || isCoach || (code.length === 4 && (state.pinMaster || "9694").length === 4)) {
+        setTimeout(verifyEmarkUnlockPin, 120);
+      }
+      return;
+    }
+    if (_prevPressPinDigitV48) _prevPressPinDigitV48(d);
+  };
+
+  function verifyEmarkUnlockPin() {
+    const code = (state.pinBuffer || "").trim();
+    if (!code) return;
+    if (code === (state.pinMaster || "9694")) {
+      state.isAdminUser = true;
+      state.staffUnlocked = true;
+      state.coachUnlocked = true;
+      state.activeCoachId = "admin";
+      state.activeCoachName = "Admin";
+      state.activeStaffName = "Admin";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      renderEmarkAll();
+      return;
+    }
+    const coachMatch = (state.coachProfiles || []).find(c => String(c.pin || "").trim() === code);
+    if (coachMatch) {
+      state.coachUnlocked = true;
+      state.activeCoachId = coachMatch.id;
+      state.activeCoachName = coachMatch.name || "Coach";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      renderEmarkAll();
+      return;
+    }
+    const box = document.getElementById("pinDisplayBox");
+    if (box) {
+      box.style.borderColor = "#DC2626";
+      box.textContent = "CODE PIN INCONNU";
+      state.pinBuffer = "";
+      setTimeout(() => {
+        box.style.borderColor = "#CBD5E1";
+        box.textContent = "";
+      }, 900);
+    }
+  }
 
   setInterval(() => {
     if (!state.emark || !state.emark.isOpen) return;
@@ -8081,4 +8362,95 @@ document.addEventListener("DOMContentLoaded", () => {
       pullEmarkFromFirebase();
     }
   }, 6000);
+})();
+
+/* ================= EXTENSION V49 : CORRECTION AFFICHAGE LOGO CLUB (FALLBACK & ONERROR GARANTI) ================= */
+(function() {
+  function healClubLogoAssets() {
+    if (!state.clubAssets || typeof state.clubAssets !== "object") {
+      state.clubAssets = {
+        logo: FALLBACK_LOGO_B64,
+        mascot: FALLBACK_MASCOT_B64,
+        customBadges: {}
+      };
+    }
+    if (!state.clubAssets.logo || typeof state.clubAssets.logo !== "string" || !state.clubAssets.logo.trim()) {
+      state.clubAssets.logo = "assets/logo-lsbsc.png";
+    }
+    if (!state.clubAssets.mascot || typeof state.clubAssets.mascot !== "string" || !state.clubAssets.mascot.trim()) {
+      state.clubAssets.mascot = "assets/mascotte-lsbsc.png";
+    }
+  }
+
+  const _origGetTeamBadgeSrcV49 = typeof getTeamBadgeSrc === "function" ? getTeamBadgeSrc : null;
+  if (_origGetTeamBadgeSrcV49) {
+    getTeamBadgeSrc = function(teamName) {
+      healClubLogoAssets();
+      if (isLSBSC(teamName)) {
+        return state.clubAssets.logo || FALLBACK_LOGO_B64;
+      }
+      const src = _origGetTeamBadgeSrcV49(teamName);
+      return src || FALLBACK_LOGO_B64;
+    };
+  }
+
+  function applyScoreboardLogoFallbacks() {
+    healClubLogoAssets();
+    const current = state.matches.find(m => m.id === state.selectedMatchId) || state.matches[0];
+    const homeLogo = document.getElementById("sbHomeLogo");
+    const awayLogo = document.getElementById("sbAwayLogo");
+
+    if (homeLogo) {
+      const targetHomeSrc = current ? getTeamBadgeSrc(current.home) : (state.clubAssets.logo || FALLBACK_LOGO_B64);
+      if (homeLogo.src !== targetHomeSrc) {
+        homeLogo.src = targetHomeSrc;
+      }
+      homeLogo.onerror = function() {
+        this.onerror = null;
+        this.src = (current && isLSBSC(current.home)) ? FALLBACK_LOGO_B64 : (current ? generateClubSvgDataUri(current.home) : FALLBACK_LOGO_B64);
+      };
+    }
+
+    if (awayLogo) {
+      const targetAwaySrc = current ? getTeamBadgeSrc(current.away) : FALLBACK_LOGO_B64;
+      if (awayLogo.src !== targetAwaySrc) {
+        awayLogo.src = targetAwaySrc;
+      }
+      awayLogo.onerror = function() {
+        this.onerror = null;
+        this.src = (current && isLSBSC(current.away)) ? FALLBACK_LOGO_B64 : (current ? generateClubSvgDataUri(current.away) : FALLBACK_LOGO_B64);
+      };
+    }
+
+    const headerLogo = document.getElementById("headerLogoImg");
+    if (headerLogo) {
+      headerLogo.onerror = function() {
+        this.onerror = null;
+        this.src = FALLBACK_LOGO_B64;
+      };
+    }
+  }
+
+  const _prevRenderRightColumnV49 = typeof renderRightColumn === "function" ? renderRightColumn : null;
+  if (_prevRenderRightColumnV49) {
+    renderRightColumn = function() {
+      healClubLogoAssets();
+      _prevRenderRightColumnV49();
+      applyScoreboardLogoFallbacks();
+    };
+  }
+
+  const _prevRenderAllV49 = typeof renderAll === "function" ? renderAll : null;
+  if (_prevRenderAllV49) {
+    renderAll = function() {
+      healClubLogoAssets();
+      _prevRenderAllV49();
+      applyScoreboardLogoFallbacks();
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    healClubLogoAssets();
+    applyScoreboardLogoFallbacks();
+  });
 })();
