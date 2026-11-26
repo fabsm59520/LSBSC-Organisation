@@ -5955,3 +5955,1318 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 6000);
   });
 })();
+
+/* ================= EXTENSION V42 : ONGLET / ESPACE COACH COMPLET (MULTI-ÉQUIPES, PIN COACH, FICHES & COMMENTAIRES MATCHS) ================= */
+(function() {
+  const DEFAULT_COACH_PROFILES = [
+    { id: "coach_1", name: "Coach U11F / U13F", pin: "2011", teams: ["U11F", "U13F"] },
+    { id: "coach_2", name: "Coach U15F / U18F", pin: "2015", teams: ["U15F", "U18F"] },
+    { id: "coach_3", name: "Coach U15M / U18M", pin: "2018", teams: ["U15M", "U18M"] },
+    { id: "coach_4", name: "Coach Seniors (SM1 / SM2)", pin: "2026", teams: ["SM1", "SM2"] },
+    { id: "coach_5", name: "Coach U9 Mini-Poussins", pin: "2009", teams: ["U9"] }
+  ];
+
+  state.coachProfiles = JSON.parse(JSON.stringify(DEFAULT_COACH_PROFILES));
+  state.coachUnlocked = false;
+  state.activeCoachId = null;
+  state.activeCoachName = "";
+  state.coachSelectedTeam = "";
+  state.coachSubTab = "overview"; // 'overview' | 'roster' | 'stats' | 'comments'
+  state.coachIsOpen = false;
+  state.matchComments = {}; // { [matchId]: [ { id, author, text, createdAt } ] }
+  state.teamRostersCustom = {}; // { [cat]: [ { name, num, poste, note } ] }
+
+  function loadCoachLocalData() {
+    try {
+      const saved = localStorage.getItem("lsbsc_state_v4");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.coachProfiles) && parsed.coachProfiles.length > 0) {
+          state.coachProfiles = parsed.coachProfiles;
+        }
+        if (parsed.matchComments && typeof parsed.matchComments === "object") {
+          state.matchComments = parsed.matchComments;
+        }
+        if (parsed.teamRostersCustom && typeof parsed.teamRostersCustom === "object") {
+          state.teamRostersCustom = parsed.teamRostersCustom;
+        }
+      }
+    } catch (e) {}
+  }
+  loadCoachLocalData();
+
+  function normalizePlayerNameKey(rawName) {
+    const base = String(rawName || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!base) return "joueur";
+    return base.split(" ").filter(Boolean).sort().join("_");
+  }
+
+  function getActiveCoachProfile() {
+    if (state.isAdminUser || state.activeCoachId === "admin") {
+      return {
+        id: "admin",
+        name: "Admin / Responsable Technique",
+        pin: state.pinMaster || "9694",
+        teams: LSBSC_TEAMS_CATALOG.map(t => t.cat)
+      };
+    }
+    return (state.coachProfiles || []).find(c => c.id === state.activeCoachId) || null;
+  }
+
+  function getCoachAllowedTeams() {
+    const prof = getActiveCoachProfile();
+    if (!prof) return [];
+    const validCats = LSBSC_TEAMS_CATALOG.map(t => t.cat);
+    const list = (prof.teams || []).filter(c => validCats.includes(c));
+    return list.length > 0 ? list : validCats;
+  }
+
+  persistLocalOnly = function() {
+    try {
+      localStorage.setItem("lsbsc_state_v4", JSON.stringify({
+        matches: state.matches,
+        tickerText: state.tickerText,
+        clubAssets: state.clubAssets,
+        buvetteMenuText: state.buvetteMenuText,
+        clubInfosText: state.clubInfosText,
+        tvDurations: state.tvDurations,
+        trustedPins: state.trustedPins,
+        coachProfiles: state.coachProfiles,
+        matchComments: state.matchComments,
+        teamRostersCustom: state.teamRostersCustom,
+        updatedAt: state.lastUpdatedAt
+      }));
+    } catch (e) {}
+  };
+
+  saveState = function(pushCloud = true) {
+    const now = Date.now();
+    state.lastUpdatedAt = now;
+    const payload = {
+      matches: state.matches,
+      tickerText: state.tickerText,
+      clubAssets: state.clubAssets,
+      buvetteMenuText: state.buvetteMenuText,
+      clubInfosText: state.clubInfosText,
+      tvDurations: state.tvDurations,
+      trustedPins: state.trustedPins,
+      coachProfiles: state.coachProfiles,
+      matchComments: state.matchComments,
+      teamRostersCustom: state.teamRostersCustom,
+      updatedAt: now
+    };
+    try {
+      localStorage.setItem("lsbsc_state_v4", JSON.stringify(payload));
+    } catch (e) {}
+    if (bcChannel) {
+      try { bcChannel.postMessage(payload); } catch (e) {}
+    }
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (pushCloud && targetUrl) {
+      fetch(targetUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(() => {
+        const syncEl = document.getElementById("syncStatusBadge");
+        if (syncEl) syncEl.textContent = "● Direct Synchronisé";
+      }).catch(() => {});
+    }
+  };
+
+  pollCloudSync = async function() {
+    if (cloudPolling || document.hidden) return;
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (!targetUrl) return;
+    cloudPolling = true;
+    try {
+      const light = cloudLightUrl(targetUrl);
+      if (light) {
+        const r = await fetch(light);
+        if (!r.ok) return;
+        const ts = await r.json();
+        if (typeof ts !== "number" || ts <= state.lastUpdatedAt) return;
+      }
+      const res = await fetch(targetUrl, { headers: { "Accept": "application/json" } });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && Array.isArray(data.matches) && data.updatedAt && data.updatedAt > state.lastUpdatedAt) {
+        state.lastUpdatedAt = data.updatedAt;
+        state.matches = overlaySchedule(data.matches);
+        if (data.tickerText) state.tickerText = data.tickerText;
+        if (data.buvetteMenuText) state.buvetteMenuText = data.buvetteMenuText;
+        if (data.clubInfosText) state.clubInfosText = data.clubInfosText;
+        if (data.tvDurations) state.tvDurations = Object.assign(state.tvDurations, data.tvDurations);
+        if (Array.isArray(data.trustedPins)) state.trustedPins = data.trustedPins;
+        if (Array.isArray(data.coachProfiles) && data.coachProfiles.length > 0) state.coachProfiles = data.coachProfiles;
+        if (data.matchComments && typeof data.matchComments === "object") state.matchComments = data.matchComments;
+        if (data.teamRostersCustom && typeof data.teamRostersCustom === "object") state.teamRostersCustom = data.teamRostersCustom;
+        if (data.clubAssets) state.clubAssets = Object.assign(state.clubAssets, data.clubAssets);
+        persistLocalOnly();
+        renderAll();
+        if (state.coachIsOpen) renderCoachSpace();
+      }
+    } catch (e) {
+    } finally {
+      cloudPolling = false;
+    }
+  };
+
+  const _prevRequestPinAccessV42 = window.requestPinAccess;
+  window.requestPinAccess = function(target) {
+    if (target === "coach") {
+      if (state.coachUnlocked || state.isAdminUser) {
+        if (state.isAdminUser && !state.coachUnlocked) {
+          state.coachUnlocked = true;
+          state.activeCoachId = "admin";
+          state.activeCoachName = "Admin";
+        }
+        window.openCoachSpace();
+        return;
+      }
+      state.pinTarget = "coach";
+      state.pinBuffer = "";
+      const titleEl = document.getElementById("pinModalTitle");
+      if (titleEl) titleEl.textContent = "📋 Accès Espace Coach — Saisissez votre PIN";
+      const box = document.getElementById("pinDisplayBox");
+      if (box) box.textContent = "";
+      const modal = document.getElementById("pinModal");
+      if (modal) modal.classList.add("open");
+      return;
+    }
+    _prevRequestPinAccessV42(target);
+  };
+
+  const _prevPressPinDigitV42 = window.pressPinDigit;
+  window.pressPinDigit = function(d) {
+    if (state.pinTarget === "coach") {
+      if (d === "C") {
+        state.pinBuffer = "";
+      } else if (d === "OK") {
+        verifyCoachPin();
+        return;
+      } else if (state.pinBuffer.length < 6) {
+        state.pinBuffer += String(d);
+      }
+      const box = document.getElementById("pinDisplayBox");
+      if (box) box.textContent = "•".repeat(state.pinBuffer.length);
+
+      if (state.pinBuffer.length >= 4) {
+        const code = state.pinBuffer;
+        const isMaster = code === (state.pinMaster || "9694");
+        const isCoach = (state.coachProfiles || []).some(c => String(c.pin).trim() === code);
+        if (isMaster || isCoach || state.pinBuffer.length === 4) {
+          setTimeout(verifyCoachPin, 120);
+        }
+      }
+      return;
+    }
+    _prevPressPinDigitV42(d);
+  };
+
+  function verifyCoachPin() {
+    const code = (state.pinBuffer || "").trim();
+    if (!code) return;
+
+    if (code === (state.pinMaster || "9694")) {
+      state.coachUnlocked = true;
+      state.isAdminUser = true;
+      state.staffUnlocked = true;
+      state.activeCoachId = "admin";
+      state.activeCoachName = "Admin";
+      state.activeStaffName = "Admin";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      window.openCoachSpace();
+      return;
+    }
+
+    const coachMatch = (state.coachProfiles || []).find(c => String(c.pin).trim() === code);
+    if (coachMatch) {
+      state.coachUnlocked = true;
+      state.activeCoachId = coachMatch.id;
+      state.activeCoachName = coachMatch.name || "Coach";
+      document.getElementById("pinModal").classList.remove("open");
+      renderAll();
+      window.openCoachSpace();
+      return;
+    }
+
+    const box = document.getElementById("pinDisplayBox");
+    if (box) {
+      box.style.borderColor = "#DC2626";
+      box.textContent = "CODE PIN INCONNU";
+      state.pinBuffer = "";
+      setTimeout(() => {
+        box.style.borderColor = "#CBD5E1";
+        box.textContent = "";
+      }, 900);
+    }
+  }
+
+  window.openCoachSpace = function() {
+    if (!state.coachUnlocked && !state.isAdminUser) {
+      window.requestPinAccess("coach");
+      return;
+    }
+    const allowed = getCoachAllowedTeams();
+    if (!state.coachSelectedTeam || !allowed.includes(state.coachSelectedTeam)) {
+      state.coachSelectedTeam = allowed[0] || "U13F";
+    }
+    state.coachIsOpen = true;
+    const ov = document.getElementById("coachSpaceOverlay");
+    if (ov) {
+      ov.style.display = "flex";
+      ov.setAttribute("aria-hidden", "false");
+    }
+    if (typeof window.pullImportedStatsFromCloud === "function") {
+      window.pullImportedStatsFromCloud(false);
+    }
+    renderCoachSpace();
+  };
+
+  window.closeCoachSpace = function() {
+    state.coachIsOpen = false;
+    const ov = document.getElementById("coachSpaceOverlay");
+    if (ov) {
+      ov.style.display = "none";
+      ov.setAttribute("aria-hidden", "true");
+    }
+  };
+
+  window.logoutCoachSession = function() {
+    state.coachUnlocked = false;
+    state.activeCoachId = null;
+    state.activeCoachName = "";
+    window.closeCoachSpace();
+    renderAll();
+  };
+
+  window.toggleCoachTeamAssignBox = function() {
+    const panel = document.getElementById("coachTeamAssignPanel");
+    if (!panel) return;
+    const willOpen = panel.style.display === "none";
+    panel.style.display = willOpen ? "flex" : "none";
+    if (willOpen) renderCoachSelfTeamsCheckboxes();
+  };
+
+  function renderCoachSelfTeamsCheckboxes() {
+    const grid = document.getElementById("coachSelfTeamsGrid");
+    if (!grid) return;
+    const allowed = getCoachAllowedTeams();
+    grid.innerHTML = LSBSC_TEAMS_CATALOG.map(t => {
+      const checked = allowed.includes(t.cat);
+      return `
+        <label class="coach-team-chk-pill ${checked ? "checked" : ""}">
+          <input type="checkbox" ${checked ? "checked" : ""} onchange="toggleCoachAssignedTeam('${t.cat}', this.checked)">
+          <span><strong>${t.cat}</strong> — ${t.short}</span>
+        </label>
+      `;
+    }).join("");
+  }
+
+  window.toggleCoachAssignedTeam = function(catCode, isChecked) {
+    const prof = getActiveCoachProfile();
+    if (!prof) return;
+    if (prof.id === "admin") {
+      if (isChecked) state.coachSelectedTeam = catCode;
+      renderCoachSelfTeamsCheckboxes();
+      renderCoachSpace();
+      return;
+    }
+    let nextTeams = Array.isArray(prof.teams) ? [...prof.teams] : [];
+    if (isChecked && !nextTeams.includes(catCode)) {
+      nextTeams.push(catCode);
+    } else if (!isChecked) {
+      if (nextTeams.length <= 1) {
+        alert("Un coach doit rester associé à au moins une équipe.");
+        renderCoachSelfTeamsCheckboxes();
+        return;
+      }
+      nextTeams = nextTeams.filter(x => x !== catCode);
+    }
+    prof.teams = nextTeams;
+    if (!nextTeams.includes(state.coachSelectedTeam)) {
+      state.coachSelectedTeam = nextTeams[0];
+    }
+    saveState(true);
+    renderCoachSelfTeamsCheckboxes();
+    renderCoachSpace();
+  };
+
+  window.selectCoachTeamTab = function(catCode) {
+    state.coachSelectedTeam = catCode;
+    renderCoachSpace();
+  };
+
+  window.setCoachSubTab = function(subTab) {
+    state.coachSubTab = subTab;
+    ["overview", "roster", "stats", "comments"].forEach(k => {
+      const btn = document.getElementById("coachSubTab" + k.charAt(0).toUpperCase() + k.slice(1));
+      if (btn) btn.classList.toggle("active", k === subTab);
+    });
+    renderCoachDynamicContent();
+  };
+
+  function getTeamAggregatedPlayers(catCode) {
+    const teamMatches = (state.matches || []).filter(m => m.cat === catCode);
+    const reportsMap = typeof window.getImportedStatsMap === "function" ? window.getImportedStatsMap() : {};
+    const agg = new Map();
+
+    teamMatches.forEach(m => {
+      const rep = reportsMap[m.id] || (typeof window.getPdfMatchReport === "function" ? window.getPdfMatchReport(m.id) : null);
+      if (!rep || !rep.players) return;
+      const sideKey = rep.lsbscSide === "home" ? "home" : "away";
+      const list = rep.players[sideKey] || [];
+      list.forEach(p => {
+        const rawName = String(p.name || "Joueur").trim();
+        const key = normalizePlayerNameKey(rawName);
+        const numStr = String(p.num || "").replace(/^#/, "").trim();
+        const cur = agg.get(key) || {
+          key,
+          name: rawName,
+          nums: new Set(),
+          games: 0,
+          starts: 0,
+          pts: 0,
+          fg: 0,
+          p3: 0,
+          p2in: 0,
+          p2out: 0,
+          ft: 0,
+          fouls: 0
+        };
+        if (numStr) cur.nums.add("#" + numStr);
+        cur.games += 1;
+        if (p.starter) cur.starts += 1;
+        cur.pts += Number(p.pts) || 0;
+        cur.fg += Number(p.fg) || 0;
+        cur.p3 += Number(p.p3) || 0;
+        cur.p2in += Number(p.p2in) || 0;
+        cur.p2out += Number(p.p2out) || 0;
+        cur.ft += Number(p.ft) || 0;
+        cur.fouls += Number(p.fouls) || 0;
+        agg.set(key, cur);
+      });
+    });
+
+    const customList = (state.teamRostersCustom && state.teamRostersCustom[catCode]) || [];
+    customList.forEach(cp => {
+      const key = normalizePlayerNameKey(cp.name);
+      if (!agg.has(key)) {
+        agg.set(key, {
+          key,
+          name: cp.name,
+          nums: cp.num ? new Set(["#" + String(cp.num).replace(/^#/, "")]) : new Set(),
+          games: 0,
+          starts: 0,
+          pts: 0,
+          fg: 0,
+          p3: 0,
+          p2in: 0,
+          p2out: 0,
+          ft: 0,
+          fouls: 0,
+          poste: cp.poste || "",
+          note: cp.note || ""
+        });
+      } else {
+        const existing = agg.get(key);
+        if (cp.num) existing.nums.add("#" + String(cp.num).replace(/^#/, ""));
+        if (cp.poste) existing.poste = cp.poste;
+        if (cp.note) existing.note = cp.note;
+      }
+    });
+
+    return Array.from(agg.values())
+      .map(p => ({
+        ...p,
+        numsLabel: Array.from(p.nums).join(", ") || "-"
+      }))
+      .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+  }
+
+  window.addCoachRosterPlayer = function(catCode) {
+    const nameEl = document.getElementById("inpCoachPlayerName");
+    const numEl = document.getElementById("inpCoachPlayerNum");
+    const posteEl = document.getElementById("inpCoachPlayerPoste");
+    const noteEl = document.getElementById("inpCoachPlayerNote");
+
+    const name = nameEl ? nameEl.value.trim() : "";
+    if (!name) {
+      alert("Veuillez saisir le nom et prénom du joueur / de la joueuse.");
+      return;
+    }
+    if (!state.teamRostersCustom[catCode]) state.teamRostersCustom[catCode] = [];
+    state.teamRostersCustom[catCode].push({
+      name,
+      num: numEl ? numEl.value.trim() : "",
+      poste: posteEl ? posteEl.value.trim() : "",
+      note: noteEl ? noteEl.value.trim() : ""
+    });
+    saveState(true);
+    renderCoachDynamicContent();
+  };
+
+  window.addCoachMatchComment = function(matchId) {
+    const inp = document.getElementById(`inpCoachComment_${matchId}`);
+    const txt = inp ? inp.value.trim() : "";
+    if (!txt) return;
+
+    if (!Array.isArray(state.matchComments[matchId])) {
+      state.matchComments[matchId] = [];
+    }
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }) + " à " +
+                    now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+    state.matchComments[matchId].push({
+      id: "c_" + Date.now(),
+      author: state.activeCoachName || "Coach",
+      text: txt,
+      createdAt: dateStr
+    });
+
+    saveState(true);
+    renderCoachDynamicContent();
+  };
+
+  window.deleteCoachMatchComment = function(matchId, commentId) {
+    if (!Array.isArray(state.matchComments[matchId])) return;
+    state.matchComments[matchId] = state.matchComments[matchId].filter(c => c.id !== commentId);
+    saveState(true);
+    renderCoachDynamicContent();
+  };
+
+  function renderCoachSpace() {
+    const titleEl = document.getElementById("coachSpaceHeaderTitle");
+    const subEl = document.getElementById("coachSpaceHeaderSub");
+    const tabsEl = document.getElementById("coachAssignedTabs");
+    const allowed = getCoachAllowedTeams();
+
+    if (titleEl) {
+      titleEl.textContent = `📋 Espace ${state.activeCoachName || "Coach"} — Revue Complète`;
+    }
+    if (subEl) {
+      subEl.textContent = `${allowed.length} équipe(s) associée(s) : ${allowed.join(" • ")}`;
+    }
+
+    if (tabsEl) {
+      tabsEl.innerHTML = allowed.map(cat => {
+        const info = LSBSC_TEAMS_CATALOG.find(x => x.cat === cat);
+        const active = cat === state.coachSelectedTeam;
+        return `
+          <button type="button" class="coach-team-tab-btn ${active ? "active" : ""}" onclick="selectCoachTeamTab('${cat}')">
+            <span>🏀 ${cat}</span>
+            <span style="font-size:0.74rem;opacity:0.9;">(${info ? info.short : cat})</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    renderCoachDynamicContent();
+  }
+
+  function renderCoachDynamicContent() {
+    const container = document.getElementById("coachDynamicContainer");
+    if (!container) return;
+
+    const cat = state.coachSelectedTeam || "U13F";
+    const teamInfo = LSBSC_TEAMS_CATALOG.find(x => x.cat === cat) || { cat, short: cat, fullName: cat };
+    const teamMatches = (state.matches || []).filter(m => m.cat === cat);
+    const reportsMap = typeof window.getImportedStatsMap === "function" ? window.getImportedStatsMap() : {};
+
+    let wins = 0, losses = 0, draws = 0, ptsFor = 0, ptsAgainst = 0, pdfCount = 0;
+    teamMatches.forEach(m => {
+      if (reportsMap[m.id]) pdfCount++;
+      if (m.status === "finished" || m.status === "forfeit") {
+        const homeUs = isLSBSC(m.home);
+        ptsFor += homeUs ? (Number(m.sh) || 0) : (Number(m.sa) || 0);
+        ptsAgainst += homeUs ? (Number(m.sa) || 0) : (Number(m.sh) || 0);
+        const out = computeMatchOutcome(m);
+        if (out === "win") wins++;
+        else if (out === "loss") losses++;
+        else if (out === "draw") draws++;
+      }
+    });
+
+    const playersList = getTeamAggregatedPlayers(cat);
+
+    if (state.coachSubTab === "roster") {
+      container.innerHTML = `
+        <div class="ssp-panel" style="border-left:6px solid #1E3A8A;">
+          <div class="ssp-panel-title">
+            <h3>👥 Fiche d'Équipe — ${teamInfo.fullName} (${cat})</h3>
+            <span style="font-size:0.78rem;font-weight:900;color:#0369A1;">${playersList.length} joueur(s) / joueuse(s) recensé(e)s</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;background:#F8FAFC;padding:10px;border-radius:10px;border:1px solid #CBD5E1;">
+            <input id="inpCoachPlayerName" type="text" placeholder="Nom Prénom (ex: DUPONT, Emma)" style="flex:2;min-width:170px;padding:7px 10px;border-radius:8px;border:1.5px solid #94A3B8;font-size:0.82rem;font-weight:700;">
+            <input id="inpCoachPlayerNum" type="text" placeholder="N° Maillot" style="width:95px;padding:7px 10px;border-radius:8px;border:1.5px solid #94A3B8;font-size:0.82rem;font-weight:700;">
+            <input id="inpCoachPlayerPoste" type="text" placeholder="Poste / Rôle (ex: Meneur)" style="flex:1;min-width:130px;padding:7px 10px;border-radius:8px;border:1.5px solid #94A3B8;font-size:0.82rem;font-weight:700;">
+            <input id="inpCoachPlayerNote" type="text" placeholder="Note coach (ex: Capitaine)" style="flex:1;min-width:140px;padding:7px 10px;border-radius:8px;border:1.5px solid #94A3B8;font-size:0.82rem;font-weight:700;">
+            <button type="button" class="btn-action-sm btn-save-score" onclick="addCoachRosterPlayer('${cat}')">➕ Ajouter à la fiche</button>
+          </div>
+
+          <div class="coach-roster-grid">
+            ${playersList.length > 0 ? playersList.map(p => `
+              <div class="coach-player-card">
+                <div class="coach-player-card-head">
+                  <span class="coach-player-name">${p.name}</span>
+                  <span class="coach-player-nums">${p.numsLabel}</span>
+                </div>
+                ${p.poste || p.note ? `<div style="font-size:0.74rem;font-weight:800;color:#EA580C;">${[p.poste, p.note].filter(Boolean).join(" • ")}</div>` : ""}
+                <div class="coach-player-metrics">
+                  <span>🏀 ${p.games} match(s)</span>
+                  <span>⭐ ${p.pts} pts (${p.games > 0 ? (p.pts / p.games).toFixed(1) : "0.0"}/m)</span>
+                  <span>🎯 ${p.fg} tirs (${p.p3}×3pts)</span>
+                  <span>⚠️ ${p.fouls} ftes</span>
+                </div>
+              </div>
+            `).join("") : `<p style="font-weight:800;color:#64748B;">Aucun joueur enregistré pour le moment. Importez une feuille de match FFBB ou ajoutez un joueur ci-dessus.</p>`}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    if (state.coachSubTab === "stats") {
+      const reportsWithMatch = teamMatches.filter(m => reportsMap[m.id]);
+      container.innerHTML = `
+        <div class="ssp-panel">
+          <div class="ssp-panel-title">
+            <h3>🏅 Tableau Statistique Complet — ${teamInfo.fullName} (${pdfCount} feuille(s) FFBB)</h3>
+            ${state.isAdminUser ? `<button type="button" class="btn-action-sm" style="background:#EA580C;color:#FFF;" onclick="closeCoachSpace();openSeasonStatsPage();">⬆️ Importer / Exporter JSON</button>` : ""}
+          </div>
+          <div class="ssp-table-wrap">
+            <table class="ssp-table">
+              <thead>
+                <tr>
+                  <th style="text-align:left;">Joueuse / Joueur</th>
+                  <th>N° portés</th>
+                  <th>Matchs</th>
+                  <th>5 Dép.</th>
+                  <th>Pts</th>
+                  <th>Moy.</th>
+                  <th>Tirs</th>
+                  <th>3pts</th>
+                  <th>2Int</th>
+                  <th>2Ext</th>
+                  <th>LF</th>
+                  <th>Fautes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${playersList.length > 0 ? playersList.map(p => `
+                  <tr>
+                    <td class="left">${p.name}</td>
+                    <td>${p.numsLabel}</td>
+                    <td>${p.games}</td>
+                    <td>${p.starts}</td>
+                    <td><strong>${p.pts}</strong></td>
+                    <td>${p.games > 0 ? (p.pts / p.games).toFixed(1) : "0.0"}</td>
+                    <td>${p.fg}</td>
+                    <td>${p.p3}</td>
+                    <td>${p.p2in}</td>
+                    <td>${p.p2out}</td>
+                    <td>${p.ft}</td>
+                    <td>${p.fouls}</td>
+                  </tr>
+                `).join("") : `<tr><td colspan="12" style="padding:16px;color:#64748B;">Aucune feuille statistique importée pour ${cat}.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        ${reportsWithMatch.map(m => {
+          const rep = reportsMap[m.id];
+          const sideKey = rep.lsbscSide === "home" ? "home" : "away";
+          const plist = (rep.players && rep.players[sideKey]) || [];
+          return `
+            <div class="ssp-panel" style="border-left:5px solid #EA580C;">
+              <div class="ssp-panel-title">
+                <h3>📋 ${m.date} • ${m.home} (${m.sh}) vs ${m.away} (${m.sa}) — ${rep.matchRef || ""}</h3>
+                <span style="font-size:0.76rem;font-weight:800;color:#475569;">Arbitres : ${rep.arbitres || "-"}</span>
+              </div>
+              <div class="ssp-table-wrap">
+                <table class="ssp-table">
+                  <thead>
+                    <tr>
+                      <th style="text-align:left;">Joueur / Joueuse</th>
+                      <th>N°</th>
+                      <th>5 Dép.</th>
+                      <th>Tps</th>
+                      <th>Pts</th>
+                      <th>Tirs</th>
+                      <th>3pts</th>
+                      <th>2Int</th>
+                      <th>2Ext</th>
+                      <th>LF</th>
+                      <th>Ftes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${plist.map(pl => `
+                      <tr>
+                        <td class="left">${pl.name}</td>
+                        <td><strong>#${pl.num}</strong></td>
+                        <td>${pl.starter ? "⭐" : "-"}</td>
+                        <td>${pl.min || "-"}</td>
+                        <td><strong>${pl.pts}</strong></td>
+                        <td>${pl.fg}</td>
+                        <td>${pl.p3}</td>
+                        <td>${pl.p2in}</td>
+                        <td>${pl.p2out}</td>
+                        <td>${pl.ft}</td>
+                        <td>${pl.fouls}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      `;
+      return;
+    }
+
+    if (state.coachSubTab === "comments") {
+      container.innerHTML = `
+        <div class="ssp-panel" style="border-left:6px solid #0284C7;">
+          <div class="ssp-panel-title">
+            <h3>💬 Commentaires & Notes Techniques des Coachs — ${teamInfo.fullName}</h3>
+            <span style="font-size:0.76rem;font-weight:800;color:#0369A1;">Synchronisé entre coachs</span>
+          </div>
+          ${teamMatches.map(m => {
+            const comments = Array.isArray(state.matchComments[m.id]) ? state.matchComments[m.id] : [];
+            const scoreLbl = m.status === "upcoming" ? `🕒 ${m.time}` : `${m.sh} - ${m.sa}`;
+            return `
+              <div class="coach-comment-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                  <div>
+                    <strong style="font-size:0.9rem;color:#0F172A;">${m.date} • ${m.home} vs ${m.away}</strong>
+                    <span style="margin-left:8px;background:#EFF6FF;color:#1E3A8A;padding:2px 8px;border-radius:6px;font-size:0.76rem;font-weight:900;">${scoreLbl}</span>
+                  </div>
+                  <span style="font-size:0.74rem;font-weight:800;color:#64748B;">${comments.length} commentaire(s)</span>
+                </div>
+
+                ${comments.length > 0 ? `
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${comments.map(c => `
+                      <div class="coach-comment-item">
+                        <div class="coach-comment-meta">
+                          <span>👤 ${c.author} • ${c.createdAt}</span>
+                          <button type="button" style="background:none;border:none;color:#DC2626;cursor:pointer;font-weight:900;" onclick="deleteCoachMatchComment(${m.id}, '${c.id}')" title="Supprimer">🗑️</button>
+                        </div>
+                        <div style="color:#1E293B;font-weight:700;white-space:pre-wrap;">${c.text}</div>
+                      </div>
+                    `).join("")}
+                  </div>
+                ` : ""}
+
+                <div class="coach-comment-form">
+                  <input type="text" id="inpCoachComment_${m.id}" class="coach-comment-input" placeholder="Ajouter un commentaire sur ce match (consignes, points forts, axes de travail...)" onkeydown="if(event.key==='Enter') addCoachMatchComment(${m.id})">
+                  <button type="button" class="btn-action-sm btn-save-score" onclick="addCoachMatchComment(${m.id})">💬 Publier</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+      return;
+    }
+
+    const matchRows = teamMatches.map(m => {
+      const homeUs = isLSBSC(m.home);
+      const out = computeMatchOutcome(m);
+      const rep = reportsMap[m.id];
+      const comments = Array.isArray(state.matchComments[m.id]) ? state.matchComments[m.id] : [];
+      const info = getMatchVenueInfo(m);
+
+      let badge = "🕒 À venir";
+      if (m.status === "live") badge = "🔴 En direct";
+      else if (m.status === "postponed") badge = "📅 Reporté";
+      else if (m.status === "forfeit") badge = "🚫 Forfait";
+      else if (m.status === "finished") badge = out === "win" ? "✅ Victoire" : (out === "loss" ? "❌ Défaite" : "🤝 Nul");
+
+      return `
+        <tr>
+          <td>${m.date}</td>
+          <td>${homeUs ? "🏠 Dom." : "🚌 Ext."}</td>
+          <td class="left">${m.home} vs ${m.away}</td>
+          <td><strong>${m.status === "upcoming" ? m.time : `${m.sh} - ${m.sa}`}</strong></td>
+          <td>${badge}</td>
+          <td>${rep ? `<span style="color:#15803D;font-weight:900;">✓ Feuille FFBB</span>` : `<span style="color:#94A3B8;">—</span>`}</td>
+          <td><a href="${info.gpsUrl}" target="_blank" rel="noopener" style="color:#1D4ED8;font-weight:800;text-decoration:none;">📍 ${info.salle}</a></td>
+          <td>
+            <button type="button" class="ssp-btn-open-match" style="background:#0284C7;" onclick="setCoachSubTab('comments')">
+              💬 ${comments.length}
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    container.innerHTML = `
+      <div class="ssp-kpi-row">
+        <div class="ssp-kpi-card">
+          <span>Bilan ${teamInfo.short}</span>
+          <strong>${wins}V - ${losses}D${draws ? ` - ${draws}N` : ""}</strong>
+          <small>${teamMatches.length} match(s) au calendrier</small>
+        </div>
+        <div class="ssp-kpi-card orange">
+          <span>Points Marqués</span>
+          <strong>${ptsFor} pts</strong>
+          <small>Moy. : ${(wins + losses + draws) > 0 ? (ptsFor / (wins + losses + draws)).toFixed(1) : "0.0"} pts/match</small>
+        </div>
+        <div class="ssp-kpi-card">
+          <span>Points Encaissés</span>
+          <strong>${ptsAgainst} pts</strong>
+          <small>Différentiel : ${ptsFor - ptsAgainst >= 0 ? "+" : ""}${ptsFor - ptsAgainst}</small>
+        </div>
+        <div class="ssp-kpi-card green">
+          <span>Effectif & Feuilles</span>
+          <strong>${playersList.length} joueurs</strong>
+          <small>${pdfCount} feuille(s) FFBB importée(s)</small>
+        </div>
+      </div>
+
+      <div class="ssp-panel">
+        <div class="ssp-panel-title">
+          <h3>📅 Calendrier Complet, Scores & Suivi — ${teamInfo.fullName}</h3>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="btn-action-sm" style="background:#1E3A8A;color:#FFF;" onclick="setCoachSubTab('roster')">👥 Fiche Équipe</button>
+            <button type="button" class="btn-action-sm" style="background:#EA580C;color:#FFF;" onclick="setCoachSubTab('stats')">🏅 Stats Joueurs</button>
+            <button type="button" class="btn-action-sm" style="background:#0284C7;color:#FFF;" onclick="setCoachSubTab('comments')">💬 Commentaires</button>
+          </div>
+        </div>
+        <div class="ssp-table-wrap">
+          <table class="ssp-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Lieu</th>
+                <th style="text-align:left;">Rencontre</th>
+                <th>Score / Heure</th>
+                <th>Résultat</th>
+                <th>Stats FFBB</th>
+                <th>Salle / GPS</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>${matchRows}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCoachPinsAdminManager() {
+    const listEl = document.getElementById("coachPinsListContainer");
+    const chkEl = document.getElementById("newCoachTeamsCheckboxes");
+
+    if (chkEl && !chkEl.dataset.initialized) {
+      chkEl.dataset.initialized = "1";
+      chkEl.innerHTML = LSBSC_TEAMS_CATALOG.map(t => `
+        <label style="display:inline-flex;align-items:center;gap:4px;background:#FFFFFF;border:1px solid #7DD3FC;padding:4px 8px;border-radius:6px;font-size:0.75rem;font-weight:800;color:#0369A1;cursor:pointer;">
+          <input type="checkbox" class="chk-new-coach-team" value="${t.cat}">
+          <span>${t.cat}</span>
+        </label>
+      `).join("");
+    }
+
+    if (!listEl) return;
+    listEl.innerHTML = (state.coachProfiles || []).map((c, idx) => `
+      <div style="background:#FFFFFF;border:1.5px solid #BAE6FD;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+          <input type="text" value="${(c.name || "").replace(/"/g, "&quot;")}" onchange="updateCoachProfileField(${idx}, 'name', this.value)" style="flex:1;min-width:150px;padding:5px 8px;border:1px solid #CBD5E1;border-radius:6px;font-size:0.82rem;font-weight:800;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:0.74rem;font-weight:800;color:#0369A1;">PIN :</span>
+            <input type="text" inputmode="numeric" maxlength="6" value="${(c.pin || "").replace(/"/g, "&quot;")}" onchange="updateCoachProfileField(${idx}, 'pin', this.value)" style="width:76px;padding:5px 6px;border:1.5px solid #0284C7;border-radius:6px;font-size:0.84rem;font-weight:900;text-align:center;">
+            <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#B91C1C;padding:5px 8px;" onclick="removeCoachProfileUser(${idx})">🗑️</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${LSBSC_TEAMS_CATALOG.map(t => {
+            const has = (c.teams || []).includes(t.cat);
+            return `
+              <label style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;font-size:0.72rem;font-weight:800;cursor:pointer;border:1px solid ${has ? "#0284C7" : "#CBD5E1"};background:${has ? "#E0F2FE" : "#F8FAFC"};color:${has ? "#0369A1" : "#64748B"};">
+                <input type="checkbox" ${has ? "checked" : ""} onchange="toggleAdminCoachTeam(${idx}, '${t.cat}', this.checked)">
+                <span>${t.cat}</span>
+              </label>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  window.updateCoachProfileField = function(idx, field, val) {
+    if (!state.coachProfiles || !state.coachProfiles[idx]) return;
+    const clean = (val || "").trim();
+    if (!clean) return;
+    if (field === "pin" && !/^\d{4,6}$/.test(clean)) {
+      alert("Le code PIN du coach doit contenir 4 à 6 chiffres.");
+      renderCoachPinsAdminManager();
+      return;
+    }
+    state.coachProfiles[idx][field] = clean;
+    saveState(true);
+    renderCoachPinsAdminManager();
+  };
+
+  window.toggleAdminCoachTeam = function(idx, catCode, checked) {
+    const c = state.coachProfiles && state.coachProfiles[idx];
+    if (!c) return;
+    let teams = Array.isArray(c.teams) ? [...c.teams] : [];
+    if (checked && !teams.includes(catCode)) teams.push(catCode);
+    else if (!checked) {
+      if (teams.length <= 1) {
+        alert("Chaque coach doit avoir au moins une équipe.");
+        renderCoachPinsAdminManager();
+        return;
+      }
+      teams = teams.filter(x => x !== catCode);
+    }
+    c.teams = teams;
+    saveState(true);
+    renderCoachPinsAdminManager();
+  };
+
+  window.addCoachPinUser = function() {
+    const nameEl = document.getElementById("inpNewCoachName");
+    const pinEl = document.getElementById("inpNewCoachPin");
+    const name = nameEl ? nameEl.value.trim() : "";
+    const pin = pinEl ? pinEl.value.trim() : "";
+    const selectedTeams = Array.from(document.querySelectorAll(".chk-new-coach-team:checked")).map(el => el.value);
+
+    if (!name) {
+      alert("Veuillez saisir le nom du coach.");
+      return;
+    }
+    if (!/^\d{4,6}$/.test(pin)) {
+      alert("Veuillez saisir un code PIN de 4 à 6 chiffres.");
+      return;
+    }
+    if (selectedTeams.length === 0) {
+      alert("Veuillez sélectionner au moins une équipe pour ce coach.");
+      return;
+    }
+    state.coachProfiles.push({
+      id: "coach_" + Date.now(),
+      name,
+      pin,
+      teams: selectedTeams
+    });
+    if (nameEl) nameEl.value = "";
+    if (pinEl) pinEl.value = "";
+    document.querySelectorAll(".chk-new-coach-team").forEach(el => { el.checked = false; });
+    saveState(true);
+    renderCoachPinsAdminManager();
+  };
+
+  window.removeCoachProfileUser = function(idx) {
+    if (!state.coachProfiles || !state.coachProfiles[idx]) return;
+    if (confirm(`Supprimer l'accès Coach « ${state.coachProfiles[idx].name} » ?`)) {
+      state.coachProfiles.splice(idx, 1);
+      saveState(true);
+      renderCoachPinsAdminManager();
+    }
+  };
+
+  const _prevOpenCloudModalV42 = window.openCloudModal;
+  window.openCloudModal = function() {
+    _prevOpenCloudModalV42();
+    renderCoachPinsAdminManager();
+  };
+
+  const _prevRenderHeaderV42 = renderHeaderAndTicker;
+  renderHeaderAndTicker = function() {
+    _prevRenderHeaderV42();
+    const btnCoach = document.getElementById("btnCoachToggle");
+    if (btnCoach) {
+      if (state.coachUnlocked) {
+        btnCoach.classList.add("unlocked");
+        btnCoach.innerHTML = `📋 ${state.activeCoachName || "Espace Coach"}`;
+      } else {
+        btnCoach.classList.remove("unlocked");
+        btnCoach.innerHTML = "📋 Espace Coach";
+      }
+    }
+  };
+
+  const _prevRenderAllV42 = renderAll;
+  renderAll = function() {
+    _prevRenderAllV42();
+    if (state.coachIsOpen) renderCoachSpace();
+  };
+})();
+
+/* ================= EXTENSION V43 : MODIFICATION DU CODE PIN ADMIN (4 À 6 CHIFFRES) ================= */
+(function() {
+  const PIN_REGEX_4_6 = /^\d{4,6}$/;
+
+  function loadMasterPinFromStorage() {
+    try {
+      const saved = localStorage.getItem("lsbsc_state_v4");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.pinMaster && PIN_REGEX_4_6.test(String(parsed.pinMaster).trim())) {
+          state.pinMaster = String(parsed.pinMaster).trim();
+          state.pinLogos = state.pinMaster;
+          state.pinStaff = state.pinMaster;
+        }
+      }
+    } catch (e) {}
+  }
+  loadMasterPinFromStorage();
+
+  function refreshAdminPinBadgeUI() {
+    const curPin = PIN_REGEX_4_6.test(String(state.pinMaster || "").trim())
+      ? String(state.pinMaster).trim()
+      : "9694";
+    const badge = document.getElementById("lblCurrentAdminPinBadge");
+    if (badge) badge.textContent = `Code Admin Maître : ${curPin}`;
+    const inp = document.getElementById("inpMasterAdminPin");
+    if (inp && document.activeElement !== inp) inp.value = curPin;
+  }
+
+  window.saveMasterAdminPin = function() {
+    const inp = document.getElementById("inpMasterAdminPin");
+    const raw = inp ? String(inp.value || "").trim() : "";
+    if (!PIN_REGEX_4_6.test(raw)) {
+      alert("Le code PIN Admin doit contenir uniquement entre 4 et 6 chiffres (ex : 9694, 59000 ou 123456).");
+      if (inp) inp.focus();
+      return;
+    }
+
+    // Éviter d'écraser un code déjà attribué à une personne de confiance ou un coach
+    const conflictTrusted = (state.trustedPins || []).some(u => String(u.pin || "").trim() === raw);
+    const conflictCoach = (state.coachProfiles || []).some(c => String(c.pin || "").trim() === raw);
+    if (conflictTrusted || conflictCoach) {
+      alert("Ce code PIN est déjà utilisé par un membre du staff ou un coach. Choisissez un autre code.");
+      if (inp) inp.focus();
+      return;
+    }
+
+    state.pinMaster = raw;
+    state.pinLogos = raw;
+    state.pinStaff = raw;
+    refreshAdminPinBadgeUI();
+    if (typeof saveState === "function") saveState(true);
+    alert(`✅ Code PIN Admin mis à jour (${raw.length} chiffres) !`);
+  };
+
+  // Persistance locale & cloud incluant pinMaster
+  const _prevPersistV43 = typeof persistLocalOnly === "function" ? persistLocalOnly : null;
+  persistLocalOnly = function() {
+    if (_prevPersistV43) _prevPersistV43();
+    try {
+      const raw = localStorage.getItem("lsbsc_state_v4");
+      const obj = raw ? JSON.parse(raw) : {};
+      obj.pinMaster = state.pinMaster;
+      localStorage.setItem("lsbsc_state_v4", JSON.stringify(obj));
+    } catch (e) {}
+  };
+
+  const _prevSaveStateV43 = typeof saveState === "function" ? saveState : null;
+  saveState = function(pushCloud = true) {
+    const now = Date.now();
+    state.lastUpdatedAt = now;
+    const payload = {
+      matches: state.matches,
+      tickerText: state.tickerText,
+      clubAssets: state.clubAssets,
+      buvetteMenuText: state.buvetteMenuText,
+      clubInfosText: state.clubInfosText,
+      tvDurations: state.tvDurations,
+      trustedPins: state.trustedPins,
+      coachProfiles: state.coachProfiles,
+      matchComments: state.matchComments,
+      teamRostersCustom: state.teamRostersCustom,
+      pinMaster: state.pinMaster,
+      updatedAt: now
+    };
+    try {
+      localStorage.setItem("lsbsc_state_v4", JSON.stringify(payload));
+    } catch (e) {}
+    if (bcChannel) {
+      try { bcChannel.postMessage(payload); } catch (e) {}
+    }
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (pushCloud && targetUrl) {
+      fetch(targetUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(() => {
+        const syncEl = document.getElementById("syncStatusBadge");
+        if (syncEl) syncEl.textContent = "● Direct Synchronisé";
+      }).catch(() => {});
+    }
+  };
+
+  // Synchronisation cloud : récupérer pinMaster si mis à jour depuis un autre appareil
+  const _origPollCloudV43 = pollCloudSync;
+  pollCloudSync = async function() {
+    if (cloudPolling || document.hidden) return;
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (!targetUrl) return;
+    cloudPolling = true;
+    try {
+      const light = cloudLightUrl(targetUrl);
+      if (light) {
+        const r = await fetch(light);
+        if (!r.ok) return;
+        const ts = await r.json();
+        if (typeof ts !== "number" || ts <= state.lastUpdatedAt) return;
+      }
+      const res = await fetch(targetUrl, { headers: { "Accept": "application/json" } });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && Array.isArray(data.matches) && data.updatedAt && data.updatedAt > state.lastUpdatedAt) {
+        if (data.pinMaster && PIN_REGEX_4_6.test(String(data.pinMaster).trim())) {
+          state.pinMaster = String(data.pinMaster).trim();
+          state.pinLogos = state.pinMaster;
+          state.pinStaff = state.pinMaster;
+        }
+      }
+    } catch (e) {}
+    cloudPolling = false;
+    if (_origPollCloudV43) await _origPollCloudV43();
+    refreshAdminPinBadgeUI();
+  };
+
+  // Sur le clavier PIN : permettre jusqu'à 6 chiffres et valider automatiquement si la saisie correspond au pinMaster (4 à 6 chiffres) ou appui sur OK
+  window.pressPinDigit = function(d) {
+    if (d === "C") {
+      state.pinBuffer = "";
+    } else if (d === "OK") {
+      if (state.pinTarget === "coach") {
+        // Déclenche la vérification coach via le gestionnaire existant
+        const ev = new CustomEvent("lsbsc:verifyCoachPin");
+        document.dispatchEvent(ev);
+      }
+      if (state.pinBuffer === state.pinMaster) {
+        state.staffUnlocked = true;
+        state.isAdminUser = true;
+        state.activeStaffName = "Admin";
+        state.activeCoachId = "admin";
+        state.activeCoachName = "Admin";
+        document.getElementById("pinModal").classList.remove("open");
+        renderAll();
+        if (state.pinTarget === "logos") {
+          state.logosUnlocked = true;
+          openLogosManagerModal();
+        } else if (state.pinTarget === "settings") {
+          openCloudModal();
+        } else if (state.pinTarget === "coach" && typeof window.openCoachSpace === "function") {
+          window.openCoachSpace();
+        } else if (state.displayMode === "mobile") {
+          switchMobileTab("live");
+        }
+        return;
+      }
+      if (state.pinTarget !== "coach" && typeof verifyMultiUserPinCode === "function") {
+        verifyMultiUserPinCode();
+      } else {
+        const box = document.getElementById("pinDisplayBox");
+        if (box) {
+          box.style.borderColor = "#DC2626";
+          box.textContent = "CODE ERRONÉ";
+          state.pinBuffer = "";
+          setTimeout(() => {
+            box.style.borderColor = "#CBD5E1";
+            box.textContent = "";
+          }, 900);
+        }
+      }
+      return;
+    } else if (state.pinBuffer.length < 6) {
+      state.pinBuffer += String(d);
+    }
+
+    const box = document.getElementById("pinDisplayBox");
+    if (box) box.textContent = "•".repeat(state.pinBuffer.length);
+
+    // Si la bufferisation atteint exactement le code PIN Admin maître (4, 5 ou 6 chiffres), valider immédiatement
+    if (state.pinBuffer === state.pinMaster) {
+      setTimeout(() => {
+        if (state.pinBuffer === state.pinMaster) {
+          state.staffUnlocked = true;
+          state.isAdminUser = true;
+          state.activeStaffName = "Admin";
+          state.activeCoachId = "admin";
+          state.activeCoachName = "Admin";
+          document.getElementById("pinModal").classList.remove("open");
+          renderAll();
+          if (state.pinTarget === "logos") {
+            state.logosUnlocked = true;
+            openLogosManagerModal();
+          } else if (state.pinTarget === "settings") {
+            openCloudModal();
+          } else if (state.pinTarget === "coach" && typeof window.openCoachSpace === "function") {
+            window.openCoachSpace();
+          } else if (state.displayMode === "mobile") {
+            switchMobileTab("live");
+          }
+        }
+      }, 120);
+      return;
+    }
+
+    // Pour les codes PIN secondaires (coach / personnes de confiance), valider à 4 chiffres si non admin
+    if (state.pinBuffer.length === 4 && state.pinMaster.length === 4) {
+      if (state.pinTarget === "coach") {
+        setTimeout(() => {
+          // Vérification via le même chemin que l'extension V42
+          const code = state.pinBuffer;
+          const cMatch = (state.coachProfiles || []).find(c => String(c.pin).trim() === code);
+          if (cMatch) {
+            state.coachUnlocked = true;
+            state.activeCoachId = cMatch.id;
+            state.activeCoachName = cMatch.name || "Coach";
+            document.getElementById("pinModal").classList.remove("open");
+            renderAll();
+            if (typeof window.openCoachSpace === "function") window.openCoachSpace();
+          } else if (box) {
+            box.style.borderColor = "#DC2626";
+            box.textContent = "CODE PIN INCONNU";
+            state.pinBuffer = "";
+            setTimeout(() => {
+              box.style.borderColor = "#CBD5E1";
+              box.textContent = "";
+            }, 900);
+          }
+        }, 120);
+      } else if (typeof verifyMultiUserPinCode === "function") {
+        setTimeout(verifyMultiUserPinCode, 120);
+      }
+    }
+  };
+
+  const _prevOpenCloudV43 = window.openCloudModal;
+  window.openCloudModal = function() {
+    if (_prevOpenCloudV43) _prevOpenCloudV43();
+    refreshAdminPinBadgeUI();
+  };
+
+  const _prevSaveCloudV43 = window.saveCloudAndTicker;
+  window.saveCloudAndTicker = function() {
+    const inp = document.getElementById("inpMasterAdminPin");
+    const raw = inp ? String(inp.value || "").trim() : "";
+    if (raw && PIN_REGEX_4_6.test(raw)) {
+      state.pinMaster = raw;
+      state.pinLogos = raw;
+      state.pinStaff = raw;
+    }
+    if (_prevSaveCloudV43) _prevSaveCloudV43();
+    refreshAdminPinBadgeUI();
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadMasterPinFromStorage();
+    refreshAdminPinBadgeUI();
+  });
+})();
+
+/* ================= EXTENSION V44 : PIN ADMIN MASQUÉ & VÉRIFICATION DE L'ANCIEN CODE POUR CHANGEMENT ================= */
+(function() {
+  const PIN_RX = /^\d{4,6}$/;
+
+  function getCurrentAdminPin() {
+    const p = String(state.pinMaster || "").trim();
+    return PIN_RX.test(p) ? p : "9694";
+  }
+
+  function refreshMaskedAdminPinUI() {
+    const cur = getCurrentAdminPin();
+    const badge = document.getElementById("lblCurrentAdminPinBadge");
+    if (badge) {
+      badge.textContent = `Code Admin Maître : ${"•".repeat(cur.length)}`;
+    }
+    const oldInp = document.getElementById("inpOldMasterAdminPin");
+    const newInp = document.getElementById("inpMasterAdminPin");
+    if (oldInp && document.activeElement !== oldInp) oldInp.value = "";
+    if (newInp && document.activeElement !== newInp) newInp.value = "";
+  }
+
+  window.saveMasterAdminPin = function() {
+    const curPin = getCurrentAdminPin();
+    const oldInp = document.getElementById("inpOldMasterAdminPin");
+    const newInp = document.getElementById("inpMasterAdminPin");
+
+    const oldVal = oldInp ? String(oldInp.value || "").trim() : "";
+    const newVal = newInp ? String(newInp.value || "").trim() : "";
+
+    if (!oldVal || oldVal !== curPin) {
+      alert("🔒 Sécurité : l'ancien code PIN Admin saisi est incorrect.");
+      if (oldInp) {
+        oldInp.value = "";
+        oldInp.focus();
+      }
+      return;
+    }
+
+    if (!PIN_RX.test(newVal)) {
+      alert("Le nouveau code PIN Admin doit contenir uniquement entre 4 et 6 chiffres.");
+      if (newInp) newInp.focus();
+      return;
+    }
+
+    if (newVal === curPin) {
+      alert("Le nouveau code PIN doit être différent de l'ancien.");
+      if (newInp) newInp.focus();
+      return;
+    }
+
+    const conflictTrusted = (state.trustedPins || []).some(u => String(u.pin || "").trim() === newVal);
+    const conflictCoach = (state.coachProfiles || []).some(c => String(c.pin || "").trim() === newVal);
+    if (conflictTrusted || conflictCoach) {
+      alert("Ce code PIN est déjà utilisé par un membre du staff ou un coach.");
+      if (newInp) newInp.focus();
+      return;
+    }
+
+    state.pinMaster = newVal;
+    state.pinLogos = newVal;
+    state.pinStaff = newVal;
+    if (typeof saveState === "function") saveState(true);
+    refreshMaskedAdminPinUI();
+    alert(`✅ Code PIN Admin modifié avec succès (${newVal.length} chiffres) !`);
+  };
+
+  // Empêcher saveCloudAndTicker d'écraser le PIN sans vérification de l'ancien code
+  const _prevSaveCloudV44 = window.saveCloudAndTicker;
+  window.saveCloudAndTicker = function() {
+    const oldInp = document.getElementById("inpOldMasterAdminPin");
+    const newInp = document.getElementById("inpMasterAdminPin");
+    const oldVal = oldInp ? String(oldInp.value || "").trim() : "";
+    const newVal = newInp ? String(newInp.value || "").trim() : "";
+
+    if (newVal.length > 0) {
+      window.saveMasterAdminPin();
+      // Recharger les champs pour éviter que _prevSaveCloudV44 ne relise inpMasterAdminPin
+      if (newInp) newInp.value = "";
+      if (oldInp) oldInp.value = "";
+    }
+    if (_prevSaveCloudV44) _prevSaveCloudV44();
+    refreshMaskedAdminPinUI();
+  };
+
+  const _prevOpenCloudV44 = window.openCloudModal;
+  window.openCloudModal = function() {
+    if (_prevOpenCloudV44) _prevOpenCloudV44();
+    refreshMaskedAdminPinUI();
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    refreshMaskedAdminPinUI();
+  });
+})();

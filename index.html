@@ -92,6 +92,7 @@
       <button class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')">🛡️ Logos</button>
       <button class="btn-top btn-cloud staff-only-tool" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
 
+      <button id="btnCoachToggle" class="btn-top btn-coach" onclick="requestPinAccess('coach')" title="Espace Coach protégé par PIN">📋 Espace Coach</button>
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
     </div>
   </header>
@@ -113,6 +114,10 @@
     <button class="mob-tab" data-tab="infos" onclick="switchMobileTab('infos')">
       <span class="mob-tab-ico">ℹ️</span>
       <span class="mob-tab-lbl">Infos Club</span>
+    </button>
+    <button class="mob-tab" data-tab="coach" onclick="requestPinAccess('coach')">
+      <span class="mob-tab-ico">📋</span>
+      <span class="mob-tab-lbl" id="mobTabCoachLbl">Coach</span>
     </button>
   </nav>
 
@@ -455,7 +460,12 @@
         <div class="club-addr-card" style="border-color:#F59E0B;background:#FFFBEB;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
             <strong style="color:#92400E;font-size:0.9rem;">🔑 Codes PIN — Personnes de Confiance (Accès Direct / Scores)</strong>
-            <span style="font-size:0.72rem;font-weight:900;background:#FEF3C7;color:#B45309;padding:3px 8px;border-radius:6px;border:1px solid #F59E0B;">Code Admin Maître : 9694</span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span id="lblCurrentAdminPinBadge" style="font-size:0.72rem;font-weight:900;background:#FEF3C7;color:#B45309;padding:3px 8px;border-radius:6px;border:1px solid #F59E0B;">Code Admin Maître : ••••••</span>
+              <input id="inpOldMasterAdminPin" type="password" inputmode="numeric" maxlength="6" placeholder="Ancien PIN" style="width:104px;padding:4px 8px;border-radius:6px;border:1.5px solid #F59E0B;font-size:0.8rem;font-weight:900;text-align:center;background:#FFFFFF;color:#0F172A;" title="Saisissez votre ancien code PIN Admin">
+              <input id="inpMasterAdminPin" type="password" inputmode="numeric" maxlength="6" placeholder="Nouveau (4-6)" style="width:116px;padding:4px 8px;border-radius:6px;border:1.5px solid #D97706;font-size:0.8rem;font-weight:900;text-align:center;background:#FFFFFF;color:#0F172A;" title="Nouveau code PIN Admin (4 à 6 chiffres)">
+              <button type="button" class="btn-action-sm" style="background:#D97706;color:#FFFFFF;padding:5px 9px;" onclick="saveMasterAdminPin()">💾 Changer PIN Admin</button>
+            </div>
           </div>
           <p style="font-size:0.75rem;color:#78350F;font-weight:700;line-height:1.35;">
             Chaque personne ci-dessous peut déverrouiller « 🔒 Direct / Scores » avec son propre code PIN (4 chiffres) pour gérer les scores en direct depuis son téléphone, sans avoir accès à ces réglages ni aux logos.
@@ -465,6 +475,25 @@
             <input id="inpNewTrustedName" type="text" placeholder="Prénom / Rôle (ex: Sarah, Coach U13...)" style="flex:1;min-width:150px;padding:7px 10px;border-radius:8px;border:1.5px solid #F59E0B;font-size:0.82rem;font-weight:700;">
             <input id="inpNewTrustedPin" type="text" inputmode="numeric" maxlength="6" placeholder="Code PIN (ex: 1234)" style="width:140px;padding:7px 10px;border-radius:8px;border:1.5px solid #F59E0B;font-size:0.82rem;font-weight:900;text-align:center;">
             <button type="button" class="btn-action-sm btn-save-score" onclick="addTrustedPinUser()">➕ Ajouter ce code PIN</button>
+          </div>
+        </div>
+
+        <div class="club-addr-card" style="border-color:#0284C7;background:#F0F9FF;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <strong style="color:#0369A1;font-size:0.9rem;">📋 Codes PIN — Coachs (Revue Équipes, Stats, Fiches & Commentaires)</strong>
+            <span style="font-size:0.72rem;font-weight:900;background:#E0F2FE;color:#0369A1;padding:3px 8px;border-radius:6px;border:1px solid #38BDF8;">Multi-équipes</span>
+          </div>
+          <p style="font-size:0.75rem;color:#0C4A6E;font-weight:700;line-height:1.35;">
+            Créez un code PIN par coach et cochez les équipes auxquelles il est associé. Le coach pourra aussi ajuster ses équipes et laisser des commentaires techniques sur ses matchs.
+          </p>
+          <div id="coachPinsListContainer" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:8px;border-top:1px dashed #7DD3FC;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <input id="inpNewCoachName" type="text" placeholder="Nom du Coach (ex: Coach Fabrice, Coach U18...)" style="flex:1;min-width:170px;padding:7px 10px;border-radius:8px;border:1.5px solid #0284C7;font-size:0.82rem;font-weight:700;">
+              <input id="inpNewCoachPin" type="text" inputmode="numeric" maxlength="6" placeholder="Code PIN (4 chiffres)" style="width:150px;padding:7px 10px;border-radius:8px;border:1.5px solid #0284C7;font-size:0.82rem;font-weight:900;text-align:center;">
+              <button type="button" class="btn-action-sm" style="background:#0284C7;color:#FFF;" onclick="addCoachPinUser()">➕ Ajouter ce Coach</button>
+            </div>
+            <div id="newCoachTeamsCheckboxes" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
           </div>
         </div>
 
@@ -577,6 +606,50 @@
 
       <!-- Contenu dynamique de la page -->
       <div id="sspDynamicContent" class="ssp-content-grid"></div>
+    </div>
+  </div>
+
+    <!-- ================= PAGE / ONGLET COACH COMPLET (ACCÈS PIN COACH OU ADMIN 9694) ================= -->
+  <div id="coachSpaceOverlay" class="coach-space-overlay" style="display:none;" aria-hidden="true">
+    <div class="coach-topbar">
+      <div class="coach-topbar-left">
+        <span class="coach-badge-ico">📋</span>
+        <div>
+          <h2 id="coachSpaceHeaderTitle">Espace Coach LSBSC — Revue Complète des Équipes</h2>
+          <p id="coachSpaceHeaderSub">Matchs, scores, statistiques détaillées, fiches d'équipes & commentaires de match</p>
+        </div>
+      </div>
+      <div class="coach-topbar-actions">
+        <button type="button" class="coach-btn coach-btn-teams" onclick="toggleCoachTeamAssignBox()">⚙️ Mes Équipes Associées</button>
+        <button type="button" class="coach-btn coach-btn-logout" onclick="logoutCoachSession()">🔒 Verrouiller</button>
+        <button type="button" class="coach-btn coach-btn-close" onclick="closeCoachSpace()">✖ Retour App</button>
+      </div>
+    </div>
+
+    <div class="coach-body">
+      <!-- Panneau d'association multi-équipes du coach connecté -->
+      <div id="coachTeamAssignPanel" class="coach-assign-card" style="display:none;">
+        <div class="coach-assign-head">
+          <strong>🏀 Équipes associées à votre profil Coach (sélection multiple)</strong>
+          <button type="button" class="btn-action-sm btn-save-score" onclick="toggleCoachTeamAssignBox()">✅ Terminer</button>
+        </div>
+        <p style="font-size:0.78rem;color:#475569;font-weight:700;margin:0;">Cochez ou décochez les équipes que vous encadrez pour les retrouver instantanément dans vos onglets.</p>
+        <div id="coachSelfTeamsGrid" class="coach-teams-checkbox-grid"></div>
+      </div>
+
+      <!-- Barre de sélection rapide parmi les équipes associées au coach -->
+      <div class="coach-teams-bar">
+        <div id="coachAssignedTabs" class="coach-assigned-tabs"></div>
+        <div class="coach-subtabs">
+          <button type="button" id="coachSubTabOverview" class="coach-subtab active" onclick="setCoachSubTab('overview')">📊 Vue d'ensemble & Matchs</button>
+          <button type="button" id="coachSubTabRoster" class="coach-subtab" onclick="setCoachSubTab('roster')">👥 Fiche Équipe & Effectif</button>
+          <button type="button" id="coachSubTabStats" class="coach-subtab" onclick="setCoachSubTab('stats')">🏅 Stats Détaillées & Feuilles</button>
+          <button type="button" id="coachSubTabComments" class="coach-subtab" onclick="setCoachSubTab('comments')">💬 Commentaires Matchs</button>
+        </div>
+      </div>
+
+      <!-- Contenu dynamique de l'espace Coach -->
+      <div id="coachDynamicContainer" class="coach-dynamic-container"></div>
     </div>
   </div>
 

@@ -5219,3 +5219,301 @@ body.mode-mobile .qt-kpi-sub {
   font-weight: 800;
   cursor: pointer;
 }
+
+/* ================= ESPACE COACH COMPLET (V42) ================= */
+.btn-coach {
+  background: linear-gradient(135deg, #0284C7, #0369A1);
+  color: #FFFFFF;
+  border: 1.5px solid #38BDF8;
+}
+.btn-coach.unlocked {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: #6EE7B7;
+}
+
+.coach-space-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: #F1F5F9;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.coach-topbar {
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #0369A1 100%);
+  color: #FFFFFF;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 4px solid #EA580C;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+}
+
+.coach-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.coach-badge-ico {
+  font-size: 1.8rem;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 6px 10px;
+}
+
+.coach-topbar-left h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.coach-topbar-left p {
+  margin: 2px 0 0 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #BAE6FD;
+}
+
+.coach-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coach-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.coach-btn:active { transform: scale(0.97); }
+.coach-btn-teams { background: #FEF3C7; color: #92400E; }
+.coach-btn-logout { background: #FEE2E2; color: #991B1B; }
+.coach-btn-close { background: #EA580C; color: #FFFFFF; }
+
+.coach-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 28px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.coach-assign-card {
+  background: #FFFFFF;
+  border: 2px solid #0284C7;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+}
+
+.coach-assign-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.coach-teams-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.coach-team-chk-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1.5px solid #CBD5E1;
+  background: #F8FAFC;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #0F172A;
+  cursor: pointer;
+}
+.coach-team-chk-pill.checked {
+  background: #EFF6FF;
+  border-color: #1D4ED8;
+  color: #1E3A8A;
+}
+
+.coach-teams-bar {
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coach-assigned-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coach-team-tab-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 2px solid #CBD5E1;
+  background: #F8FAFC;
+  color: #1E293B;
+  font-size: 0.84rem;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.coach-team-tab-btn.active {
+  background: #1E3A8A;
+  border-color: #1E3A8A;
+  color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(30, 58, 138, 0.25);
+}
+
+.coach-subtabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1.5px solid #E2E8F0;
+}
+
+.coach-subtab {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.coach-subtab.active {
+  background: #EA580C;
+  border-color: #EA580C;
+  color: #FFFFFF;
+}
+
+.coach-dynamic-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.coach-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.coach-player-card {
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  border-left: 5px solid #1E3A8A;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.coach-player-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.coach-player-name {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.coach-player-nums {
+  background: #DBEAFE;
+  color: #1E3A8A;
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.coach-player-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.coach-comment-card {
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coach-comment-item {
+  background: #F8FAFC;
+  border-left: 4px solid #0284C7;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+
+.coach-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #0369A1;
+  margin-bottom: 3px;
+}
+
+.coach-comment-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coach-comment-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #94A3B8;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
