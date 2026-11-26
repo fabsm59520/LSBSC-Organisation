@@ -7270,3 +7270,815 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshMaskedAdminPinUI();
   });
 })();
+
+
+/* ================= EXTENSION V45 : INTÉGRATION E-MARQUE TOURNOI & FEUILLE DE MARQUE + SYNCHRO FIREBASE ================= */
+(function() {
+  const EMARK_STORAGE_KEY = "lsbsc_emark_tournament_v1";
+  const EMARK_PHT = ["", "Phase 1 · Matchs de poule", "Phase 2 · Matchs à élimination croisés", "Phase 3 · Finale et petites finales"];
+  const EMARK_PH = {
+    s0: ["1er poule A", "2e poule B"],
+    s1: ["1er poule B", "2e poule A"],
+    k0: ["3e poule A", "4e poule B"],
+    k1: ["3e poule B", "4e poule A"],
+    q5: ["3e poule A", "3e poule B"],
+    f:  ["Vainqueur demi 1", "Vainqueur demi 2"],
+    c:  ["Perdant demi 1", "Perdant demi 2"],
+    k5: ["Vainqueur 5–8 n°1", "Vainqueur 5–8 n°2"],
+    k7: ["Perdant 5–8 n°1", "Perdant 5–8 n°2"]
+  };
+  const EMARK_LAB = {
+    "1": "+1 point", "2": "+2 points", "3": "+3 points",
+    P: "Faute personnelle", T: "Faute technique", U: "Faute antisportive", D: "Faute disqualifiante",
+    TO: "Temps mort", C: "Faute technique entraîneur", B: "Faute technique banc"
+  };
+
+  function mkDefaultPlayers() {
+    return Array.from({ length: 10 }, (_, i) => ({ n: String(i + 4), name: "" }));
+  }
+
+  function mkDefaultMatchSheet() {
+    return {
+      info: { num: "", date: "", salle: "ANTOINE BLONDIN A 790M2", arb1: "", arb2: "", marq: "" },
+      teams: [
+        { name: "Équipe A", coach: "", players: mkDefaultPlayers(), on: [] },
+        { name: "Équipe B", coach: "", players: mkDefaultPlayers(), on: [] }
+      ],
+      period: 1,
+      ms: 600000,
+      t0: Date.now(),
+      run: false,
+      pos: null,
+      tm: null,
+      log: []
+    };
+  }
+
+  function mkDefaultTournament() {
+    return {
+      n: 8,
+      courts: 2,
+      dur: 20,
+      start: "09:00",
+      org: "Lille Sud Basketball Sporting Club",
+      names: Array.from({ length: 8 }, (_, i) => "Équipe " + (i + 1)),
+      sc: {}
+    };
+  }
+
+  function sanitizeTournamentObj(raw) {
+    const base = mkDefaultTournament();
+    const src = (raw && typeof raw === "object") ? raw : {};
+    const n = Math.max(4, Math.min(8, Number(src.n) || 8));
+    const courts = (Number(src.courts) === 1) ? 1 : 2;
+    const dur = Math.max(5, Number(src.dur) || 20);
+    const start = (typeof src.start === "string" && /^\d{1,2}:\d{2}$/.test(src.start)) ? src.start : "09:00";
+    const org = (typeof src.org === "string") ? src.org : base.org;
+    const rawNames = Array.isArray(src.names) ? src.names : [];
+    const names = Array.from({ length: 8 }, (_, i) => {
+      const v = rawNames[i];
+      return (typeof v === "string" && v.trim()) ? v : ("Équipe " + (i + 1));
+    });
+    const sc = (src.sc && typeof src.sc === "object") ? src.sc : {};
+    return { n, courts, dur, start, org, names, sc };
+  }
+
+  function sanitizeMatchObj(raw) {
+    const base = mkDefaultMatchSheet();
+    const src = (raw && typeof raw === "object") ? raw : {};
+    const teams = [0, 1].map(idx => {
+      const tSrc = (Array.isArray(src.teams) && src.teams[idx]) ? src.teams[idx] : {};
+      const players = Array.isArray(tSrc.players) && tSrc.players.length
+        ? tSrc.players.map((p, j) => ({ n: String((p && p.n) ?? (j + 4)), name: String((p && p.name) || "") }))
+        : mkDefaultPlayers();
+      return {
+        name: String(tSrc.name || (idx ? "Équipe B" : "Équipe A")),
+        coach: String(tSrc.coach || ""),
+        players,
+        on: Array.isArray(tSrc.on) ? tSrc.on : []
+      };
+    });
+    return {
+      info: Object.assign({}, base.info, (src.info && typeof src.info === "object") ? src.info : {}),
+      teams,
+      period: Number(src.period) || 1,
+      ms: (src.ms == null) ? 600000 : Number(src.ms),
+      t0: Number(src.t0) || Date.now(),
+      run: Boolean(src.run),
+      pos: (src.pos === 0 || src.pos === 1) ? src.pos : null,
+      tm: (src.tm != null) ? src.tm : null,
+      log: Array.isArray(src.log) ? src.log : []
+    };
+  }
+
+  state.emark = {
+    isOpen: false,
+    view: "tournoi",
+    updatedAt: 0,
+    tn: mkDefaultTournament(),
+    match: mkDefaultMatchSheet(),
+    savedTeams: {}
+  };
+
+  function loadEmarkLocal() {
+    try {
+      const raw = localStorage.getItem(EMARK_STORAGE_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p === "object") {
+          state.emark.tn = sanitizeTournamentObj(p.tn);
+          state.emark.match = sanitizeMatchObj(p.match);
+          state.emark.savedTeams = (p.savedTeams && typeof p.savedTeams === "object") ? p.savedTeams : {};
+          state.emark.updatedAt = Number(p.updatedAt) || 0;
+        }
+      }
+    } catch (e) {
+      state.emark.tn = mkDefaultTournament();
+      state.emark.match = mkDefaultMatchSheet();
+    }
+  }
+  loadEmarkLocal();
+
+  function getEmarkFirebaseUrl() {
+    const targetUrl = state.syncUrl || DEFAULT_CLOUD_SYNC_URL;
+    if (!targetUrl) return null;
+    if (/\.json(\?.*)?$/.test(targetUrl)) {
+      return targetUrl.replace(/\.json(\?.*)?$/, (m, q) => "/emarkTournament.json" + (q || ""));
+    }
+    return targetUrl.replace(/\/+$/, "") + "/emarkTournament.json";
+  }
+
+  function pushEmarkToFirebase() {
+    const emarkNodeUrl = getEmarkFirebaseUrl();
+    if (!emarkNodeUrl) return;
+    fetch(emarkNodeUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        tn: state.emark.tn,
+        match: state.emark.match,
+        savedTeams: state.emark.savedTeams,
+        updatedAt: state.emark.updatedAt
+      })
+    }).then(() => {
+      const lbl = document.getElementById("emarkSyncStatusLbl");
+      if (lbl) lbl.textContent = "● Synchronisé Firebase (" + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) + ")";
+    }).catch(() => {});
+  }
+
+  function saveEmarkState(pushCloud = true) {
+    state.emark.updatedAt = Date.now();
+    try {
+      localStorage.setItem(EMARK_STORAGE_KEY, JSON.stringify({
+        tn: state.emark.tn,
+        match: state.emark.match,
+        savedTeams: state.emark.savedTeams,
+        updatedAt: state.emark.updatedAt
+      }));
+    } catch (e) {}
+    if (pushCloud) pushEmarkToFirebase();
+  }
+
+  async function pullEmarkFromFirebase() {
+    const emarkNodeUrl = getEmarkFirebaseUrl();
+    if (!emarkNodeUrl) return;
+    try {
+      const res = await fetch(emarkNodeUrl, { headers: { "Accept": "application/json" } });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && typeof data === "object" && data.tn && data.match && (Number(data.updatedAt) || 0) > (Number(state.emark.updatedAt) || 0)) {
+        state.emark.tn = sanitizeTournamentObj(data.tn);
+        state.emark.match = sanitizeMatchObj(data.match);
+        if (data.savedTeams && typeof data.savedTeams === "object") {
+          state.emark.savedTeams = Object.assign(state.emark.savedTeams || {}, data.savedTeams);
+        }
+        state.emark.updatedAt = Number(data.updatedAt) || Date.now();
+        try {
+          localStorage.setItem(EMARK_STORAGE_KEY, JSON.stringify({
+            tn: state.emark.tn,
+            match: state.emark.match,
+            savedTeams: state.emark.savedTeams,
+            updatedAt: state.emark.updatedAt
+          }));
+        } catch (e) {}
+        if (state.emark.isOpen) renderEmarkAll();
+      }
+    } catch (e) {}
+  }
+
+  const emarkEsc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const emarkPl = p => p < 5 ? "Q" + p : "Prol." + (p - 4);
+  const emarkGrp = p => p <= 2 ? 0 : p <= 4 ? 1 : p - 3;
+  const emarkMaxTO = g => g == 0 ? 2 : g == 1 ? 3 : 1;
+  const emarkRem = () => {
+    const S = state.emark.match;
+    const m = S.ms == null ? 600000 : S.ms;
+    return S.run ? Math.max(0, m - (Date.now() - S.t0)) : m;
+  };
+  const emarkFmt = s => s == null ? "" : Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  const emarkStop = () => {
+    const S = state.emark.match;
+    if (S.run) { S.ms = emarkRem(); S.run = false; }
+  };
+  const emarkPush = o => {
+    const S = state.emark.match;
+    o.per = S.period;
+    o.c = Math.ceil(emarkRem() / 1000);
+    S.log.push(o);
+  };
+  const emarkCoachOut = c => c.filter(x => x == "C").length >= 2 || c.length >= 3;
+  const emarkIsOut = f => {
+    const n = k => f.filter(x => x == k).length;
+    return f.length >= 5 || n("D") > 0 || n("U") >= 2 || n("T") >= 2 || (n("U") > 0 && n("T") > 0);
+  };
+  const emarkTt = m => String(Math.floor(m / 60) % 24).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+
+  function emarkCalc() {
+    const S = state.emark.match;
+    const T = S.teams.map(t => ({ s: 0, pts: t.players.map(() => 0), fl: t.players.map(() => []), tf: {}, to: {}, cf: [] }));
+    const L = [];
+    (S.log || []).forEach(e => {
+      const t = T[e.t];
+      if (!t) return;
+      if ("123".includes(e.k) && e.k.length == 1) {
+        const v = +e.k;
+        t.s += v;
+        if (e.p >= 0 && t.pts[e.p] != null) t.pts[e.p] += v;
+      } else if (e.k == "TO") {
+        const g = emarkGrp(e.per);
+        t.to[g] = (t.to[g] || 0) + 1;
+      } else if (e.k == "C" || e.k == "B") {
+        t.cf.push(e.k);
+      } else {
+        if (e.p >= 0 && t.fl[e.p]) t.fl[e.p].push(e.k);
+        if (e.k != "T") t.tf[e.per] = (t.tf[e.per] || 0) + 1;
+      }
+      L.push({ e, a: T[0].s, b: T[1].s });
+    });
+    return { T, L };
+  }
+
+  function emarkRr(ids) {
+    const a = ids.slice(), Rd = [];
+    if (a.length % 2) a.push(-1);
+    const k = a.length;
+    for (let r = 0; r < k - 1; r++) {
+      const m = [];
+      for (let i = 0; i < k / 2; i++) {
+        const x = a[i], y = a[k - 1 - i];
+        if (x >= 0 && y >= 0) m.push([x, y]);
+      }
+      Rd.push(m);
+      a.splice(1, 0, a.pop());
+    }
+    return Rd;
+  }
+
+  function emarkPlan() {
+    const TN = state.emark.tn;
+    const n = Math.max(4, Math.min(8, Number(TN.n) || 8));
+    const courts = Math.max(1, Number(TN.courts) || 2);
+    const ids = [...Array(n).keys()], h = Math.ceil(n / 2);
+    const G = [ids.slice(0, h), ids.slice(h)];
+    const rds = G.map(emarkRr), M = [], mx = Math.max(1, ...rds.map(r => r.length));
+    for (let r = 0; r < mx; r++) {
+      rds.forEach((rd, g) => (rd[r] || []).forEach(p => M.push({ id: "g" + p[0] + "-" + p[1], a: p[0], b: p[1], g, ph: 1, lab: "Poule " + "AB"[g] })));
+    }
+    const slots = [], left = M.slice();
+    let prev = [];
+    let guard = 0;
+    while (left.length && guard++ < 100) {
+      const s = [], used = new Set();
+      for (const pass of [0, 1]) {
+        for (let i = 0; i < left.length && s.length < courts; ) {
+          const m = left[i];
+          if (!used.has(m.a) && !used.has(m.b) && (pass || (!prev.includes(m.a) && !prev.includes(m.b)))) {
+            s.push(m);
+            used.add(m.a);
+            used.add(m.b);
+            left.splice(i, 1);
+          } else i++;
+        }
+      }
+      if (!s.length && left.length) {
+        s.push(left.shift());
+      }
+      slots.push(s);
+      prev = [...used];
+    }
+    const ch = a => { for (let i = 0; i < a.length; i += courts) slots.push(a.slice(i, i + courts)); };
+    const big = G[0].length > 3 && G[1].length > 3, mid = !big && G[0].length > 2 && G[1].length > 2;
+    ch([{ id: "s0", ph: 2, lab: "Demi-finale 1" }, { id: "s1", ph: 2, lab: "Demi-finale 2" }, ...(big ? [{ id: "k0", ph: 2, lab: "Places 5–8 · match 1" }, { id: "k1", ph: 2, lab: "Places 5–8 · match 2" }] : mid ? [{ id: "q5", ph: 2, lab: "5e place" }] : [])]);
+    ch([...(big ? [{ id: "k7", ph: 3, lab: "7e place" }, { id: "k5", ph: 3, lab: "5e place" }] : []), { id: "c", ph: 3, lab: "3e place" }, { id: "f", ph: 3, lab: "Finale" }]);
+    return { G, slots, M };
+  }
+
+  function emarkStand(P, gi) {
+    const TN = state.emark.tn;
+    const r = P.G[gi].map(t => ({ t, j: 0, v: 0, pf: 0, pa: 0 }));
+    P.M.filter(m => m.g == gi).forEach(m => {
+      const s = TN.sc[m.id];
+      if (!s || s[0] == null || s[1] == null || s[0] === "" || s[1] === "") return;
+      const x = r.find(o => o.t == m.a), y = r.find(o => o.t == m.b);
+      if (!x || !y) return;
+      x.j++; y.j++; x.pf += +s[0]; x.pa += +s[1]; y.pf += +s[1]; y.pa += +s[0];
+      (+s[0] > +s[1] ? x : y).v++;
+    });
+    r.forEach(o => { o.pts = o.v * 2 + (o.j - o.v); });
+    return r.sort((p, q) => q.pts - p.pts || (q.pf - q.pa) - (p.pf - p.pa) || q.pf - p.pf || p.t - q.t);
+  }
+
+  window.openTournamentEmarkSpace = function() {
+    state.emark.isOpen = true;
+    const ov = document.getElementById("emarkTournamentOverlay");
+    if (ov) {
+      ov.style.display = "flex";
+      ov.setAttribute("aria-hidden", "false");
+    }
+    window.setEmarkView(state.emark.view || "tournoi");
+    pullEmarkFromFirebase();
+  };
+
+  window.closeTournamentEmarkSpace = function() {
+    state.emark.isOpen = false;
+    const ov = document.getElementById("emarkTournamentOverlay");
+    if (ov) {
+      ov.style.display = "none";
+      ov.setAttribute("aria-hidden", "true");
+    }
+  };
+
+  window.setEmarkView = function(viewName) {
+    state.emark.view = ["tournoi", "match", "public", "results"].includes(viewName) ? viewName : "tournoi";
+    ["tournoi", "match", "public", "results"].forEach(v => {
+      const btn = document.getElementById("btnEmarkView" + v.charAt(0).toUpperCase() + v.slice(1));
+      if (btn) btn.classList.toggle("active", v === state.emark.view);
+    });
+    const pubEl = document.getElementById("emarkPublicScreen");
+    const bodyEl = document.getElementById("emarkMainScrollBody");
+    const vT = document.getElementById("emarkTournoiView");
+    const vM = document.getElementById("emarkMatchView");
+    const vR = document.getElementById("emarkResultsView");
+
+    if (state.emark.view === "public") {
+      if (pubEl) pubEl.style.display = "grid";
+      if (bodyEl) bodyEl.style.display = "none";
+    } else {
+      if (pubEl) pubEl.style.display = "none";
+      if (bodyEl) bodyEl.style.display = "block";
+      if (vT) vT.style.display = state.emark.view === "tournoi" ? "flex" : "none";
+      if (vM) vM.style.display = state.emark.view === "match" ? "flex" : "none";
+      if (vR) vR.style.display = state.emark.view === "results" ? "flex" : "none";
+    }
+    renderEmarkAll();
+  };
+
+  function renderEmarkAll() {
+    const tournoiEl = document.getElementById("emarkTournoiView");
+    const matchEl = document.getElementById("emarkMatchView");
+    const resEl = document.getElementById("emarkResultsView");
+    const pubEl = document.getElementById("emarkPublicScreen");
+
+    try {
+      if (!state.emark || !state.emark.tn || !state.emark.match) {
+        state.emark = {
+          isOpen: true,
+          view: "tournoi",
+          updatedAt: 0,
+          tn: mkDefaultTournament(),
+          match: mkDefaultMatchSheet(),
+          savedTeams: {}
+        };
+      }
+      state.emark.tn = sanitizeTournamentObj(state.emark.tn);
+      state.emark.match = sanitizeMatchObj(state.emark.match);
+
+      const { T, L } = emarkCalc();
+      const S = state.emark.match;
+      const TN = state.emark.tn;
+      S.teams.forEach(t => { t.on = t.on || []; });
+
+      if (pubEl && state.emark.view === "public") {
+        const g = emarkGrp(S.period);
+        const tTxt = emarkFmt(Math.ceil(emarkRem() / 1000));
+        const sideHtml = idx => {
+          const d = T[idx], tf = d.tf[S.period] || 0;
+          return `<div>
+            <div style="font-size:2rem;font-weight:900;color:${idx ? "#FF86A3" : "#7AA5FF"};">${emarkEsc(S.teams[idx].name)}</div>
+            <div style="font-size:6.5rem;font-weight:900;line-height:1;color:#FBBF24;">${d.s}</div>
+            <div style="margin-top:8px;">Fautes : ${tf}${tf >= 5 ? " · BONUS" : ""}</div>
+            <div>Temps morts restants : ${emarkMaxTO(g) - (d.to[g] || 0)}</div>
+          </div>`;
+        };
+        pubEl.innerHTML = sideHtml(0) + `
+          <div>
+            <div style="font-size:1.4rem;color:#94A3B8;">${emarkPl(S.period)}</div>
+            <div id="emarkPubClock" style="font-size:4.5rem;font-weight:900;color:#FBBF24;">${tTxt}</div>
+            <div style="font-size:1.1rem;color:#38BDF8;">${S.pos == null ? "" : (S.pos ? "▶ " : "◀ ") + emarkEsc(S.teams[S.pos].name)}</div>
+            <button type="button" class="emark-nav-btn" style="margin-top:16px;" onclick="setEmarkView('match')">Quitter l'écran public</button>
+          </div>
+        ` + sideHtml(1);
+      }
+
+      const P = emarkPlan();
+      const nm = i => emarkEsc(TN.names[i] || ("Équipe " + (i + 1)));
+      const pd = id => { const s = TN.sc[id]; return !!s && s[0] != null && s[1] != null && s[0] !== "" && s[1] !== ""; };
+      const st = P.G.map((g, gi) => emarkStand(P, gi));
+      const ok = P.G.every((g, gi) => P.M.filter(m => m.g == gi).every(m => pd(m.id)));
+      const [hh, mi] = String(TN.start || "09:00").split(":");
+      const t0 = (+hh || 0) * 60 + (+mi || 0);
+      const allM = P.slots.flat();
+      const ref = {};
+      if (ok) {
+        const q = (g, k) => st[g][k] && st[g][k].t;
+        ref.s0 = [q(0, 0), q(1, 1)];
+        ref.s1 = [q(1, 0), q(0, 1)];
+        if (P.G[0].length > 3 && P.G[1].length > 3) { ref.k0 = [q(0, 2), q(1, 3)]; ref.k1 = [q(1, 2), q(0, 3)]; }
+        else if (P.G[0].length > 2 && P.G[1].length > 2) ref.q5 = [q(0, 2), q(1, 2)];
+      }
+      const wl = id => { const s = TN.sc[id], r = ref[id]; return r && pd(id) ? (+s[0] > +s[1] ? r : [r[1], r[0]]) : null; };
+      const a0 = wl("s0"), a1 = wl("s1"), b0 = wl("k0"), b1 = wl("k1");
+      if (a0 && a1) { ref.f = [a0[0], a1[0]]; ref.c = [a0[1], a1[1]]; }
+      if (b0 && b1) { ref.k5 = [b0[0], b1[0]]; ref.k7 = [b0[1], b1[1]]; }
+
+      let fin = null;
+      if (allM.filter(m => m.ph > 1).every(m => pd(m.id))) {
+        fin = [];
+        ["f", "c", "k5", "k7", "q5"].forEach(id => { const w = wl(id); if (w) fin.push(...w); });
+        for (let k = 2; k < 8; k++) st.forEach(g => { if (g[k] && !fin.includes(g[k].t)) fin.push(g[k].t); });
+      }
+
+      let lastPh = 0;
+      const slotsHtml = P.slots.map((s, si) => {
+        const hd = s[0].ph != lastPh ? `<h4 style="margin:12px 0 6px;color:#1E3A8A;font-weight:900;">${EMARK_PHT[lastPh = s[0].ph]}</h4>` : "";
+        const cards = s.map((m, ci) => {
+          const r = ref[m.id] || [], a = m.ph == 1 ? m.a : r[0], b = m.ph == 1 ? m.b : r[1];
+          const sc = TN.sc[m.id] || [], w = pd(m.id) ? (+sc[0] > +sc[1] ? 0 : 1) : -1;
+          const nn = (i, k) => i != null ? nm(i) : EMARK_PH[m.id][k];
+          const cls = m.ph == 1 ? "g" + "AB"[m.g] : m.id == "f" ? "fin" : "ko";
+          return `<div class="emark-mc ${cls}">
+            <div style="display:flex;justify-content:space-between;font-size:0.74rem;font-weight:800;color:#64748B;">
+              <span>Salle ${ci + 1}</span><span>${m.lab}</span>
+            </div>
+            <div class="emark-mb">
+              <span class="tA ${w == 0 ? "w" : ""}">${nn(a, 0)}</span>
+              <input type="number" min="0" value="${sc[0] ?? ""}" onchange="emarkUpdateMatchScore('${m.id}', 0, this.value)">
+              <span>–</span>
+              <input type="number" min="0" value="${sc[1] ?? ""}" onchange="emarkUpdateMatchScore('${m.id}', 1, this.value)">
+              <span class="${w == 1 ? "w" : ""}">${nn(b, 1)}</span>
+            </div>
+            ${a != null && b != null ? `<button type="button" class="btn-action-sm" style="background:#EFF6FF;color:#1E3A8A;width:100%;" onclick="emarkOpenMatchFromTournament('${m.id}', ${a}, ${b})">📋 Ouvrir la feuille de marque</button>` : ""}
+          </div>`;
+        }).join("");
+        return `${hd}<div class="emark-slot"><div class="emark-slot-tm">${emarkTt(t0 + si * TN.dur)}</div><div class="emark-slot-matches">${cards}</div></div>`;
+      }).join("");
+
+      const namesGrid = g => P.G[g].map(i => `
+        <label style="display:flex;align-items:center;gap:6px;margin:4px 0;font-weight:800;">
+          <span style="background:#1E3A8A;color:#FFF;border-radius:999px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;">${i + 1}</span>
+          <input value="${emarkEsc(TN.names[i])}" onchange="emarkUpdateTeamName(${i}, this.value)" style="flex:1;padding:5px 8px;border:1px solid #CBD5E1;border-radius:7px;font-weight:800;">
+        </label>
+      `).join("");
+
+      const standingsTabs = st.map((r, gi) => `
+        <div class="emark-poule-card ${"AB"[gi]}">
+          <h4 style="margin:0 0 6px;font-weight:900;">Poule ${"AB"[gi]}</h4>
+          <table>
+            <tr><th>Équipe</th><th>J</th><th>V</th><th>+/-</th><th>Pts</th></tr>
+            ${r.map((o, k) => `<tr class="${k < 2 ? "q" : ""}"><td style="color:#0F172A;">${k + 1}. ${nm(o.t)}</td><td style="color:#0F172A;">${o.j}</td><td style="color:#0F172A;">${o.v}</td><td style="color:#0F172A;">${o.pf - o.pa}</td><td style="color:#0F172A;"><b>${o.pts}</b></td></tr>`).join("")}
+          </table>
+        </div>
+      `).join("");
+
+      if (tournoiEl) {
+        tournoiEl.innerHTML = `
+          <div class="emark-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+              <strong style="font-size:1rem;color:#1E3A8A;">⚙️ Paramètres du Tournoi (Synchronisé Firebase)</strong>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${fin ? `<button type="button" class="btn-action-sm btn-save-score" onclick="setEmarkView('results')">🏆 Voir Page Résultats</button>` : ""}
+                <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#B91C1C;" onclick="emarkResetTournament()">🔄 Réinitialiser tournoi</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:0.84rem;font-weight:800;">
+              <label>Équipes :
+                <select onchange="emarkUpdateTnCfg('n', +this.value)">
+                  ${[4, 5, 6, 7, 8].map(k => `<option value="${k}" ${k == Math.max(4, TN.n) ? "selected" : ""}>${k}</option>`).join("")}
+                </select>
+              </label>
+              <label>Organisateur : <input value="${emarkEsc(TN.org || "")}" onchange="emarkUpdateTnCfg('org', this.value)" style="width:210px;"></label>
+              <label>Terrains :
+                <button type="button" class="btn-action-sm ${TN.courts == 1 ? "btn-save-score" : ""}" onclick="emarkUpdateTnCfg('courts', 1)">1</button>
+                <button type="button" class="btn-action-sm ${TN.courts == 2 ? "btn-save-score" : ""}" onclick="emarkUpdateTnCfg('courts', 2)">2</button>
+              </label>
+              <label>Début : <input type="time" value="${emarkEsc(TN.start || "09:00")}" onchange="emarkUpdateTnCfg('start', this.value)"></label>
+              <label>Durée (min) : <input type="number" min="5" value="${TN.dur || 20}" onchange="emarkUpdateTnCfg('dur', Math.max(5, +this.value || 20))" style="width:65px;"></label>
+            </div>
+            <p style="margin-top:8px;font-size:0.78rem;color:#475569;font-weight:700;">
+              ${allM.length} matchs · ${P.slots.length} créneaux · fin prévue à ${emarkTt(t0 + P.slots.length * TN.dur)}. Victoire = 2 pts, défaite = 1 pt.
+            </p>
+          </div>
+
+          <div class="emark-grid-2">
+            <div class="emark-poule-card A"><h4 style="margin:0 0 6px;color:#1D4ED8;font-weight:900;">Poule A</h4>${namesGrid(0)}</div>
+            <div class="emark-poule-card B"><h4 style="margin:0 0 6px;color:#BE123C;font-weight:900;">Poule B</h4>${namesGrid(1)}</div>
+          </div>
+
+          <div class="emark-card">
+            <h4 style="margin:0 0 6px;font-weight:900;color:#0F172A;">📅 Programme de la journée</h4>
+            ${slotsHtml}
+          </div>
+
+          <div class="emark-grid-2">${standingsTabs}</div>
+        `;
+      }
+
+      if (matchEl) {
+        const periodsHtml = [1, 2, 3, 4, 5, 6].map(p =>
+          `<button type="button" class="btn-action-sm ${S.period == p ? "btn-set-live" : ""}" onclick="emarkSetPeriod(${p})">${emarkPl(p)}</button>`
+        ).join("");
+
+        const savedTeamKeys = Object.keys(state.emark.savedTeams || {});
+        const teamsCardsHtml = S.teams.map((tm, i) => {
+          const d = T[i], g = emarkGrp(S.period), used = d.to[g] || 0, mx = emarkMaxTO(g), tf = d.tf[S.period] || 0;
+          const playerRows = tm.players.map((p, j) => {
+            const f = d.fl[j] || [], out = emarkIsOut(f);
+            const evBtn = (k, l) => `<button type="button" class="btn-action-sm" style="padding:4px 7px;" ${out ? "disabled" : ""} onclick="emarkPlayerEvent(${i}, ${j}, '${k}')">${l}</button>`;
+            return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 4px;border-top:1px solid #E2E8F0;${out ? "background:#FEE2E2;border-radius:6px;" : ""}">
+              <strong style="min-width:28px;color:#1E3A8A;">#${emarkEsc(p.n)}</strong>
+              <input value="${emarkEsc(p.name)}" placeholder="Nom joueur/joueuse" onchange="emarkUpdatePlayerName(${i}, ${j}, this.value)" style="flex:1;min-width:120px;padding:4px 7px;border:1px solid #CBD5E1;border-radius:6px;font-weight:700;">
+              <span style="font-weight:900;min-width:36px;text-align:right;">${d.pts[j]} pt</span>
+              <span style="font-size:0.75rem;font-weight:800;color:#991B1B;">Ftes: ${f.join("") || "—"}</span>
+              <div style="display:flex;gap:3px;flex-wrap:wrap;width:100%;">
+                ${evBtn("1", "+1")}${evBtn("2", "+2")}${evBtn("3", "+3")}
+                ${evBtn("P", "P")}${evBtn("T", "T")}${evBtn("U", "U")}${evBtn("D", "D")}
+              </div>
+            </div>`;
+          }).join("");
+
+          return `<div class="emark-poule-card ${i ? "B" : "A"}">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+              <input value="${emarkEsc(tm.name)}" onchange="emarkUpdateMatchTeamField(${i}, 'name', this.value)" style="flex:1;font-weight:900;font-size:1rem;padding:6px 8px;border:1.5px solid #94A3B8;border-radius:8px;">
+              <button type="button" class="btn-action-sm btn-save-score" onclick="emarkSaveRoster(${i})" title="Mémoriser l'effectif dans Firebase">💾 Mémoriser</button>
+              <select onchange="emarkLoadRoster(${i}, this.value)" style="max-width:130px;font-weight:800;">
+                <option value="">Charger…</option>
+                ${savedTeamKeys.map(k => `<option value="${emarkEsc(k)}">${emarkEsc(k)}</option>`).join("")}
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:0.8rem;font-weight:800;margin-bottom:8px;">
+              <span>Coach : <input value="${emarkEsc(tm.coach || "")}" onchange="emarkUpdateMatchTeamField(${i}, 'coach', this.value)" style="width:130px;"></span>
+              <button type="button" class="btn-action-sm" style="background:#EFF6FF;color:#1E3A8A;" ${used >= mx ? "disabled" : ""} onclick="emarkTimeout(${i})">Temps mort (${mx - used}/${mx})</button>
+              <span>Fautes ${emarkPl(S.period)} : <b>${tf}</b>${tf >= 5 ? " · BONUS" : ""}</span>
+              <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#92400E;" onclick="emarkCoachFoul(${i}, 'C')">+C</button>
+              <button type="button" class="btn-action-sm" style="background:#FEF3C7;color:#92400E;" onclick="emarkCoachFoul(${i}, 'B')">+B</button>
+              <span>${(d.cf || []).join(" ")}${emarkCoachOut(d.cf || []) ? " · exclu" : ""}</span>
+            </div>
+            ${playerRows}
+          </div>`;
+        }).join("");
+
+        matchEl.innerHTML = `
+          <div class="emark-card">
+            <div class="emark-sb">
+              <span class="tn">${emarkEsc(S.teams[0].name)}</span>
+              <span class="n">${T[0].s}</span>
+              <span style="font-size:1.5rem;font-weight:900;color:#FBBF24;">–</span>
+              <span class="n">${T[1].s}</span>
+              <span class="tn">${emarkEsc(S.teams[1].name)}</span>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:10px;">
+              ${periodsHtml}
+              <span id="emarkClockDisplay" style="font-size:1.4rem;font-weight:900;color:#1E3A8A;margin:0 6px;font-variant-numeric:tabular-nums;">${emarkFmt(Math.ceil(emarkRem() / 1000))}</span>
+              <button type="button" class="btn-action-sm btn-save-score" onclick="emarkToggleClock()">${S.run ? "⏸ Arrêter" : "▶ Démarrer"}</button>
+              <button type="button" class="btn-action-sm" style="background:#E2E8F0;color:#0F172A;" onclick="emarkTogglePoss()">Poss : ${S.pos == null ? "—" : emarkEsc(S.teams[S.pos].name)}</button>
+              <button type="button" class="btn-action-sm" style="background:#FEE2E2;color:#991B1B;" onclick="emarkUndo()">↩ Annuler</button>
+              <button type="button" class="btn-action-sm btn-reset-up" onclick="emarkResetMatch()">Nouveau match</button>
+              ${S.tm != null ? `<button type="button" class="btn-action-sm btn-set-live" onclick="emarkValidateTournamentScore()">✅ Valider au tournoi</button>` : ""}
+            </div>
+          </div>
+
+          <div class="emark-grid-2">${teamsCardsHtml}</div>
+
+          <div class="emark-card">
+            <h4 style="margin:0 0 6px;font-weight:900;">📜 Déroulement du match (${L.length} action(s))</h4>
+            <div style="max-height:190px;overflow-y:auto;font-size:0.82rem;">
+              ${L.length ? L.slice().reverse().map(({ e, a, b }) => {
+                const tm = S.teams[e.t], p = e.p >= 0 ? tm.players[e.p] : null;
+                return `<div style="padding:4px 0;border-top:1px solid #E2E8F0;display:flex;gap:10px;">
+                  <strong style="min-width:56px;color:#1E3A8A;">${a} – ${b}</strong>
+                  <span>${emarkPl(e.per)} ${emarkFmt(e.c)} · ${emarkEsc(tm.name)}${p ? " · #" + emarkEsc(p.n) + " " + emarkEsc(p.name) : ""} · <b>${EMARK_LAB[e.k] || e.k}</b></span>
+                </div>`;
+              }).join("") : `<p style="color:#64748B;font-weight:700;">Aucune action enregistrée.</p>`}
+            </div>
+          </div>
+        `;
+      }
+
+      if (resEl && state.emark.view === "results") {
+        if (!fin) {
+          resEl.innerHTML = `<div class="emark-card" style="text-align:center;padding:24px;">
+            <h3 style="margin:0 0 6px;color:#1E3A8A;">🏆 Résultats & Podium du Tournoi</h3>
+            <p style="font-weight:700;color:#475569;">Complétez les scores des poules et des phases finales dans l'onglet « 🏆 Tournoi & Poules » pour afficher le classement final.</p>
+          </div>`;
+        } else {
+          resEl.innerHTML = `<div class="emark-card" style="text-align:center;">
+            <div style="font-size:0.82rem;font-weight:900;color:#EA580C;text-transform:uppercase;">🏆 Tournoi de basket</div>
+            <h3 style="margin:4px 0;font-size:1.8rem;font-weight:900;color:#0F172A;">Résultats & Classement Final</h3>
+            <p style="color:#64748B;font-weight:700;">${emarkEsc(TN.org || "LSBSC")}</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0;">
+              <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px;">🥈<br><strong>${nm(fin[1])}</strong></div>
+              <div style="background:#FEF3C7;border:2px solid #D97706;border-radius:10px;padding:14px;">🥇<br><strong>${nm(fin[0])}</strong></div>
+              <div style="background:#F8FAFC;border:1.5px solid #CBD5E1;border-radius:10px;padding:12px;">🥉<br><strong>${nm(fin[2])}</strong></div>
+            </div>
+            <ol style="text-align:left;max-width:420px;margin:0 auto;padding-left:22px;font-weight:800;">
+              ${fin.map(i => `<li style="padding:4px 0;">${nm(i)} <span style="color:#64748B;font-size:0.78rem;">(Poule ${P.G[0].includes(i) ? "A" : "B"})</span></li>`).join("")}
+            </ol>
+          </div>`;
+        }
+      }
+    } catch (err) {
+      if (tournoiEl) {
+        tournoiEl.innerHTML = `<div class="emark-card" style="color:#991B1B;background:#FEF2F2;border-color:#FCA5A5;">
+          <strong>⚠️ Affichage de secours du tournoi</strong>
+          <p style="font-size:0.82rem;">${emarkEsc(err && err.message ? err.message : String(err))}</p>
+          <button type="button" class="btn-action-sm btn-save-score" onclick="emarkResetTournament()">Réinitialiser les données du tournoi</button>
+        </div>`;
+      }
+    }
+  }
+
+  window.emarkUpdateTnCfg = function(key, val) {
+    state.emark.tn[key] = val;
+    state.emark.tn = sanitizeTournamentObj(state.emark.tn);
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkUpdateTeamName = function(idx, val) {
+    state.emark.tn.names[idx] = val;
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkUpdateMatchScore = function(matchId, sideIdx, rawVal) {
+    const s = state.emark.tn.sc[matchId] || [null, null];
+    s[sideIdx] = rawVal === "" ? null : Math.max(0, parseInt(rawVal, 10) || 0);
+    state.emark.tn.sc[matchId] = s;
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkResetTournament = function() {
+    if (!confirm("Réinitialiser le tournoi et effacer les scores du tournoi ?")) return;
+    state.emark.tn = mkDefaultTournament();
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkOpenMatchFromTournament = function(matchId, idxA, idxB) {
+    const TN = state.emark.tn;
+    const fresh = mkDefaultMatchSheet();
+    [idxA, idxB].forEach((ti, k) => {
+      const nme = TN.names[ti] || ("Équipe " + (ti + 1));
+      fresh.teams[k].name = nme;
+      const sv = state.emark.savedTeams && state.emark.savedTeams[nme];
+      if (sv) {
+        fresh.teams[k].coach = sv.coach || "";
+        fresh.teams[k].players = (sv.players || mkDefaultPlayers()).map(q => ({ ...q }));
+      }
+    });
+    fresh.tm = matchId;
+    state.emark.match = fresh;
+    saveEmarkState(true);
+    window.setEmarkView("match");
+  };
+
+  window.emarkValidateTournamentScore = function() {
+    const S = state.emark.match;
+    if (S.tm == null) return;
+    const { T } = emarkCalc();
+    if (T[0].s == T[1].s) {
+      alert("Égalité : jouez la prolongation avant de valider le score au tournoi.");
+      return;
+    }
+    state.emark.tn.sc[S.tm] = [T[0].s, T[1].s];
+    saveEmarkState(true);
+    window.setEmarkView("tournoi");
+  };
+
+  window.emarkSetPeriod = function(p) {
+    emarkStop();
+    state.emark.match.period = p;
+    state.emark.match.ms = p <= 4 ? 600000 : 300000;
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkToggleClock = function() {
+    const S = state.emark.match;
+    if (S.run) {
+      emarkStop();
+    } else {
+      S.ms = emarkRem();
+      S.t0 = Date.now();
+      S.run = true;
+    }
+    saveEmarkState(false);
+    renderEmarkAll();
+  };
+
+  window.emarkTogglePoss = function() {
+    const S = state.emark.match;
+    S.pos = S.pos == null ? 0 : 1 - S.pos;
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkUndo = function() {
+    state.emark.match.log.pop();
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkResetMatch = function() {
+    if (!confirm("Démarrer une nouvelle feuille de marque ?")) return;
+    state.emark.match = mkDefaultMatchSheet();
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkPlayerEvent = function(tIdx, pIdx, k) {
+    emarkPush({ t: tIdx, p: pIdx, k });
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkTimeout = function(tIdx) {
+    emarkStop();
+    emarkPush({ t: tIdx, p: -1, k: "TO" });
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkCoachFoul = function(tIdx, k) {
+    emarkPush({ t: tIdx, p: -1, k });
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkUpdateMatchTeamField = function(tIdx, field, val) {
+    state.emark.match.teams[tIdx][field] = val;
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  window.emarkUpdatePlayerName = function(tIdx, pIdx, val) {
+    state.emark.match.teams[tIdx].players[pIdx].name = val;
+    saveEmarkState(true);
+  };
+
+  window.emarkSaveRoster = function(tIdx) {
+    const tm = state.emark.match.teams[tIdx];
+    if (!tm || !tm.name) return;
+    state.emark.savedTeams[tm.name] = {
+      coach: tm.coach || "",
+      players: (tm.players || []).map(p => ({ ...p }))
+    };
+    saveEmarkState(true);
+    alert(`Effectif « ${tm.name} » mémorisé dans Firebase !`);
+    renderEmarkAll();
+  };
+
+  window.emarkLoadRoster = function(tIdx, name) {
+    if (!name || !state.emark.savedTeams || !state.emark.savedTeams[name]) return;
+    const sv = state.emark.savedTeams[name];
+    state.emark.match.teams[tIdx].name = name;
+    state.emark.match.teams[tIdx].coach = sv.coach || "";
+    state.emark.match.teams[tIdx].players = (sv.players || mkDefaultPlayers()).map(p => ({ ...p }));
+    saveEmarkState(true);
+    renderEmarkAll();
+  };
+
+  setInterval(() => {
+    if (!state.emark || !state.emark.isOpen) return;
+    const S = state.emark.match;
+    if (S.run && emarkRem() <= 0) {
+      S.ms = 0;
+      S.run = false;
+      saveEmarkState(true);
+      renderEmarkAll();
+      return;
+    }
+    const tStr = emarkFmt(Math.ceil(emarkRem() / 1000));
+    const el1 = document.getElementById("emarkClockDisplay");
+    const el2 = document.getElementById("emarkPubClock");
+    if (el1) el1.textContent = tStr;
+    if (el2) el2.textContent = tStr;
+  }, 250);
+
+  setInterval(() => {
+    if (state.emark && state.emark.isOpen && !document.hidden) {
+      pullEmarkFromFirebase();
+    }
+  }, 6000);
+})();

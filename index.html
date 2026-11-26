@@ -92,6 +92,7 @@
       <button class="btn-top btn-logos staff-only-tool" onclick="requestPinAccess('logos')">🛡️ Logos</button>
       <button class="btn-top btn-cloud staff-only-tool" onclick="requestPinAccess('settings')" title="Bandeau Buvette & Synchronisation">⚙️</button>
 
+      <button id="btnTournamentEmarkToggle" class="btn-top" style="background:linear-gradient(135deg,#D97706,#EA580C);color:#FFF;border:1.5px solid #FDE68A;" onclick="openTournamentEmarkSpace()" title="Feuille de marque & gestion des tournois LSBSC (Firebase)">🏆 Tournoi</button>
       <button id="btnCoachToggle" class="btn-top btn-coach" onclick="requestPinAccess('coach')" title="Espace Coach protégé par PIN">📋 Espace Coach</button>
       <button id="btnStaffToggle" class="btn-top btn-staff" onclick="requestPinAccess('staff')">🔒 Direct / Scores</button>
     </div>
@@ -650,6 +651,34 @@
 
       <!-- Contenu dynamique de l'espace Coach -->
       <div id="coachDynamicContainer" class="coach-dynamic-container"></div>
+    </div>
+  </div>
+
+    <!-- ================= ESPACE TOURNOI & FEUILLE DE MARQUE E-MARQUE (SYNCHRO FIREBASE) ================= -->
+  <div id="emarkTournamentOverlay" class="emark-overlay" style="display:none;" aria-hidden="true">
+    <div class="emark-topbar">
+      <div class="emark-topbar-left">
+        <span style="font-size:1.6rem;">🏆</span>
+        <div>
+          <h2>e-Marque & Tournois LSBSC</h2>
+          <p id="emarkSyncStatusLbl">Feuille de marque, chronomètre, poules, phases finales & podium • Synchronisé Firebase</p>
+        </div>
+      </div>
+      <div class="emark-topbar-actions">
+        <button type="button" id="btnEmarkViewTournoi" class="emark-nav-btn active" onclick="setEmarkView('tournoi')">🏆 Tournoi & Poules</button>
+        <button type="button" id="btnEmarkViewMatch" class="emark-nav-btn" onclick="setEmarkView('match')">🏀 Feuille de Marque</button>
+        <button type="button" id="btnEmarkViewPublic" class="emark-nav-btn" onclick="setEmarkView('public')">📺 Écran Public</button>
+        <button type="button" id="btnEmarkViewResults" class="emark-nav-btn" onclick="setEmarkView('results')">🥇 Résultats</button>
+        <button type="button" class="emark-nav-btn emark-btn-close" onclick="closeTournamentEmarkSpace()">✖ Retour App</button>
+      </div>
+    </div>
+
+    <div id="emarkPublicScreen" class="emark-public-screen" style="display:none;"></div>
+
+    <div id="emarkMainScrollBody" class="emark-body">
+      <div id="emarkTournoiView" class="emark-view-pane"></div>
+      <div id="emarkMatchView" class="emark-view-pane" style="display:none;"></div>
+      <div id="emarkResultsView" class="emark-view-pane" style="display:none;"></div>
     </div>
   </div>
 
